@@ -22,7 +22,7 @@ export default function SignIn() {
         
         <div className={styles.links}>
           <a href="#" className={styles.link}>Forgot password?</a>
-          <a href="#" className={styles.link}>Create account</a>
+          <a href="/signup" className={styles.link}>Create account</a>
         </div>
         
         <button type="submit" className={styles.btn}>Sign In</button>

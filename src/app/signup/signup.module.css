@@ -1,0 +1,182 @@
+.container {
+  min-height: 100vh;
+  background: #FFFFFF;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 60px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.nav {
+  display: flex;
+  gap: 40px;
+}
+
+.navLink {
+  color: #666;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.logo {
+  font-size: 24px;
+  font-family: serif;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.icons {
+  display: flex;
+  gap: 20px;
+}
+
+.icon {
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.content {
+  max-width: 450px;
+  margin: 80px auto;
+  padding: 0 20px;
+}
+
+.membership {
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.title {
+  text-align: center;
+  font-size: 36px;
+  font-weight: 400;
+  font-family: serif;
+  margin: 0 0 15px;
+}
+
+.subtitle {
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 40px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.input {
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: #000;
+}
+
+.hint {
+  font-size: 12px;
+  color: #666;
+  margin: 5px 0 0;
+}
+
+.checkbox {
+  display: flex;
+  gap: 10px;
+  font-size: 14px;
+  align-items: flex-start;
+}
+
+.checkbox input {
+  margin-top: 3px;
+}
+
+.link {
+  color: #000;
+  text-decoration: underline;
+}
+
+.btn {
+  padding: 14px;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 32px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.inputError {
+  border-color: #dc2626 !important;
+}
+
+.error {
+  color: #dc2626;
+  font-size: 12px;
+  margin: 5px 0 0;
+}
+
+.or {
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+  margin: 10px 0;
+}
+
+.social {
+  display: flex;
+  gap: 15px;
+}
+
+.socialBtn {
+  flex: 1;
+  padding: 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.login {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  margin-top: 10px;
+}
