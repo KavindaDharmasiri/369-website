@@ -72,7 +72,7 @@ export default function SignUp() {
       }
 
       toast.success('Account created successfully!')
-      setTimeout(() => router.push('/shop'), 1000)
+      setTimeout(() => router.push('/customer/shop'), 1000)
     } catch (error) {
       console.error('Signup error:', error)
       toast.error('Something went wrong. Please try again.')

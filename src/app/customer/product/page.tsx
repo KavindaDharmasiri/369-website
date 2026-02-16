@@ -1,6 +1,7 @@
 'use client'
 import styles from './product.module.css'
 import { useState } from 'react'
+import Link from 'next/link'
 import Cart from '@/components/Cart'
 
 export default function Product() {
@@ -20,9 +21,9 @@ export default function Product() {
       <header className={styles.header}>
         <div className={styles.logo}>369</div>
         <nav className={styles.nav}>
-          <a href="/shop" className={styles.navLink}>Gallery</a>
-          <a href="/men" className={styles.navLink}>Men</a>
-          <a href="/women" className={styles.navLink}>Women</a>
+          <Link href="/customer/shop" className={styles.navLink}>Gallery</Link>
+          <Link href="/customer/category?type=men" className={styles.navLink}>Men</Link>
+          <Link href="/customer/category?type=women" className={styles.navLink}>Women</Link>
         </nav>
         <div className={styles.icons}>
           <span className={styles.icon} onClick={() => setIsCartOpen(true)}>🛒</span>

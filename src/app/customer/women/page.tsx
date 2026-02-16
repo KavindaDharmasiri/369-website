@@ -22,9 +22,9 @@ export default function Women() {
       <header className={styles.header}>
         <div className={styles.logo}>369</div>
         <nav className={styles.nav}>
-          <a href="/shop" className={styles.navLink}>Home</a>
-          <a href="/women" className={`${styles.navLink} ${styles.active}`}>Women</a>
-          <a href="/men" className={styles.navLink}>Men</a>
+          <a href="/customer/shop" className={styles.navLink}>Home</a>
+          <a href="/customer/women" className={`${styles.navLink} ${styles.active}`}>Women</a>
+          <a href="/customer/men" className={styles.navLink}>Men</a>
         </nav>
         <div className={styles.icons}>
           <span className={styles.icon}>🔍</span>
@@ -54,7 +54,7 @@ export default function Women() {
 
         <div className={styles.products}>
           {products.map((product, index) => (
-            <div key={index} className={styles.product} onClick={() => window.location.href = '/product'}>
+            <div key={index} className={styles.product} onClick={() => window.location.href = '/customer/product'}>
               <div className={styles.productImage}>
                 <img src="https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png" alt={product.name} />
               </div>

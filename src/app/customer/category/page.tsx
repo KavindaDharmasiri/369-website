@@ -1,19 +1,28 @@
 'use client'
-import styles from './shop.module.css'
-import { useState } from 'react'
+import styles from './category.module.css'
+import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 
-export default function Shop() {
+export default function Category() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const category = searchParams.get('type') || 'women'
 
   const products = [
-    { name: 'Sculpted Wool Jacket', price: '$495' },
+    { name: 'Tailored Trousers', price: '$325' },
+    { name: 'Camel Overcoat', price: '$895' },
     { name: 'Essential Silk Blouse', price: '$285' },
     { name: 'Cashmere Crewneck', price: '$395' },
-    { name: 'Tailored Trousers', price: '$325' },
-    { name: 'Structured Leather Bag', price: '$645' },
     { name: 'Merino Knit Dress', price: '$425' },
+    { name: 'Structured Leather Bag', price: '$645' },
+    { name: 'Sculpted Wool Jacket', price: '$495' },
     { name: 'Leather Loafers', price: '$385' },
-    { name: 'Camel Overcoat', price: '$895' },
+    { name: 'Linen Button-Down', price: '$245' },
+    { name: 'Leather Ankle Boots', price: '$485' },
+    { name: 'Silk Camisole', price: '$195' },
+    { name: 'Structured Blazer', price: '$595' },
   ]
 
   const cartItems = [
@@ -31,9 +40,9 @@ export default function Shop() {
       <header className={styles.header}>
         <div className={styles.logo}>369</div>
         <nav className={styles.nav}>
-          <a href="/shop" className={`${styles.navLink} ${styles.active}`}>Home</a>
-          <a href="/women" className={styles.navLink}>Women</a>
-          <a href="/men" className={styles.navLink}>Men</a>
+          <Link href="/customer/shop" className={styles.navLink}>Home</Link>
+          <Link href="/customer/category?type=women" className={`${styles.navLink} ${category === 'women' ? styles.active : ''}`}>Women</Link>
+          <Link href="/customer/category?type=men" className={`${styles.navLink} ${category === 'men' ? styles.active : ''}`}>Men</Link>
         </nav>
         <div className={styles.icons}>
           <span className={styles.icon}>🔍</span>
@@ -42,26 +51,28 @@ export default function Shop() {
         </div>
       </header>
 
-      <section className={styles.hero}>
-        <div className={styles.heroText}>
-          <h1>Refined Essentials for Every Day</h1>
-          <p>Discover timeless pieces crafted with intention, designed to elevate the everyday with quiet sophistication.</p>
-        </div>
-        <div className={styles.heroImage}>
-          <img src="https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png" alt="Fashion" />
-        </div>
-      </section>
+      <div className={styles.content}>
+        <h1 className={styles.title}>{category === 'men' ? 'Men' : 'Women'}</h1>
 
-      <div className={styles.tabs}>
-        <div className={`${styles.tab} ${styles.active}`}>Personalized Gallery</div>
-        <div className={styles.tab}>New</div>
-      </div>
+        <div className={styles.filterBar}>
+          <div className={styles.filters}>
+            <button className={styles.filterBtn}>Coats</button>
+            <button className={styles.filterBtn}>Knitwear</button>
+            <button className={styles.filterBtn}>Trousers</button>
+            <button className={styles.filterBtn}>Dresses</button>
+            <button className={styles.filterBtn}>Bags</button>
+          </div>
+          <div className={styles.sort}>
+            <span>Sort by</span>
+            <select className={styles.sortSelect}>
+              <option>Newest</option>
+            </select>
+          </div>
+        </div>
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>New Arrivals</h2>
         <div className={styles.products}>
           {products.map((product, index) => (
-            <div key={index} className={styles.product} onClick={() => window.location.href = '/product'}>
+            <div key={index} className={styles.product} onClick={() => router.push('/customer/product')}>
               <div className={styles.productImage}>
                 <img src="https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png" alt={product.name} />
               </div>
@@ -70,7 +81,7 @@ export default function Shop() {
             </div>
           ))}
         </div>
-      </section>
+      </div>
 
       <footer className={styles.footer}>
         <div className={styles.footerSection}>
