@@ -74,6 +74,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       }
     })
 
+    // If category is set to inactive, also set all its subcategories to inactive
+    if (isActive === false) {
+      await prisma.subCategory.updateMany({
+        where: { categoryId: parseInt(params.id) },
+        data: { isActive: false }
+      })
+    }
+
     const encrypted = encrypt(JSON.stringify({ success: true, category }))
     return NextResponse.json({ data: encrypted })
   } catch (error: any) {
@@ -95,6 +103,18 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   if (!auth.authorized) return auth.response
 
   try {
+    // Check if category has subcategories
+    const subcategoryCount = await prisma.subCategory.count({
+      where: { categoryId: parseInt(params.id) }
+    })
+
+    if (subcategoryCount > 0) {
+      const encrypted = encrypt(JSON.stringify({ 
+        error: `Cannot delete category. It has ${subcategoryCount} subcategory(ies). Please delete or reassign them first.` 
+      }))
+      return NextResponse.json({ data: encrypted }, { status: 400 })
+    }
+
     await prisma.category.delete({ where: { id: parseInt(params.id) } })
     const encrypted = encrypt(JSON.stringify({ success: true }))
     return NextResponse.json({ data: encrypted })
