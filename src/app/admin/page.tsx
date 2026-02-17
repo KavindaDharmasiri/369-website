@@ -56,7 +56,7 @@ export default function Admin() {
             <p className={styles.pageSubtitle}>Overview of your store performance</p>
           </div>
           <div className={styles.headerActions}>
-            <button className={styles.periodBtn}>📅 Last 30 Days</button>
+            <button className={styles.periodBtn}>▦ Last 30 Days</button>
             <button className={styles.exportBtn}>Export Report</button>
           </div>
         </header>
@@ -74,7 +74,7 @@ export default function Admin() {
             <div className={styles.statCard}>
               <div className={styles.statHeader}>
                 <span className={styles.statLabel}>Orders</span>
-                <span className={styles.statIcon}>🛒</span>
+                <span className={styles.statIcon}>◈</span>
               </div>
               <div className={styles.statValue}>1,847</div>
               <div className={styles.statChange}>+8.2% vs last period</div>

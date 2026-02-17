@@ -100,6 +100,7 @@
 .main {
   flex: 1;
   overflow-y: auto;
+  margin-left: 260px;
 }
 
 .content {
@@ -212,6 +213,10 @@
   margin-right: 8px;
   opacity: 0.5;
   transition: opacity 0.2s;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .actionBtn:hover {

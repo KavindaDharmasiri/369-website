@@ -31,9 +31,11 @@ export default function GeneratedSKU() {
             <div>
               <h1 className={styles.pageTitle}>Product</h1>
               <div className={styles.breadcrumb}>
-                <Link href="/admin" className={styles.breadcrumbLink}>Product Management</Link>
+                <Link href="/admin" className={styles.breadcrumbLink}>Dashboard</Link>
                 <span className={styles.separator}>/</span>
-                <Link href="/admin/products/specifications" className={styles.breadcrumbLink}>Product Specifications</Link>
+                <Link href="/admin/products" className={styles.breadcrumbLink}>Products</Link>
+                <span className={styles.separator}>/</span>
+                <Link href="/admin/products/specifications" className={styles.breadcrumbLink}>Specifications</Link>
                 <span className={styles.separator}>/</span>
                 <span>Generated SKU</span>
               </div>
@@ -60,8 +62,8 @@ export default function GeneratedSKU() {
                   <td>volume, volume</td>
                   <td>LKR 0</td>
                   <td>
-                    <button className={styles.actionBtn}>👁</button>
-                    <button className={styles.actionBtn}>✏️</button>
+                    <button className={styles.actionBtn}>◎</button>
+                    <button className={styles.actionBtn}>✎</button>
                   </td>
                 </tr>
                 <tr>
@@ -70,8 +72,8 @@ export default function GeneratedSKU() {
                   <td>volume, volume</td>
                   <td>LKR 0</td>
                   <td>
-                    <button className={styles.actionBtn}>👁</button>
-                    <button className={styles.actionBtn}>✏️</button>
+                    <button className={styles.actionBtn}>◎</button>
+                    <button className={styles.actionBtn}>✎</button>
                   </td>
                 </tr>
                 <tr>
@@ -80,8 +82,8 @@ export default function GeneratedSKU() {
                   <td>volume, volume</td>
                   <td>LKR 0</td>
                   <td>
-                    <button className={styles.actionBtn}>👁</button>
-                    <button className={styles.actionBtn}>✏️</button>
+                    <button className={styles.actionBtn}>◎</button>
+                    <button className={styles.actionBtn}>✎</button>
                   </td>
                 </tr>
                 <tr>
@@ -90,8 +92,8 @@ export default function GeneratedSKU() {
                   <td>volume, volume</td>
                   <td>LKR 0</td>
                   <td>
-                    <button className={styles.actionBtn}>👁</button>
-                    <button className={styles.actionBtn}>✏️</button>
+                    <button className={styles.actionBtn}>◎</button>
+                    <button className={styles.actionBtn}>✎</button>
                   </td>
                 </tr>
               </tbody>
@@ -99,7 +101,7 @@ export default function GeneratedSKU() {
           </div>
 
           <div className={styles.actions}>
-            <button className={styles.publishBtn}>📦 Publish</button>
+            <button className={styles.publishBtn}>▢ Publish</button>
             <button className={styles.finishBtn}>Finish</button>
           </div>
         </div>

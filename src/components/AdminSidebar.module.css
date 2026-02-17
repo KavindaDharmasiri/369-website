@@ -5,6 +5,11 @@
   display: flex;
   flex-direction: column;
   padding: 32px 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .logo {
@@ -32,6 +37,7 @@
   gap: 14px;
   font-size: 15px;
   transition: all 0.2s;
+  font-weight: 400;
 }
 
 .navLink:hover {
@@ -42,10 +48,29 @@
 .navLink.active {
   background: #f8f9fa;
   color: #212529;
+  font-weight: 400;
 }
 
 .icon {
-  font-size: 18px;
+  font-size: 14px;
+  color: inherit;
+}
+
+.navSection {
+  margin: 8px 0;
+}
+
+.navSectionTitle {
+  font-size: 11px;
+  color: #adb5bd;
+  padding: 8px 20px 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.subLink {
+  padding-left: 36px;
 }
 
 .userProfile {

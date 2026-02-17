@@ -1,106 +1,7 @@
 .container {
   display: flex;
   min-height: 100vh;
-  max-height: 100vh;
   background: #f8f9fa;
-  overflow: hidden;
-}
-
-.sidebar {
-  width: 260px;
-  background: white;
-  border-right: 1px solid #e9ecef;
-  display: flex;
-  flex-direction: column;
-  padding: 32px 0;
-  height: 100vh;
-  position: sticky;
-  top: 0;
-  flex-shrink: 0;
-}
-
-.logo {
-  font-size: 28px;
-  font-family: 'Playfair Display', serif;
-  padding: 0 28px 48px;
-  font-weight: 500;
-}
-
-.nav {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 0 16px;
-  flex: 1;
-}
-
-.navLink {
-  padding: 12px 20px;
-  color: #6c757d;
-  text-decoration: none;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font-size: 15px;
-  transition: all 0.2s;
-}
-
-.navLink:hover {
-  background: #f8f9fa;
-  color: #212529;
-}
-
-.navLink.active {
-  background: #f8f9fa;
-  color: #212529;
-}
-
-.icon {
-  font-size: 18px;
-}
-
-.userProfile {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 20px 28px;
-  border-top: 1px solid #e9ecef;
-  margin-top: auto;
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #dee2e6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 15px;
-}
-
-.userInfo {
-  flex: 1;
-}
-
-.userName {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.userEmail {
-  font-size: 11px;
-  color: #6c757d;
-}
-
-.menuBtn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #6c757d;
 }
 
 .main {
@@ -109,6 +10,7 @@
   flex-direction: column;
   height: 100vh;
   overflow-y: auto;
+  margin-left: 260px;
 }
 
 .header {

@@ -328,6 +328,16 @@
   color: #adb5bd;
 }
 
+.select {
+  padding: 10px 14px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #212529;
+  background: white;
+  cursor: pointer;
+}
+
 .modalFooter {
   padding: 16px 28px;
   border-top: 1px solid #e9ecef;
@@ -366,7 +376,7 @@
   background: #f8f9fa;
 }
 
-.addCategoryBtn {
+.addSubCategoryBtn {
   padding: 10px 24px;
   background: #212529;
   color: white;
@@ -377,6 +387,6 @@
   transition: all 0.2s;
 }
 
-.addCategoryBtn:hover {
+.addSubCategoryBtn:hover {
   background: #000;
 }

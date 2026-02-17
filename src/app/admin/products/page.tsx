@@ -34,9 +34,9 @@ export default function AdminProducts() {
             <div>
               <h1 className={styles.pageTitle}>Product</h1>
               <div className={styles.breadcrumb}>
-                <Link href="/admin" className={styles.breadcrumbLink}>Product Management</Link>
+                <Link href="/admin" className={styles.breadcrumbLink}>Dashboard</Link>
                 <span className={styles.separator}>/</span>
-                <span>Product</span>
+                <span>Products</span>
               </div>
             </div>
             <button className={styles.addBtn} onClick={() => router.push('/admin/products/add')}>+ Add Product</button>
@@ -107,9 +107,9 @@ export default function AdminProducts() {
                   <td>LKR 7599.99</td>
                   <td>12/29/25, 9:20 AM</td>
                   <td>
-                    <button className={styles.actionBtn}>👁</button>
-                    <button className={styles.actionBtn}>✏️</button>
-                    <button className={styles.actionBtn}>🗑️</button>
+                    <button className={styles.actionBtn}>◎</button>
+                    <button className={styles.actionBtn}>✎</button>
+                    <button className={styles.actionBtn}>✕</button>
                   </td>
                 </tr>
                 <tr>
@@ -122,9 +122,9 @@ export default function AdminProducts() {
                   <td>LKR 1000</td>
                   <td>12/29/25, 8:36 AM</td>
                   <td>
-                    <button className={styles.actionBtn}>👁</button>
-                    <button className={styles.actionBtn}>✏️</button>
-                    <button className={styles.actionBtn}>🗑️</button>
+                    <button className={styles.actionBtn}>◎</button>
+                    <button className={styles.actionBtn}>✎</button>
+                    <button className={styles.actionBtn}>✕</button>
                   </td>
                 </tr>
                 <tr>
@@ -137,9 +137,9 @@ export default function AdminProducts() {
                   <td>LKR 2000</td>
                   <td>3/27/25, 3:34 AM</td>
                   <td>
-                    <button className={styles.actionBtn}>👁</button>
-                    <button className={styles.actionBtn}>✏️</button>
-                    <button className={styles.actionBtn}>🗑️</button>
+                    <button className={styles.actionBtn}>◎</button>
+                    <button className={styles.actionBtn}>✎</button>
+                    <button className={styles.actionBtn}>✕</button>
                   </td>
                 </tr>
                 <tr>
@@ -152,9 +152,9 @@ export default function AdminProducts() {
                   <td>LKR 2000</td>
                   <td>3/6/25, 7:52 AM</td>
                   <td>
-                    <button className={styles.actionBtn}>👁</button>
-                    <button className={styles.actionBtn}>✏️</button>
-                    <button className={styles.actionBtn}>🗑️</button>
+                    <button className={styles.actionBtn}>◎</button>
+                    <button className={styles.actionBtn}>✎</button>
+                    <button className={styles.actionBtn}>✕</button>
                   </td>
                 </tr>
                 <tr>
@@ -167,9 +167,9 @@ export default function AdminProducts() {
                   <td>LKR 3900</td>
                   <td>2/27/25, 4:54 AM</td>
                   <td>
-                    <button className={styles.actionBtn}>👁</button>
-                    <button className={styles.actionBtn}>✏️</button>
-                    <button className={styles.actionBtn}>🗑️</button>
+                    <button className={styles.actionBtn}>◎</button>
+                    <button className={styles.actionBtn}>✎</button>
+                    <button className={styles.actionBtn}>✕</button>
                   </td>
                 </tr>
                 <tr>

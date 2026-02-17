@@ -31,9 +31,9 @@ export default function AddProduct() {
             <div>
               <h1 className={styles.pageTitle}>Add Product</h1>
               <div className={styles.breadcrumb}>
-                <Link href="/admin" className={styles.breadcrumbLink}>Product Management</Link>
+                <Link href="/admin" className={styles.breadcrumbLink}>Dashboard</Link>
                 <span className={styles.separator}>/</span>
-                <Link href="/admin/products" className={styles.breadcrumbLink}>Product</Link>
+                <Link href="/admin/products" className={styles.breadcrumbLink}>Products</Link>
                 <span className={styles.separator}>/</span>
                 <span>Add Product</span>
               </div>

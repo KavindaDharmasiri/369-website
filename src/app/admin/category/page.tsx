@@ -48,7 +48,7 @@ export default function CategoryManagement() {
             <div>
               <h1 className={styles.pageTitle}>Category Management</h1>
               <div className={styles.breadcrumb}>
-                <Link href="/admin" className={styles.breadcrumbLink}>Configurator</Link>
+                <Link href="/admin" className={styles.breadcrumbLink}>Dashboard</Link>
                 <span className={styles.separator}>/</span>
                 <span>Category</span>
               </div>
@@ -101,9 +101,9 @@ export default function CategoryManagement() {
                     <td>{category.description}</td>
                     <td><span className={styles.statusActive}>ACTIVE</span></td>
                     <td>
-                      <button className={styles.actionBtn}>👁</button>
-                      <button className={styles.actionBtn}>✏️</button>
-                      <button className={styles.actionBtn}>🗑️</button>
+                      <button className={styles.actionBtn}>◎</button>
+                      <button className={styles.actionBtn}>✎</button>
+                      <button className={styles.actionBtn}>✕</button>
                     </td>
                   </tr>
                 ))}
@@ -136,9 +136,9 @@ export default function CategoryManagement() {
               <div>
                 <h2>Add New Category</h2>
                 <div className={styles.breadcrumb}>
-                  <span>Configurator</span>
+                  <Link href="/admin" className={styles.breadcrumbLink}>Dashboard</Link>
                   <span className={styles.separator}>/</span>
-                  <Link href="/admin/category" className={styles.breadcrumbLink}>Category Management</Link>
+                  <Link href="/admin/category" className={styles.breadcrumbLink}>Category</Link>
                   <span className={styles.separator}>/</span>
                   <span>Add New Category</span>
                 </div>

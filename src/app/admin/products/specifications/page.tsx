@@ -33,9 +33,11 @@ export default function ProductSpecifications() {
             <div>
               <h1 className={styles.pageTitle}>Product</h1>
               <div className={styles.breadcrumb}>
-                <Link href="/admin" className={styles.breadcrumbLink}>Product Management</Link>
+                <Link href="/admin" className={styles.breadcrumbLink}>Dashboard</Link>
                 <span className={styles.separator}>/</span>
-                <Link href="/admin/products/specifications" className={styles.breadcrumbLink}>Product Specifications</Link>
+                <Link href="/admin/products" className={styles.breadcrumbLink}>Products</Link>
+                <span className={styles.separator}>/</span>
+                <span>Specifications</span>
               </div>
             </div>
             <button className={styles.addBtn} onClick={() => setShowModal(true)}>+ Add Specifications</button>
@@ -59,8 +61,8 @@ export default function ProductSpecifications() {
                   <td>Blue</td>
                   <td>The bule mist</td>
                   <td>
-                    <button className={styles.actionBtn}>👁</button>
-                    <button className={styles.actionBtn}>✏️</button>
+                    <button className={styles.actionBtn}>◎</button>
+                    <button className={styles.actionBtn}>✎</button>
                   </td>
                 </tr>
                 <tr>
@@ -68,8 +70,8 @@ export default function ProductSpecifications() {
                   <td>Gold</td>
                   <td>The gold mist</td>
                   <td>
-                    <button className={styles.actionBtn}>👁</button>
-                    <button className={styles.actionBtn}>✏️</button>
+                    <button className={styles.actionBtn}>◎</button>
+                    <button className={styles.actionBtn}>✎</button>
                   </td>
                 </tr>
               </tbody>
@@ -77,7 +79,7 @@ export default function ProductSpecifications() {
           </div>
 
           <div className={styles.actions}>
-            <button className={styles.updateBtn} onClick={() => router.push('/admin/products/sku')}>✏️ Update & Next</button>
+            <button className={styles.updateBtn} onClick={() => router.push('/admin/products/sku')}>✎ Update & Next</button>
             <button className={styles.nextBtn}>→ Next</button>
           </div>
         </div>
@@ -132,7 +134,7 @@ export default function ProductSpecifications() {
                     ) : (
                       <input type="text" placeholder="Attribute Value" className={styles.input} />
                     )}
-                    <button className={styles.deleteBtn} onClick={() => setAttributes(attributes.filter((_, i) => i !== index))}>🗑️</button>
+                    <button className={styles.deleteBtn} onClick={() => setAttributes(attributes.filter((_, i) => i !== index))}>✕</button>
                   </div>
                 ))}
               </div>
