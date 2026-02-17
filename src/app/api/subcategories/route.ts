@@ -1,43 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { requireAdmin } from '@/lib/apiMiddleware'
 import { encrypt, decrypt } from '@/lib/encryption'
-import { verifyToken } from '@/lib/auth'
 
 const prisma = new PrismaClient()
 
-function checkAdminAuth(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')
-  const token = authHeader?.replace('Bearer ', '')
+const getHandler = async (req: NextRequest, user: any) => {
+  try {
+    const { searchParams } = new URL(req.url)
+    const categoryId = searchParams.get('categoryId')
+    const name = searchParams.get('name')
+    const description = searchParams.get('description')
+    const activeOnly = searchParams.get('activeOnly')
 
-  if (!token) {
-    const encrypted = encrypt(JSON.stringify({ error: 'Unauthorized' }))
-    return { authorized: false, response: NextResponse.json({ data: encrypted }, { status: 401 }) }
+    const where: any = {}
+    if (categoryId) where.categoryId = parseInt(categoryId)
+    if (name) where.name = { contains: name }
+    if (description) where.description = { contains: description }
+    if (activeOnly === 'true') where.isActive = true
+    else if (activeOnly === 'false') where.isActive = false
+
+    const subcategories = await prisma.subCategory.findMany({
+      where,
+      include: { category: true },
+      orderBy: { name: 'asc' },
+    })
+
+    const encrypted = encrypt(JSON.stringify({ subcategories }))
+    return NextResponse.json({ data: encrypted })
+  } catch (error: any) {
+    const encrypted = encrypt(JSON.stringify({ error: error.message }))
+    return NextResponse.json({ data: encrypted }, { status: 500 })
   }
-
-  const user = verifyToken(token)
-  if (!user || user.userType !== 'admin') {
-    const encrypted = encrypt(JSON.stringify({ error: 'Admin access required' }))
-    return { authorized: false, response: NextResponse.json({ data: encrypted }, { status: 403 }) }
-  }
-
-  return { authorized: true, user }
 }
 
-export async function POST(req: NextRequest) {
-  const auth = checkAdminAuth(req)
-  if (!auth.authorized) return auth.response
-
+const postHandler = async (req: NextRequest, user: any) => {
   try {
     const body = await req.json()
     const decryptedPayload = JSON.parse(decrypt(body.data))
     const { name, description, categoryId, isActive } = decryptedPayload
 
-    if (!name || name.trim().length === 0) {
-      const encrypted = encrypt(JSON.stringify({ error: 'Sub category name is required' }))
-      return NextResponse.json({ data: encrypted }, { status: 400 })
-    }
-
-    if (name.trim().length < 2) {
+    if (!name || name.trim().length < 2) {
       const encrypted = encrypt(JSON.stringify({ error: 'Sub category name must be at least 2 characters' }))
       return NextResponse.json({ data: encrypted }, { status: 400 })
     }
@@ -57,9 +60,8 @@ export async function POST(req: NextRequest) {
         name: name.trim(),
         description: description?.trim() || null,
         categoryId: parseInt(categoryId),
-        isActive: isActive ?? true
+        isActive: isActive ?? true,
       },
-      include: { category: true }
     })
 
     const encrypted = encrypt(JSON.stringify({ success: true, subcategory }))
@@ -74,34 +76,5 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
-  const auth = checkAdminAuth(req)
-  if (!auth.authorized) return auth.response
-
-  try {
-    const { searchParams } = new URL(req.url)
-    const name = searchParams.get('name')
-    const description = searchParams.get('description')
-    const activeOnly = searchParams.get('activeOnly')
-
-    const where: any = {}
-    if (name) where.name = { contains: name }
-    if (description) where.description = { contains: description }
-    if (activeOnly === 'true') {
-      where.isActive = true
-    } else if (activeOnly === 'false') {
-      where.isActive = false
-    }
-
-    const subcategories = await prisma.subCategory.findMany({ 
-      where, 
-      include: { category: true },
-      orderBy: { createdAt: 'desc' } 
-    })
-    const encrypted = encrypt(JSON.stringify({ subcategories }))
-    return NextResponse.json({ data: encrypted })
-  } catch (error) {
-    const encrypted = encrypt(JSON.stringify({ error: 'Failed to fetch sub categories' }))
-    return NextResponse.json({ data: encrypted }, { status: 500 })
-  }
-}
+export const GET = requireAdmin(getHandler)
+export const POST = requireAdmin(postHandler)

@@ -2,13 +2,14 @@
 import styles from './products.module.css'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getAuthUser, removeAuthToken } from '@/lib/auth'
+import { getAuthUser } from '@/lib/auth'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 
 export default function AdminProducts() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
+  const [products, setProducts] = useState<any[]>([])
   const [productName, setProductName] = useState('')
   const [productType, setProductType] = useState('All')
   const [addedDate, setAddedDate] = useState('')
@@ -20,7 +21,17 @@ export default function AdminProducts() {
       return
     }
     setUser(authUser)
+    fetchProducts()
   }, [router])
+
+  const fetchProducts = async () => {
+    const token = localStorage.getItem('authToken')
+    const res = await fetch('/api/products', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const data = await res.json()
+    setProducts(data || [])
+  }
 
   if (!user) return null
 
@@ -97,102 +108,29 @@ export default function AdminProducts() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td><span className={styles.badge}>Product</span></td>
-                  <td>ECLAT</td>
-                  <td>Baby Care</td>
-                  <td>Bath & Body</td>
-                  <td><span className={styles.marketBadge}>Marketplace</span></td>
-                  <td><span className={styles.statusActive}>ACTIVE</span></td>
-                  <td>LKR 7599.99</td>
-                  <td>12/29/25, 9:20 AM</td>
-                  <td>
-                    <button className={styles.actionBtn}>◎</button>
-                    <button className={styles.actionBtn}>✎</button>
-                    <button className={styles.actionBtn}>✕</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td><span className={styles.badge}>Product</span></td>
-                  <td>hhh</td>
-                  <td>Skin Wellness</td>
-                  <td>Eye Care</td>
-                  <td><span className={styles.marketBadge}>Marketplace</span></td>
-                  <td><span className={styles.statusActive}>ACTIVE</span></td>
-                  <td>LKR 1000</td>
-                  <td>12/29/25, 8:36 AM</td>
-                  <td>
-                    <button className={styles.actionBtn}>◎</button>
-                    <button className={styles.actionBtn}>✎</button>
-                    <button className={styles.actionBtn}>✕</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td><span className={styles.badge}>Product</span></td>
-                  <td>body lotion</td>
-                  <td>Skin</td>
-                  <td>skin blue</td>
-                  <td><span className={styles.draftBadge}>Draft Market</span></td>
-                  <td><span className={styles.statusActive}>ACTIVE</span></td>
-                  <td>LKR 2000</td>
-                  <td>3/27/25, 3:34 AM</td>
-                  <td>
-                    <button className={styles.actionBtn}>◎</button>
-                    <button className={styles.actionBtn}>✎</button>
-                    <button className={styles.actionBtn}>✕</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td><span className={styles.badge}>Product</span></td>
-                  <td>Amora</td>
-                  <td>Perfume</td>
-                  <td>Ladies Perfume</td>
-                  <td><span className={styles.marketBadge}>Marketplace</span></td>
-                  <td><span className={styles.statusActive}>ACTIVE</span></td>
-                  <td>LKR 2000</td>
-                  <td>3/6/25, 7:52 AM</td>
-                  <td>
-                    <button className={styles.actionBtn}>◎</button>
-                    <button className={styles.actionBtn}>✎</button>
-                    <button className={styles.actionBtn}>✕</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td><span className={styles.badge}>Product</span></td>
-                  <td>Royal Lotus Body Spray</td>
-                  <td>Skin Wellness</td>
-                  <td>Face Care</td>
-                  <td><span className={styles.marketBadge}>Marketplace</span></td>
-                  <td><span className={styles.statusActive}>ACTIVE</span></td>
-                  <td>LKR 3900</td>
-                  <td>2/27/25, 4:54 AM</td>
-                  <td>
-                    <button className={styles.actionBtn}>◎</button>
-                    <button className={styles.actionBtn}>✎</button>
-                    <button className={styles.actionBtn}>✕</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td colSpan={9}>
-                    <div className={styles.pagination}>
-                      <span>Show</span>
-                      <select className={styles.pageSelect}>
-                        <option>5</option>
-                        <option>10</option>
-                        <option>25</option>
-                      </select>
-                      <span>per page</span>
-                      <span className={styles.recordCount}>0/13 Records</span>
-                      <div className={styles.pageButtons}>
-                        <button className={styles.pageBtn}>«</button>
-                        <button className={styles.pageBtn}>1</button>
-                        <button className={styles.pageBtn}>2</button>
-                        <button className={styles.pageBtn}>3</button>
-                        <button className={styles.pageBtn}>»</button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
+                {products.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} style={{ textAlign: 'center', padding: '40px' }}>No products found</td>
+                  </tr>
+                ) : (
+                  products.map((product) => (
+                    <tr key={product.id}>
+                      <td><span className={styles.badge}>{product.prodType}</span></td>
+                      <td>{product.prodName}</td>
+                      <td>{product.prodCategoryName}</td>
+                      <td>{product.prodSubCategoryName}</td>
+                      <td><span className={product.prodMarket === 'MARKETPLACE' ? styles.marketBadge : styles.draftBadge}>{product.prodMarket === 'MARKETPLACE' ? 'Marketplace' : 'Draft Market'}</span></td>
+                      <td><span className={product.status === 'ACTIVE' ? styles.statusActive : styles.statusInactive}>{product.status}</span></td>
+                      <td>LKR {product.prodPrice}</td>
+                      <td>{new Date(product.createdAt).toLocaleString()}</td>
+                      <td>
+                        <button className={styles.actionBtn} onClick={() => router.push(`/admin/products/add?id=${product.id}&mode=view`)} title="View">◎</button>
+                        <button className={styles.actionBtn} onClick={() => router.push(`/admin/products/add?id=${product.id}&mode=edit`)} title="Edit">✎</button>
+                        <button className={styles.actionBtn} onClick={() => alert('Delete product: ' + product.prodName)} title="Delete">✕</button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
