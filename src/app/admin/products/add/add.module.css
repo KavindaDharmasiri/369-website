@@ -1,0 +1,285 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.sidebar {
+  width: 260px;
+  background: white;
+  border-right: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 0;
+}
+
+.logo {
+  font-size: 28px;
+  font-family: 'Playfair Display', serif;
+  padding: 0 28px 48px;
+  font-weight: 500;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 16px;
+  flex: 1;
+}
+
+.navLink {
+  padding: 12px 20px;
+  color: #6c757d;
+  text-decoration: none;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 15px;
+  transition: all 0.2s;
+}
+
+.navLink:hover {
+  background: #f8f9fa;
+  color: #212529;
+}
+
+.navLink.active {
+  background: #f8f9fa;
+  color: #212529;
+}
+
+.icon {
+  font-size: 18px;
+}
+
+.userProfile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 28px;
+  border-top: 1px solid #e9ecef;
+  margin-top: auto;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #dee2e6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.userInfo {
+  flex: 1;
+}
+
+.userName {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.userEmail {
+  font-size: 11px;
+  color: #6c757d;
+}
+
+.menuBtn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #6c757d;
+}
+
+.main {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.content {
+  padding: 32px 40px;
+}
+
+.header {
+  margin-bottom: 32px;
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-family: 'Playfair Display', serif;
+  font-weight: 400;
+  margin: 0 0 8px;
+  color: #212529;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #6c757d;
+}
+
+.separator {
+  color: #adb5bd;
+}
+
+.breadcrumbLink {
+  color: #6c757d;
+  text-decoration: none;
+}
+
+.breadcrumbLink:hover {
+  color: #212529;
+}
+
+.form {
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.topRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.section {
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.section:last-of-type {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-family: 'Playfair Display', serif;
+  font-weight: 500;
+  margin: 0 0 24px;
+  color: #212529;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.row:last-child {
+  margin-bottom: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field label {
+  font-size: 13px;
+  color: #6c757d;
+}
+
+.input,
+.select {
+  padding: 10px 14px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #212529;
+  background: white;
+}
+
+.input::placeholder {
+  color: #adb5bd;
+}
+
+.select {
+  cursor: pointer;
+}
+
+.fileInput {
+  padding: 10px 14px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #212529;
+  background: white;
+  cursor: pointer;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #495057;
+}
+
+.radio input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #495057;
+  padding-top: 8px;
+}
+
+.checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 32px;
+}
+
+.submitBtn {
+  padding: 10px 24px;
+  background: #212529;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.submitBtn:hover {
+  background: #000;
+}

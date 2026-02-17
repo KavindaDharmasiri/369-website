@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getAuthUser, removeAuthToken } from '@/lib/auth'
 import Link from 'next/link'
+import AdminSidebar from '@/components/AdminSidebar'
 
 export default function Admin() {
   const router = useRouter()
@@ -46,32 +47,7 @@ export default function Admin() {
 
   return (
     <div className={styles.container}>
-      <aside className={styles.sidebar}>
-        <div className={styles.logo}>369</div>
-        <nav className={styles.nav}>
-          <Link href="/admin" className={`${styles.navLink} ${styles.active}`}>
-            <span className={styles.icon}>📊</span> Dashboard
-          </Link>
-          <Link href="/admin/products" className={styles.navLink}>
-            <span className={styles.icon}>📦</span> Products
-          </Link>
-          <Link href="/admin/orders" className={styles.navLink}>
-            <span className={styles.icon}>🛒</span> Orders
-          </Link>
-          <Link href="/admin/analytics" className={styles.navLink}>
-            <span className={styles.icon}>📈</span> Analytics
-          </Link>
-        </nav>
-        
-        <div className={styles.userProfile}>
-          <div className={styles.avatar}>A</div>
-          <div className={styles.userInfo}>
-            <div className={styles.userName}>Admin</div>
-            <div className={styles.userEmail}>{user.email}</div>
-          </div>
-          <button className={styles.menuBtn}>⋮</button>
-        </div>
-      </aside>
+      <AdminSidebar userEmail={user.email} />
 
       <main className={styles.main}>
         <header className={styles.header}>
