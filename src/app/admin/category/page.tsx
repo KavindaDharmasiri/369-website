@@ -344,16 +344,7 @@ export default function CategoryManagement() {
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
-              <div>
-                <h2>Add New Category</h2>
-                <div className={styles.breadcrumb}>
-                  <Link href="/admin" className={styles.breadcrumbLink}>Dashboard</Link>
-                  <span className={styles.separator}>/</span>
-                  <Link href="/admin/category" className={styles.breadcrumbLink}>Category</Link>
-                  <span className={styles.separator}>/</span>
-                  <span>Add New Category</span>
-                </div>
-              </div>
+              <h2>Add New Category</h2>
             </div>
 
             <div className={styles.modalContent}>

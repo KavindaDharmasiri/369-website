@@ -379,16 +379,7 @@ export default function SubCategoryManagement() {
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
-              <div>
-                <h2>Add New Sub Category</h2>
-                <div className={styles.breadcrumb}>
-                  <Link href="/admin" className={styles.breadcrumbLink}>Dashboard</Link>
-                  <span className={styles.separator}>/</span>
-                  <Link href="/admin/subcategory" className={styles.breadcrumbLink}>Sub Category</Link>
-                  <span className={styles.separator}>/</span>
-                  <span>Add New Sub Category</span>
-                </div>
-              </div>
+              <h2>Add New Sub Category</h2>
             </div>
 
             <div className={styles.modalContent}>
