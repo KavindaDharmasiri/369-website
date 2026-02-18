@@ -4,10 +4,18 @@ import { requireAdmin } from '@/lib/apiMiddleware'
 
 const prisma = new PrismaClient()
 
-const getHandler = async (req: NextRequest, user: any, { params }: { params: { id: string } }) => {
+const getHandler = async (req: NextRequest, { params }: { params: { id: string } }) => {
   try {
+    const { searchParams } = new URL(req.url)
+    const variantKeys = searchParams.get('variantKeys')
+    
+    const where: any = { productId: parseInt(params.id) }
+    if (variantKeys) {
+      where.variantKeys = variantKeys
+    }
+    
     const skus = await prisma.productSku.findMany({
-      where: { productId: parseInt(params.id) },
+      where,
       orderBy: { id: 'asc' },
     })
 
@@ -17,4 +25,6 @@ const getHandler = async (req: NextRequest, user: any, { params }: { params: { i
   }
 }
 
-export const GET = (req: NextRequest, context: any) => requireAdmin((r: NextRequest, u: any) => getHandler(r, u, context))(req)
+export async function GET(req: NextRequest, context: any) {
+  return getHandler(req, context)
+}

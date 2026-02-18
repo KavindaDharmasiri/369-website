@@ -28,6 +28,12 @@ export default function AddProduct() {
   const [selectedImage, setSelectedImage] = useState('')
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [categoryTags, setCategoryTags] = useState<string[]>([])
+  const [metaTags, setMetaTags] = useState<string[]>([])
+  const [ga4Tags, setGa4Tags] = useState<string[]>([])
+  const [categoryTagInput, setCategoryTagInput] = useState('')
+  const [metaTagInput, setMetaTagInput] = useState('')
+  const [ga4TagInput, setGa4TagInput] = useState('')
   const [formData, setFormData] = useState({
     status: 'INACTIVE',
     stockStatus: true,
@@ -46,8 +52,8 @@ export default function AddProduct() {
     tagsCategory: '',
     tagsMeta: '',
     tagsGa4: '',
-    visiPage: '',
-    visiSection: '',
+    featuredOnHomepage: false,
+    showInNewArrivals: false,
     returnPolicyDoc: '',
   })
 
@@ -105,10 +111,13 @@ export default function AddProduct() {
       tagsCategory: product.tagsCategory || '',
       tagsMeta: product.tagsMeta || '',
       tagsGa4: product.tagsGa4 || '',
-      visiPage: product.visiPage || '',
-      visiSection: product.visiSection || '',
+      featuredOnHomepage: product.featuredOnHomepage || false,
+      showInNewArrivals: product.showInNewArrivals || false,
       returnPolicyDoc: product.returnPolicyDoc || '',
     })
+    setCategoryTags(product.tagsCategory ? product.tagsCategory.split(',').filter((t: string) => t.trim()) : [])
+    setMetaTags(product.tagsMeta ? product.tagsMeta.split(',').filter((t: string) => t.trim()) : [])
+    setGa4Tags(product.tagsGa4 ? product.tagsGa4.split(',').filter((t: string) => t.trim()) : [])
     fetchSubCategories(product.categoryId.toString())
   }
 
@@ -233,13 +242,21 @@ export default function AddProduct() {
     const url = productId ? `/api/products/${productId}` : '/api/products'
     const method = productId ? 'PUT' : 'POST'
 
+    const submitData = {
+      ...formData,
+      prodMarket: 'DRAFT',
+      tagsCategory: categoryTags.join(','),
+      tagsMeta: metaTags.join(','),
+      tagsGa4: ga4Tags.join(',')
+    }
+
     const res = await fetch(url, {
       method,
       headers: { 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify(formData),
+      body: JSON.stringify(submitData),
     })
 
     if (res.ok) {
@@ -292,7 +309,7 @@ export default function AddProduct() {
 
           <form className={styles.form} onSubmit={handleSubmit}>
             <div className={styles.card}>
-              <h2 className={styles.sectionTitle}>Basic Information</h2>
+              <h2 className={styles.sectionTitle}>ⓘ Basic Information</h2>
               <div className={styles.topRow}>
                 <div className={styles.field}>
                   <label>Product Status</label>
@@ -312,7 +329,7 @@ export default function AddProduct() {
                 </div>
                 <div className={styles.field}>
                   <label>Marketplace</label>
-                  <select className={styles.select} value={formData.prodMarket} onChange={(e) => setFormData({...formData, prodMarket: e.target.value})} disabled={isViewMode}>
+                  <select className={styles.select} value={formData.prodMarket} onChange={(e) => setFormData({...formData, prodMarket: e.target.value})} disabled>
                     <option value="DRAFT">Draft</option>
                     <option value="MARKETPLACE">Publish</option>
                   </select>
@@ -321,7 +338,7 @@ export default function AddProduct() {
             </div>
 
             <div className={styles.card}>
-              <h2 className={styles.sectionTitle}>Product Classification</h2>
+              <h2 className={styles.sectionTitle}>☷ Product Classification</h2>
               <div className={styles.row}>
                 <div className={styles.field}>
                   <label>Product Type</label>
@@ -347,7 +364,7 @@ export default function AddProduct() {
             </div>
 
             <div className={styles.card}>
-              <h2 className={styles.sectionTitle}>Product Information</h2>
+              <h2 className={styles.sectionTitle}>✎ Product Information</h2>
               <div className={styles.row}>
                 <div className={styles.field}>
                   <label>Product Name/Title *</label>
@@ -365,133 +382,192 @@ export default function AddProduct() {
             </div>
 
             <div className={styles.card}>
-              <h2 className={styles.sectionTitle}>Pricing</h2>
+              <h2 className={styles.sectionTitle}>₿ Pricing</h2>
               <div className={styles.row}>
                 <div className={styles.field}>
                   <label>Product Price (RS) *</label>
                   <input type="number" placeholder="0" className={styles.input} value={formData.prodPrice} onChange={(e) => setFormData({...formData, prodPrice: e.target.value})} required disabled={isViewMode} />
                 </div>
-                <div className={styles.field}>
-                  <label>Charge Tax on Product</label>
-                  <label className={styles.checkbox}>
-                    <input type="checkbox" checked={formData.chargeTax} onChange={(e) => setFormData({...formData, chargeTax: e.target.checked})} disabled={isViewMode} />
-                    <span>Charge TAX</span>
-                  </label>
-                </div>
               </div>
             </div>
 
             <div className={styles.card}>
-              <h2 className={styles.sectionTitle}>Product Images</h2>
-              <div className={styles.mediaManager}>
-                <div className={styles.mediaHeader}>
-                  <span className={styles.mediaTitle}>💼 Media Manager</span>
-                  <div className={styles.mediaTabs}>
-                    <button 
-                      type="button" 
-                      className={`${styles.mediaTabBtn} ${mediaTab === 'device' ? styles.active : ''}`}
-                      onClick={() => setMediaTab('device')}
-                    >
-                      Device Upload
-                    </button>
-                    <button 
-                      type="button" 
-                      className={`${styles.mediaTabBtn} ${mediaTab === 'ai' ? styles.active : ''}`}
-                      onClick={() => setMediaTab('ai')}
-                    >
-                      ✨ AI Studio
-                    </button>
+              <div className={styles.mediaHeader}>
+                <h2 className={styles.sectionTitle}>☷ Product Images</h2>
+                <div className={styles.mediaTabs}>
+                  <button 
+                    type="button" 
+                    className={`${styles.mediaTabBtn} ${mediaTab === 'device' ? styles.active : ''}`}
+                    onClick={() => setMediaTab('device')}
+                  >
+                    Device Upload
+                  </button>
+                  <button 
+                    type="button" 
+                    className={`${styles.mediaTabBtn} ${mediaTab === 'ai' ? styles.active : ''}`}
+                    onClick={() => setMediaTab('ai')}
+                  >
+                    ✦ AI Studio
+                  </button>
+                </div>
+              </div>
+              
+              {mediaTab === 'device' ? (
+                <div className={styles.mediaGrid}>
+                  {productImages.map((url, index) => (
+                    <div key={index} className={styles.mediaItem}>
+                      {index === 0 && <span className={styles.mainBadge}>Main</span>}
+                      <img src={url} alt={`Product ${index + 1}`} onClick={() => { setSelectedImage(url); setShowImageModal(true); }} />
+                      <button type="button" className={styles.removeImgBtn} onClick={() => handleRemoveImage(index)}>✕</button>
+                    </div>
+                  ))}
+                  <div className={styles.addMedia}>
+                    <input type="file" multiple id="prodImg" className={styles.hiddenInput} onChange={handleImageUpload} disabled={isViewMode || uploading} />
+                    <label htmlFor="prodImg" className={styles.addMediaLabel}>
+                      {uploading ? (
+                        <>
+                          <span>⏳</span>
+                          <span>Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>+</span>
+                          <span>Add Media</span>
+                        </>
+                      )}
+                    </label>
                   </div>
                 </div>
-                
-                {mediaTab === 'device' ? (
-                  <div className={styles.mediaGrid}>
-                    {productImages.map((url, index) => (
-                      <div key={index} className={styles.mediaItem}>
-                        {index === 0 && <span className={styles.mainBadge}>Main</span>}
-                        <img src={url} alt={`Product ${index + 1}`} onClick={() => { setSelectedImage(url); setShowImageModal(true); }} />
-                        <button type="button" className={styles.removeImgBtn} onClick={() => handleRemoveImage(index)}>✕</button>
-                      </div>
-                    ))}
-                    <div className={styles.addMedia}>
-                      <input type="file" multiple id="prodImg" className={styles.hiddenInput} onChange={handleImageUpload} disabled={isViewMode || uploading} />
-                      <label htmlFor="prodImg" className={styles.addMediaLabel}>
-                        {uploading ? (
-                          <>
-                            <span>⏳</span>
-                            <span>Uploading...</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>+</span>
-                            <span>Add Media</span>
-                          </>
-                        )}
+              ) : (
+                <div className={styles.aiStudio}>
+                  <div className={styles.aiHeader}>
+                    <span>✦ AI Studio Generator</span>
+                  </div>
+                  <div className={styles.aiContent}>
+                    <div className={styles.refImage}>
+                      <span>Ref Image</span>
+                    </div>
+                    <div className={styles.aiOption}>
+                      <span>Generate with Model?</span>
+                      <label className={styles.switch}>
+                        <input type="checkbox" />
+                        <span className={styles.slider}></span>
                       </label>
                     </div>
+                    <button type="button" className={styles.generateBtn}>Generate Variations →</button>
                   </div>
-                ) : (
-                  <div className={styles.aiStudio}>
-                    <div className={styles.aiHeader}>
-                      <span>✨ AI Studio Generator</span>
-                    </div>
-                    <div className={styles.aiContent}>
-                      <div className={styles.refImage}>
-                        <span>Ref Image</span>
-                      </div>
-                      <div className={styles.aiOption}>
-                        <span>Generate with Model?</span>
-                        <label className={styles.switch}>
-                          <input type="checkbox" />
-                          <span className={styles.slider}></span>
-                        </label>
-                      </div>
-                      <button type="button" className={styles.generateBtn}>Generate Variations →</button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             <div className={styles.card}>
-              <h2 className={styles.sectionTitle}>Tags</h2>
+              <h2 className={styles.sectionTitle}>☷ Tags</h2>
               
               <div className={styles.row}>
                 <div className={styles.field}>
                   <label>Category Tags</label>
-                  <input type="text" placeholder="Add category" className={styles.input} value={formData.tagsCategory} onChange={(e) => setFormData({...formData, tagsCategory: e.target.value})} disabled={isViewMode} />
+                  <div className={styles.tagInputWrapper}>
+                    {categoryTags.map((tag, index) => (
+                      <span key={index} className={styles.tag}>
+                        {tag}
+                        <button type="button" onClick={() => setCategoryTags(categoryTags.filter((_, i) => i !== index))} disabled={isViewMode}>✕</button>
+                      </span>
+                    ))}
+                    <input 
+                      type="text" 
+                      placeholder="Add tag..." 
+                      className={styles.tagInput} 
+                      value={categoryTagInput}
+                      onChange={(e) => setCategoryTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && categoryTagInput.trim()) {
+                          e.preventDefault()
+                          setCategoryTags([...categoryTags, categoryTagInput.trim()])
+                          setCategoryTagInput('')
+                        }
+                      }}
+                      disabled={isViewMode}
+                    />
+                  </div>
                 </div>
                 <div className={styles.field}>
                   <label>Meta Tags</label>
-                  <input type="text" placeholder="Add meta tags" className={styles.input} value={formData.tagsMeta} onChange={(e) => setFormData({...formData, tagsMeta: e.target.value})} disabled={isViewMode} />
+                  <div className={styles.tagInputWrapper}>
+                    {metaTags.map((tag, index) => (
+                      <span key={index} className={styles.tag}>
+                        {tag}
+                        <button type="button" onClick={() => setMetaTags(metaTags.filter((_, i) => i !== index))} disabled={isViewMode}>✕</button>
+                      </span>
+                    ))}
+                    <input 
+                      type="text" 
+                      placeholder="Add tag..." 
+                      className={styles.tagInput} 
+                      value={metaTagInput}
+                      onChange={(e) => setMetaTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && metaTagInput.trim()) {
+                          e.preventDefault()
+                          setMetaTags([...metaTags, metaTagInput.trim()])
+                          setMetaTagInput('')
+                        }
+                      }}
+                      disabled={isViewMode}
+                    />
+                  </div>
                 </div>
                 <div className={styles.field}>
                   <label>GA-4 Meta Tags</label>
-                  <input type="text" placeholder="Add GA-4 meta tags" className={styles.input} value={formData.tagsGa4} onChange={(e) => setFormData({...formData, tagsGa4: e.target.value})} disabled={isViewMode} />
+                  <div className={styles.tagInputWrapper}>
+                    {ga4Tags.map((tag, index) => (
+                      <span key={index} className={styles.tag}>
+                        {tag}
+                        <button type="button" onClick={() => setGa4Tags(ga4Tags.filter((_, i) => i !== index))} disabled={isViewMode}>✕</button>
+                      </span>
+                    ))}
+                    <input 
+                      type="text" 
+                      placeholder="Add tag..." 
+                      className={styles.tagInput} 
+                      value={ga4TagInput}
+                      onChange={(e) => setGa4TagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && ga4TagInput.trim()) {
+                          e.preventDefault()
+                          setGa4Tags([...ga4Tags, ga4TagInput.trim()])
+                          setGa4TagInput('')
+                        }
+                      }}
+                      disabled={isViewMode}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
             <div className={styles.card}>
-              <h2 className={styles.sectionTitle}>Product Visibility</h2>
+              <h2 className={styles.sectionTitle}>◉ Visibility</h2>
               
-              <div className={styles.row}>
-                <div className={styles.field}>
-                  <label>Page</label>
-                  <select className={styles.select} value={formData.visiPage} onChange={(e) => setFormData({...formData, visiPage: e.target.value})} disabled={isViewMode}>
-                    <option value="">Select Page</option>
-                    <option value="Dashboard">Dashboard</option>
-                    <option value="Home">Home</option>
-                  </select>
+              <div className={styles.visibilityOption}>
+                <div>
+                  <div className={styles.optionTitle}>Featured on Homepage</div>
+                  <div className={styles.optionDesc}>Display this product in the hero section</div>
                 </div>
-                <div className={styles.field}>
-                  <label>Section</label>
-                  <select className={styles.select} value={formData.visiSection} onChange={(e) => setFormData({...formData, visiSection: e.target.value})} disabled={isViewMode}>
-                    <option value="">Select Section</option>
-                    <option value="Top Products">Top Products</option>
-                    <option value="Featured">Featured</option>
-                  </select>
+                <label className={styles.switch}>
+                  <input type="checkbox" checked={formData.featuredOnHomepage} onChange={(e) => setFormData({...formData, featuredOnHomepage: e.target.checked})} disabled={isViewMode} />
+                  <span className={styles.slider}></span>
+                </label>
+              </div>
+
+              <div className={styles.visibilityOption}>
+                <div>
+                  <div className={styles.optionTitle}>Show in New Arrivals</div>
+                  <div className={styles.optionDesc}>Add to the 'Just In' collection automatically</div>
                 </div>
+                <label className={styles.switch}>
+                  <input type="checkbox" checked={formData.showInNewArrivals} onChange={(e) => setFormData({...formData, showInNewArrivals: e.target.checked})} disabled={isViewMode} />
+                  <span className={styles.slider}></span>
+                </label>
               </div>
             </div>
 
@@ -500,7 +576,7 @@ export default function AddProduct() {
                 <button type="button" onClick={() => router.push('/admin/products')} className={styles.submitBtn}>Back to Products</button>
               ) : (
                 <button type="submit" className={styles.submitBtn} disabled={saving}>
-                  {saving ? 'Saving...' : `💾 ${isEditMode ? 'Update' : 'Save as Draft'} & Next`}
+                  {saving ? 'Saving...' : `☷ ${isEditMode ? 'Update' : 'Save as Draft'} & Next`}
                 </button>
               )}
             </div>

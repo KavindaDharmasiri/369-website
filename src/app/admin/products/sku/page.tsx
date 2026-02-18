@@ -3,6 +3,7 @@ import styles from './sku.module.css'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuthUser } from '@/lib/auth'
+import { decryptData } from '@/lib/clientEncryption'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 
@@ -17,14 +18,18 @@ export default function GeneratedSKU() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
   const [editModal, setEditModal] = useState(false)
+  const [viewModal, setViewModal] = useState(false)
   const [selectedSku, setSelectedSku] = useState<any>(null)
   const [skuCode, setSkuCode] = useState('')
   const [variantDetails, setVariantDetails] = useState('')
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
+  const [stock, setStock] = useState('')
   const [skuImages, setSkuImages] = useState<string[]>([])
   const [showImageModal, setShowImageModal] = useState(false)
   const [selectedImage, setSelectedImage] = useState('')
+  const [mediaTab, setMediaTab] = useState('device')
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     const authUser = getAuthUser()
@@ -48,8 +53,9 @@ export default function GeneratedSKU() {
     const res = await fetch(`/api/products/${prodId}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-    const data = await res.json()
-    setProduct(data)
+    const result = await res.json()
+    const decrypted = decryptData(result.data)
+    setProduct(decrypted)
   }
 
   const fetchSkus = async (prodId: string) => {
@@ -75,12 +81,24 @@ export default function GeneratedSKU() {
     }
   }
 
+  const handleView = (sku: any) => {
+    setSelectedSku(sku)
+    setSkuCode(sku.skuCode)
+    setVariantDetails(sku.variantDetails || '')
+    setDescription(sku.description || '')
+    setPrice(sku.price.toString())
+    setStock(sku.stock?.toString() || '0')
+    setSkuImages(sku.images ? JSON.parse(sku.images) : [])
+    setViewModal(true)
+  }
+
   const handleEdit = (sku: any) => {
     setSelectedSku(sku)
     setSkuCode(sku.skuCode)
     setVariantDetails(sku.variantDetails || '')
     setDescription(sku.description || '')
     setPrice(sku.price.toString())
+    setStock(sku.stock?.toString() || '0')
     setSkuImages(sku.images ? JSON.parse(sku.images) : [])
     setEditModal(true)
   }
@@ -89,6 +107,7 @@ export default function GeneratedSKU() {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
 
+    setUploading(true)
     const token = localStorage.getItem('authToken')
     const uploadedUrls: string[] = []
 
@@ -106,6 +125,7 @@ export default function GeneratedSKU() {
     }
 
     setSkuImages([...skuImages, ...uploadedUrls])
+    setUploading(false)
   }
 
   const handleRemoveImage = (index: number) => {
@@ -125,6 +145,7 @@ export default function GeneratedSKU() {
       body: JSON.stringify({
         description,
         price: parseFloat(price),
+        stock: parseInt(stock) || 0,
         images: JSON.stringify(skuImages)
       })
     })
@@ -136,9 +157,96 @@ export default function GeneratedSKU() {
     }
   }
 
-  const handleFinish = () => {
-    sessionStorage.removeItem('currentProductId')
-    router.push('/admin/products')
+  const handlePublish = async () => {
+    if (!productId) return
+
+    const token = localStorage.getItem('authToken')
+    const fetchRes = await fetch(`/api/products/${productId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const result = await fetchRes.json()
+    const productData = decryptData(result.data)
+
+    const updateRes = await fetch(`/api/products/${productId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        status: productData.status,
+        stockStatus: productData.stockStatus,
+        prodMarket: 'MARKETPLACE',
+        prodType: productData.prodType,
+        prodCategoryName: productData.prodCategoryName,
+        prodName: productData.prodName,
+        prodSubtitle: productData.prodSubtitle,
+        prodDescription: productData.prodDescription,
+        prodImg: productData.prodImg,
+        prodPrice: productData.prodPrice,
+        chargeTax: productData.chargeTax,
+        tagsCategory: productData.tagsCategory,
+        tagsMeta: productData.tagsMeta,
+        tagsGa4: productData.tagsGa4,
+        featuredOnHomepage: productData.featuredOnHomepage,
+        showInNewArrivals: productData.showInNewArrivals,
+        returnPolicyDoc: productData.returnPolicyDoc,
+        prodSubCategoryName: productData.prodSubCategoryName,
+        categoryId: productData.categoryId,
+        subCategoryId: productData.subCategoryId
+      })
+    })
+
+    if (updateRes.ok) {
+      sessionStorage.removeItem('currentProductId')
+      router.push('/admin/products')
+    }
+  }
+
+  const handleFinish = async () => {
+    if (!productId) return
+
+    const token = localStorage.getItem('authToken')
+    const fetchRes = await fetch(`/api/products/${productId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const result = await fetchRes.json()
+    const productData = decryptData(result.data)
+
+    const updateRes = await fetch(`/api/products/${productId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        status: productData.status,
+        stockStatus: productData.stockStatus,
+        prodMarket: 'DRAFT',
+        prodType: productData.prodType,
+        prodCategoryName: productData.prodCategoryName,
+        prodName: productData.prodName,
+        prodSubtitle: productData.prodSubtitle,
+        prodDescription: productData.prodDescription,
+        prodImg: productData.prodImg,
+        prodPrice: productData.prodPrice,
+        chargeTax: productData.chargeTax,
+        tagsCategory: productData.tagsCategory,
+        tagsMeta: productData.tagsMeta,
+        tagsGa4: productData.tagsGa4,
+        featuredOnHomepage: productData.featuredOnHomepage,
+        showInNewArrivals: productData.showInNewArrivals,
+        returnPolicyDoc: productData.returnPolicyDoc,
+        prodSubCategoryName: productData.prodSubCategoryName,
+        categoryId: productData.categoryId,
+        subCategoryId: productData.subCategoryId
+      })
+    })
+
+    if (updateRes.ok) {
+      sessionStorage.removeItem('currentProductId')
+      router.push('/admin/products')
+    }
   }
 
   if (!user) return null
@@ -195,7 +303,7 @@ export default function GeneratedSKU() {
                       <td>{sku.variantDetails}</td>
                       <td>LKR {sku.price}</td>
                       <td>
-                        <button className={styles.actionBtn}>◎</button>
+                        <button className={styles.actionBtn} onClick={() => handleView(sku)}>◎</button>
                         <button className={styles.actionBtn} onClick={() => handleEdit(sku)}>✎</button>
                       </td>
                     </tr>
@@ -227,6 +335,7 @@ export default function GeneratedSKU() {
 
           <div className={styles.actions}>
             <button className={styles.backBtn} onClick={() => router.back()}>← Back</button>
+            <button className={styles.publishBtn} onClick={handlePublish}>Publish</button>
             <button className={styles.finishBtn} onClick={handleFinish}>Finish</button>
           </div>
         </div>
@@ -241,39 +350,147 @@ export default function GeneratedSKU() {
             </div>
             <div className={styles.modalContent}>
               <div className={styles.field}>
-                <label>Sku Code</label>
+                <label>SKU CODE</label>
                 <input type="text" className={styles.input} value={skuCode} disabled style={{background: '#f8f9fa'}} />
               </div>
               <div className={styles.field}>
-                <label>Variant Details</label>
+                <label>VARIANT DETAILS</label>
                 <input type="text" className={styles.input} value={variantDetails} disabled style={{background: '#f8f9fa'}} />
               </div>
               <div className={styles.field}>
-                <label>Description</label>
-                <textarea placeholder="Type Here..." className={styles.textarea} rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
+                <label>DESCRIPTION</label>
+                <textarea className={styles.textarea} rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
               <div className={styles.field}>
-                <label>Price</label>
+                <label>PRICE</label>
                 <input type="number" className={styles.input} value={price} onChange={(e) => setPrice(e.target.value)} />
               </div>
               <div className={styles.field}>
-                <label>SKU Images</label>
-                <input type="file" multiple accept="image/*" onChange={handleImageUpload} className={styles.fileInput} />
-                {skuImages.length > 0 && (
-                  <div className={styles.imagesGrid}>
-                    {skuImages.map((url, index) => (
-                      <div key={index} className={styles.imageItem}>
-                        <img src={url} alt={`SKU ${index + 1}`} onClick={() => { setSelectedImage(url); setShowImageModal(true); }} />
-                        <button type="button" className={styles.removeBtn} onClick={() => handleRemoveImage(index)}>✕</button>
-                      </div>
-                    ))}
+                <label>STOCK QUANTITY</label>
+                <input type="number" className={styles.input} value={stock} onChange={(e) => setStock(e.target.value)} min="0" />
+              </div>
+              <div className={styles.field}>
+                <label>SKU IMAGES</label>
+                <div className={styles.mediaManager}>
+                  <div className={styles.mediaHeader}>
+                    <span className={styles.mediaTitle}>💼 Media Manager</span>
+                    <div className={styles.mediaTabs}>
+                      <button 
+                        type="button" 
+                        className={`${styles.mediaTabBtn} ${mediaTab === 'device' ? styles.active : ''}`}
+                        onClick={() => setMediaTab('device')}
+                      >
+                        Device Upload
+                      </button>
+                      <button 
+                        type="button" 
+                        className={`${styles.mediaTabBtn} ${mediaTab === 'ai' ? styles.active : ''}`}
+                        onClick={() => setMediaTab('ai')}
+                      >
+                        ✨ AI Studio
+                      </button>
+                    </div>
                   </div>
-                )}
+                  
+                  {mediaTab === 'device' ? (
+                    <div className={styles.mediaGrid}>
+                      {skuImages.map((url, index) => (
+                        <div key={index} className={styles.mediaItem}>
+                          {index === 0 && <span className={styles.mainBadge}>Main</span>}
+                          <img src={url} alt={`SKU ${index + 1}`} onClick={() => { setSelectedImage(url); setShowImageModal(true); }} />
+                          <button type="button" className={styles.removeImgBtn} onClick={() => handleRemoveImage(index)}>✕</button>
+                        </div>
+                      ))}
+                      <div className={styles.addMedia}>
+                        <input type="file" multiple id="skuImg" className={styles.hiddenInput} onChange={handleImageUpload} disabled={uploading} />
+                        <label htmlFor="skuImg" className={styles.addMediaLabel}>
+                          {uploading ? (
+                            <>
+                              <span>⏳</span>
+                              <span>Uploading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>+</span>
+                              <span>Add Media</span>
+                            </>
+                          )}
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={styles.aiStudio}>
+                      <div className={styles.aiHeader}>
+                        <span>✨ AI Studio Generator</span>
+                      </div>
+                      <div className={styles.aiContent}>
+                        <div className={styles.refImage}>
+                          <span>Ref Image</span>
+                        </div>
+                        <div className={styles.aiOption}>
+                          <span>Generate with Model?</span>
+                          <label className={styles.switch}>
+                            <input type="checkbox" />
+                            <span className={styles.slider}></span>
+                          </label>
+                        </div>
+                        <button type="button" className={styles.generateBtn}>Generate Variations →</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <div className={styles.modalFooter}>
-              <button className={styles.closeModalBtn} onClick={() => setEditModal(false)}>Close</button>
-              <button className={styles.applyBtn} onClick={handleUpdate}>Apply</button>
+              <button className={styles.saveBtn} onClick={handleUpdate}>UPDATE</button>
+              <button className={styles.closeModalBtn} onClick={() => setEditModal(false)}>CLOSE</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewModal && selectedSku && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <h2>View SKU</h2>
+              <button className={styles.closeBtn} onClick={() => setViewModal(false)}>✕</button>
+            </div>
+            <div className={styles.modalContent}>
+              <div className={styles.field}>
+                <label>SKU CODE</label>
+                <input type="text" className={styles.input} value={skuCode} readOnly style={{background: '#f8f9fa'}} />
+              </div>
+              <div className={styles.field}>
+                <label>VARIANT DETAILS</label>
+                <input type="text" className={styles.input} value={variantDetails} readOnly style={{background: '#f8f9fa'}} />
+              </div>
+              <div className={styles.field}>
+                <label>DESCRIPTION</label>
+                <textarea className={styles.textarea} rows={4} value={description} readOnly style={{background: '#f8f9fa'}} />
+              </div>
+              <div className={styles.field}>
+                <label>PRICE</label>
+                <input type="number" className={styles.input} value={price} readOnly style={{background: '#f8f9fa'}} />
+              </div>
+              <div className={styles.field}>
+                <label>STOCK QUANTITY</label>
+                <input type="number" className={styles.input} value={stock} readOnly style={{background: '#f8f9fa'}} />
+              </div>
+              <div className={styles.field}>
+                <label>SKU IMAGES</label>
+                <div className={styles.mediaGrid}>
+                  {skuImages.map((url, index) => (
+                    <div key={index} className={styles.mediaItem}>
+                      {index === 0 && <span className={styles.mainBadge}>Main</span>}
+                      <img src={url} alt={`SKU ${index + 1}`} onClick={() => { setSelectedImage(url); setShowImageModal(true); }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className={styles.modalFooter}>
+              <button className={styles.closeModalBtn} onClick={() => setViewModal(false)}>CLOSE</button>
             </div>
           </div>
         </div>

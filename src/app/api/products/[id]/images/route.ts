@@ -29,7 +29,7 @@ const postHandler = async (req: NextRequest, user: any, { params }: { params: { 
   }
 }
 
-const getHandler = async (req: NextRequest, user: any, { params }: { params: { id: string } }) => {
+const getHandler = async (req: NextRequest, { params }: { params: { id: string } }) => {
   try {
     const images = await prisma.productImage.findMany({
       where: { productId: parseInt(params.id) },
@@ -43,4 +43,6 @@ const getHandler = async (req: NextRequest, user: any, { params }: { params: { i
 }
 
 export const POST = (req: NextRequest, context: any) => requireAdmin((r: NextRequest, u: any) => postHandler(r, u, context))(req)
-export const GET = (req: NextRequest, context: any) => requireAdmin((r: NextRequest, u: any) => getHandler(r, u, context))(req)
+export async function GET(req: NextRequest, context: any) {
+  return getHandler(req, context)
+}

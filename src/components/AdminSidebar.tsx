@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
 import styles from './AdminSidebar.module.css'
 
 interface AdminSidebarProps {
@@ -9,6 +10,25 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({ userEmail }: AdminSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const [showLogout, setShowLogout] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowLogout(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken')
+    sessionStorage.clear()
+    router.push('/signin')
+  }
 
   return (
     <aside className={styles.sidebar}>
@@ -55,7 +75,14 @@ export default function AdminSidebar({ userEmail }: AdminSidebarProps) {
           <div className={styles.userName}>Admin</div>
           <div className={styles.userEmail}>{userEmail}</div>
         </div>
-        <button className={styles.menuBtn}>⋮</button>
+        <div className={styles.menuContainer} ref={menuRef}>
+          <button className={styles.menuBtn} onClick={() => setShowLogout(!showLogout)}>⋮</button>
+          {showLogout && (
+            <div className={styles.logoutDropdown}>
+              <button onClick={handleLogout}>Logout</button>
+            </div>
+          )}
+        </div>
       </div>
     </aside>
   )

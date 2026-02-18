@@ -5,7 +5,7 @@ import { encrypt } from '@/lib/encryption'
 
 const prisma = new PrismaClient()
 
-const getHandler = async (req: NextRequest, user: any, { params }: { params: { id: string } }) => {
+const getHandler = async (req: NextRequest, { params }: { params: { id: string } }) => {
   try {
     const product = await prisma.product.findUnique({
       where: { id: parseInt(params.id) },
@@ -43,8 +43,8 @@ const putHandler = async (req: NextRequest, user: any, { params }: { params: { i
         tagsCategory: body.tagsCategory,
         tagsMeta: body.tagsMeta,
         tagsGa4: body.tagsGa4,
-        visiPage: body.visiPage,
-        visiSection: body.visiSection,
+        featuredOnHomepage: body.featuredOnHomepage,
+        showInNewArrivals: body.showInNewArrivals,
         returnPolicyDoc: body.returnPolicyDoc,
         prodSubCategoryName: body.prodSubCategoryName,
         categoryId: parseInt(body.categoryId),
@@ -59,5 +59,7 @@ const putHandler = async (req: NextRequest, user: any, { params }: { params: { i
   }
 }
 
-export const GET = (req: NextRequest, context: any) => requireAdmin((r: NextRequest, u: any) => getHandler(r, u, context))(req)
+export async function GET(req: NextRequest, context: any) {
+  return getHandler(req, context)
+}
 export const PUT = (req: NextRequest, context: any) => requireAdmin((r: NextRequest, u: any) => putHandler(r, u, context))(req)

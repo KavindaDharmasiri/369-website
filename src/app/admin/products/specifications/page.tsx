@@ -17,10 +17,12 @@ export default function ProductSpecifications() {
   const [editModal, setEditModal] = useState(false)
   const [deleteModal, setDeleteModal] = useState(false)
   const [selectedSpec, setSelectedSpec] = useState<any>(null)
+  const [showOptionsMenu, setShowOptionsMenu] = useState<number | null>(null)
   const [specs, setSpecs] = useState<any[]>([])
   const [specName, setSpecName] = useState('')
   const [specDesc, setSpecDesc] = useState('')
-  const [attributes, setAttributes] = useState([{ name: '', value: '', type: 'text' }])
+  const [attributes, setAttributes] = useState([{ name: '', value: '' }])
+  const [attributeType, setAttributeType] = useState('text')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
@@ -39,6 +41,16 @@ export default function ProductSpecifications() {
     setProductId(storedProductId)
     fetchSpecs(storedProductId)
   }, [router, urlProductId])
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (showOptionsMenu !== null) {
+        setShowOptionsMenu(null)
+      }
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [showOptionsMenu])
 
   const fetchSpecs = async (prodId: string) => {
     const token = localStorage.getItem('authToken')
@@ -65,7 +77,7 @@ export default function ProductSpecifications() {
       body: JSON.stringify({
         name: specName,
         description: specDesc,
-        attributes: attributes.filter(a => a.name && a.value)
+        attributes: attributes.filter(a => a.name && a.value).map(a => ({ ...a, type: attributeType }))
       })
     })
 
@@ -75,7 +87,7 @@ export default function ProductSpecifications() {
       setSelectedSpec(null)
       setSpecName('')
       setSpecDesc('')
-      setAttributes([{ name: '', value: '', type: 'text' }])
+      setAttributes([{ name: '', value: '' }])
       fetchSpecs(productId)
     }
   }
@@ -89,7 +101,8 @@ export default function ProductSpecifications() {
     setSelectedSpec(spec)
     setSpecName(spec.name)
     setSpecDesc(spec.description || '')
-    setAttributes(spec.attributes.length > 0 ? spec.attributes : [{ name: '', value: '', type: 'text' }])
+    setAttributes(spec.attributes.length > 0 ? spec.attributes.map((a: any) => ({ name: a.name, value: a.value })) : [{ name: '', value: '' }])
+    setAttributeType(spec.attributes.length > 0 && spec.attributes[0].type ? spec.attributes[0].type : 'text')
     setEditModal(true)
   }
 
@@ -142,7 +155,7 @@ export default function ProductSpecifications() {
                 <span>Specifications</span>
               </div>
             </div>
-            <button className={styles.addBtn} onClick={() => { setSelectedSpec(null); setSpecName(''); setSpecDesc(''); setAttributes([{ name: '', value: '', type: 'text' }]); setShowModal(true); }}>+ Add Specifications</button>
+            <button className={styles.addBtn} onClick={() => { setSelectedSpec(null); setSpecName(''); setSpecDesc(''); setAttributes([{ name: '', value: '' }]); setAttributeType('text'); setShowModal(true); }}>Add Specifications</button>
           </div>
 
           <h2 className={styles.sectionTitle}>Specification</h2>
@@ -169,9 +182,36 @@ export default function ProductSpecifications() {
                       <td>{spec.name}</td>
                       <td>{spec.description || '-'}</td>
                       <td>
-                        <button className={styles.actionBtn} onClick={() => handleView(spec)}>◎</button>
-                        <button className={styles.actionBtn} onClick={() => handleEdit(spec)}>✎</button>
-                        <button className={styles.actionBtn} onClick={() => { setSelectedSpec(spec); setDeleteModal(true); }}>✕</button>
+                        <div className={styles.actionBtns}>
+                          <button className={styles.actionBtn} onClick={() => handleView(spec)} title="View">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                              <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                          </button>
+                          <button className={styles.actionBtn} onClick={() => handleEdit(spec)} title="Edit">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </button>
+                          <div className={styles.moreMenu}>
+                            <button className={styles.actionBtn} onClick={(e) => { e.stopPropagation(); setShowOptionsMenu(showOptionsMenu === spec.id ? null : spec.id); }} title="More">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="5" r="2"/>
+                                <circle cx="12" cy="12" r="2"/>
+                                <circle cx="12" cy="19" r="2"/>
+                              </svg>
+                            </button>
+                            {showOptionsMenu === spec.id && (
+                              <div className={styles.optionsDropdown}>
+                                <button onClick={() => { setSelectedSpec(spec); setDeleteModal(true); setShowOptionsMenu(null); }}>
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -202,8 +242,7 @@ export default function ProductSpecifications() {
 
           <div className={styles.actions}>
             <button className={styles.backBtn} onClick={() => router.back()}>← Back</button>
-            <button className={styles.updateBtn} onClick={handleNext}>✎ Update & Next</button>
-            <button className={styles.nextBtn} onClick={handleNext}>→ Next</button>
+            <button className={styles.updateBtn} onClick={handleNext}>Update as Draft & Next</button>
           </div>
         </div>
       </main>
@@ -217,32 +256,44 @@ export default function ProductSpecifications() {
             </div>
             
             <div className={styles.modalContent}>
-              <div className={styles.section}>
-                <h3>Specification</h3>
+              <div className={styles.specSection}>
+                <h3>SPECIFICATION</h3>
                 
                 <div className={styles.field}>
-                  <label>Name</label>
-                  <input type="text" placeholder="Enter Specification Name" className={styles.input} value={specName} onChange={(e) => setSpecName(e.target.value)} />
+                  <label>NAME</label>
+                  <input type="text" className={styles.input} value={specName} onChange={(e) => setSpecName(e.target.value)} />
                 </div>
                 
                 <div className={styles.field}>
-                  <label>Description</label>
-                  <textarea placeholder="Type Here..." className={styles.textarea} rows={4} value={specDesc} onChange={(e) => setSpecDesc(e.target.value)} />
+                  <label>DESCRIPTION</label>
+                  <textarea className={styles.textarea} rows={4} value={specDesc} onChange={(e) => setSpecDesc(e.target.value)} />
                 </div>
               </div>
 
-              <div className={styles.section}>
-                <div className={styles.sectionHeader}>
-                  <h3>Attributes</h3>
-                  <button className={styles.addAttrBtn} onClick={() => setAttributes([...attributes, { name: '', value: '', type: 'text' }])}>+ Add</button>
+              <div className={styles.attrSection}>
+                <div className={styles.attrHeader}>
+                  <h3>ATTRIBUTES</h3>
+                  <button className={styles.addAttrBtn} onClick={() => setAttributes([...attributes, { name: '', value: '' }])}>+ Add</button>
                 </div>
                 
+                <div className={styles.field}>
+                  <label>ATTRIBUTE TYPE</label>
+                  <select 
+                    className={styles.attrSelect}
+                    value={attributeType}
+                    onChange={(e) => setAttributeType(e.target.value)}
+                  >
+                    <option value="text">Text</option>
+                    <option value="color">Color</option>
+                  </select>
+                </div>
+
                 {attributes.map((attr, index) => (
                   <div key={index} className={styles.attrRow}>
                     <input 
                       type="text" 
                       placeholder="Attribute Name" 
-                      className={styles.input} 
+                      className={styles.attrInput} 
                       value={attr.name}
                       onChange={(e) => {
                         const newAttrs = [...attributes]
@@ -250,19 +301,7 @@ export default function ProductSpecifications() {
                         setAttributes(newAttrs)
                       }}
                     />
-                    <select 
-                      className={styles.select}
-                      value={attr.type}
-                      onChange={(e) => {
-                        const newAttrs = [...attributes]
-                        newAttrs[index].type = e.target.value
-                        setAttributes(newAttrs)
-                      }}
-                    >
-                      <option value="text">Text</option>
-                      <option value="color">Color</option>
-                    </select>
-                    {attr.type === 'color' ? (
+                    {attributeType === 'color' ? (
                       <input 
                         type="color" 
                         className={styles.colorInput} 
@@ -277,7 +316,7 @@ export default function ProductSpecifications() {
                       <input 
                         type="text" 
                         placeholder="Attribute Value" 
-                        className={styles.input} 
+                        className={styles.attrInput} 
                         value={attr.value}
                         onChange={(e) => {
                           const newAttrs = [...attributes]
@@ -286,15 +325,19 @@ export default function ProductSpecifications() {
                         }}
                       />
                     )}
-                    <button className={styles.deleteBtn} onClick={() => setAttributes(attributes.filter((_, i) => i !== index))}>✕</button>
+                    <button className={styles.deleteAttrBtn} onClick={() => attributes.length > 1 && setAttributes(attributes.filter((_, i) => i !== index))} disabled={attributes.length === 1}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                      </svg>
+                    </button>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className={styles.modalFooter}>
-              <button className={styles.closeModalBtn} onClick={() => { setShowModal(false); setSelectedSpec(null); setSpecName(''); setSpecDesc(''); setAttributes([{ name: '', value: '', type: 'text' }]); }}>Close</button>
-              <button className={styles.closeModalBtn} onClick={handleSaveSpec}>Save</button>
+              <button className={styles.saveBtn} onClick={handleSaveSpec}>SAVE</button>
+              <button className={styles.closeModalBtn} onClick={() => { setShowModal(false); setSelectedSpec(null); setSpecName(''); setSpecDesc(''); setAttributes([{ name: '', value: '' }]); setAttributeType('text'); }}>CLOSE</button>
             </div>
           </div>
         </div>
@@ -307,28 +350,38 @@ export default function ProductSpecifications() {
               <button className={styles.closeBtn} onClick={() => setViewModal(false)}>✕</button>
             </div>
             <div className={styles.modalContent}>
-              <div className={styles.section}>
-                <h3>Specification</h3>
+              <div className={styles.specSection}>
+                <h3>SPECIFICATION</h3>
                 <div className={styles.field}>
-                  <label>Name</label>
-                  <p>{selectedSpec.name}</p>
+                  <label>NAME</label>
+                  <input type="text" className={styles.input} value={selectedSpec.name} readOnly />
                 </div>
                 <div className={styles.field}>
-                  <label>Description</label>
-                  <p>{selectedSpec.description || '-'}</p>
+                  <label>DESCRIPTION</label>
+                  <textarea className={styles.textarea} rows={4} value={selectedSpec.description || ''} readOnly />
                 </div>
               </div>
-              <div className={styles.section}>
-                <h3>Attributes</h3>
+              <div className={styles.attrSection}>
+                <h3>ATTRIBUTES</h3>
+                <div className={styles.field}>
+                  <label>ATTRIBUTE TYPE</label>
+                  <input type="text" className={styles.input} value={selectedSpec.attributes.length > 0 && selectedSpec.attributes[0].type ? selectedSpec.attributes[0].type.toUpperCase() : 'TEXT'} readOnly />
+                </div>
                 {selectedSpec.attributes.map((attr: any, index: number) => (
                   <div key={index} className={styles.attrRow}>
-                    <p><strong>{attr.name}:</strong> {attr.type === 'color' ? <span style={{backgroundColor: attr.value, padding: '5px 20px', border: '1px solid #ccc'}}>{attr.value}</span> : attr.value}</p>
+                    <input type="text" className={styles.attrInput} value={attr.name} readOnly />
+                    {attr.type === 'color' ? (
+                      <input type="color" className={styles.colorInput} value={attr.value} disabled />
+                    ) : (
+                      <input type="text" className={styles.attrInput} value={attr.value} readOnly />
+                    )}
+                    <div style={{width: '40px'}}></div>
                   </div>
                 ))}
               </div>
             </div>
             <div className={styles.modalFooter}>
-              <button className={styles.closeModalBtn} onClick={() => setViewModal(false)}>Close</button>
+              <button className={styles.closeModalBtn} onClick={() => setViewModal(false)}>CLOSE</button>
             </div>
           </div>
         </div>
@@ -342,42 +395,55 @@ export default function ProductSpecifications() {
               <button className={styles.closeBtn} onClick={() => setEditModal(false)}>✕</button>
             </div>
             <div className={styles.modalContent}>
-              <div className={styles.section}>
-                <h3>Specification</h3>
+              <div className={styles.specSection}>
+                <h3>SPECIFICATION</h3>
                 <div className={styles.field}>
-                  <label>Name</label>
-                  <input type="text" placeholder="Enter Specification Name" className={styles.input} value={specName} onChange={(e) => setSpecName(e.target.value)} />
+                  <label>NAME</label>
+                  <input type="text" className={styles.input} value={specName} onChange={(e) => setSpecName(e.target.value)} />
                 </div>
                 <div className={styles.field}>
-                  <label>Description</label>
-                  <textarea placeholder="Type Here..." className={styles.textarea} rows={4} value={specDesc} onChange={(e) => setSpecDesc(e.target.value)} />
+                  <label>DESCRIPTION</label>
+                  <textarea className={styles.textarea} rows={4} value={specDesc} onChange={(e) => setSpecDesc(e.target.value)} />
                 </div>
               </div>
-              <div className={styles.section}>
-                <div className={styles.sectionHeader}>
-                  <h3>Attributes</h3>
-                  <button className={styles.addAttrBtn} onClick={() => setAttributes([...attributes, { name: '', value: '', type: 'text' }])}>+ Add</button>
+              <div className={styles.attrSection}>
+                <div className={styles.attrHeader}>
+                  <h3>ATTRIBUTES</h3>
+                  <button className={styles.addAttrBtn} onClick={() => setAttributes([...attributes, { name: '', value: '' }])}>+ Add</button>
                 </div>
+                
+                <div className={styles.field}>
+                  <label>ATTRIBUTE TYPE</label>
+                  <select 
+                    className={styles.attrSelect}
+                    value={attributeType}
+                    onChange={(e) => setAttributeType(e.target.value)}
+                  >
+                    <option value="text">Text</option>
+                    <option value="color">Color</option>
+                  </select>
+                </div>
+
                 {attributes.map((attr, index) => (
                   <div key={index} className={styles.attrRow}>
-                    <input type="text" placeholder="Attribute Name" className={styles.input} value={attr.name} onChange={(e) => { const newAttrs = [...attributes]; newAttrs[index].name = e.target.value; setAttributes(newAttrs); }} />
-                    <select className={styles.select} value={attr.type} onChange={(e) => { const newAttrs = [...attributes]; newAttrs[index].type = e.target.value; setAttributes(newAttrs); }}>
-                      <option value="text">Text</option>
-                      <option value="color">Color</option>
-                    </select>
-                    {attr.type === 'color' ? (
+                    <input type="text" placeholder="Attribute Name" className={styles.attrInput} value={attr.name} onChange={(e) => { const newAttrs = [...attributes]; newAttrs[index].name = e.target.value; setAttributes(newAttrs); }} />
+                    {attributeType === 'color' ? (
                       <input type="color" className={styles.colorInput} value={attr.value || '#000000'} onChange={(e) => { const newAttrs = [...attributes]; newAttrs[index].value = e.target.value; setAttributes(newAttrs); }} />
                     ) : (
-                      <input type="text" placeholder="Attribute Value" className={styles.input} value={attr.value} onChange={(e) => { const newAttrs = [...attributes]; newAttrs[index].value = e.target.value; setAttributes(newAttrs); }} />
+                      <input type="text" placeholder="Attribute Value" className={styles.attrInput} value={attr.value} onChange={(e) => { const newAttrs = [...attributes]; newAttrs[index].value = e.target.value; setAttributes(newAttrs); }} />
                     )}
-                    <button className={styles.deleteBtn} onClick={() => setAttributes(attributes.filter((_, i) => i !== index))}>✕</button>
+                    <button className={styles.deleteAttrBtn} onClick={() => attributes.length > 1 && setAttributes(attributes.filter((_, i) => i !== index))} disabled={attributes.length === 1}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                      </svg>
+                    </button>
                   </div>
                 ))}
               </div>
             </div>
             <div className={styles.modalFooter}>
-              <button className={styles.closeModalBtn} onClick={() => setEditModal(false)}>Close</button>
-              <button className={styles.closeModalBtn} onClick={handleSaveSpec}>Update</button>
+              <button className={styles.saveBtn} onClick={handleSaveSpec}>UPDATE</button>
+              <button className={styles.closeModalBtn} onClick={() => setEditModal(false)}>CLOSE</button>
             </div>
           </div>
         </div>

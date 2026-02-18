@@ -2,12 +2,21 @@
 import styles from './product.module.css'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuthUser } from '@/lib/auth'
+import { decryptData } from '@/lib/clientEncryption'
 import Cart from '@/components/Cart'
 
 export default function Product() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const productId = searchParams.get('id')
+  const [product, setProduct] = useState<any>(null)
+  const [images, setImages] = useState<string[]>([])
+  const [defaultImages, setDefaultImages] = useState<string[]>([])
+  const [specs, setSpecs] = useState<any[]>([])
+  const [selectedSku, setSelectedSku] = useState<any>(null)
+  const [selectedSpecs, setSelectedSpecs] = useState<{[key: string]: string}>({})
   const [selectedSize, setSelectedSize] = useState('M')
   const [selectedColor, setSelectedColor] = useState('beige')
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -15,7 +24,65 @@ export default function Product() {
 
   useEffect(() => {
     setUser(getAuthUser())
-  }, [])
+    if (productId) {
+      fetchProduct()
+      fetchImages()
+      fetchSpecs()
+    }
+  }, [productId])
+
+  useEffect(() => {
+    if (Object.keys(selectedSpecs).length > 0) {
+      fetchSkuBySpecs()
+    }
+  }, [selectedSpecs])
+
+  const fetchProduct = async () => {
+    const res = await fetch(`/api/products/${productId}`)
+    const result = await res.json()
+    const decrypted = decryptData(result.data)
+    setProduct(decrypted)
+  }
+
+  const fetchImages = async () => {
+    const res = await fetch(`/api/products/${productId}/images`)
+    const data = await res.json()
+    const imgs = data.images?.map((img: any) => img.imageUrl) || []
+    setImages(imgs)
+    setDefaultImages(imgs)
+  }
+
+  const fetchSpecs = async () => {
+    const res = await fetch(`/api/products/${productId}/specs`)
+    const data = await res.json()
+    setSpecs(data || [])
+  }
+
+  const fetchSkuBySpecs = async () => {
+    const variantKeys = Object.values(selectedSpecs).join(', ')
+    const res = await fetch(`/api/products/${productId}/skus?variantKeys=${encodeURIComponent(variantKeys)}`)
+    const data = await res.json()
+    if (data.length > 0) {
+      const sku = data[0]
+      setSelectedSku(sku)
+      if (sku.images) {
+        const skuImages = JSON.parse(sku.images)
+        if (skuImages.length > 0) {
+          setImages(skuImages)
+        } else {
+          setImages(defaultImages)
+        }
+      } else {
+        setImages(defaultImages)
+      }
+    }
+  }
+
+  const handleSpecSelection = (specName: string, attrName: string) => {
+    setSelectedSpecs(prev => ({...prev, [specName]: attrName}))
+  }
+
+  if (!product) return <div>Loading...</div>
 
   const relatedProducts = [
     { name: 'Cashmere Crewneck', price: '$495' },
@@ -45,49 +112,40 @@ export default function Product() {
 
       <div className={styles.content}>
         <div className={styles.images}>
-          <div className={styles.imageBox}>
-            <img src="https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png" alt="Product" />
-          </div>
-          <div className={styles.imageBox}>
-            <img src="https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png" alt="Product" />
-          </div>
-          <div className={styles.imageBox}>
-            <img src="https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png" alt="Product" />
-          </div>
+          {images.length > 0 ? images.map((img, index) => (
+            <div key={index} className={styles.imageBox}>
+              <img src={img} alt={`Product ${index + 1}`} />
+            </div>
+          )) : (
+            <div className={styles.imageBox}>
+              <img src={product.prodImg || "https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png"} alt="Product" />
+            </div>
+          )}
         </div>
 
         <div className={styles.details}>
-          <h1 className={styles.title}>Sculpted Wool Jacket</h1>
-          <div className={styles.price}>$895</div>
-          <p className={styles.description}>
-            A masterfully tailored jacket crafted from premium Italian wool. The sculpted silhouette features
-            clean lines and structured shoulders, embodying timeless elegance with a modern sensibility.
-          </p>
+          <h1 className={styles.title}>{product.prodName}</h1>
+          <div className={styles.price}>LKR {selectedSku?.price || product.prodPrice}</div>
+          <p className={styles.description}>{product.prodDescription}</p>
+          {selectedSku && selectedSku.stock > 0 && <p style={{color: 'green', fontSize: '14px'}}>In Stock: {selectedSku.stock} available</p>}
+          {selectedSku && selectedSku.stock === 0 && <p style={{color: 'red', fontSize: '14px'}}>Out of Stock</p>}
 
-          <div className={styles.option}>
-            <label className={styles.label}>Color</label>
-            <div className={styles.colors}>
-              <div className={`${styles.color} ${styles.beige}`} onClick={() => setSelectedColor('beige')}></div>
-              <div className={`${styles.color} ${styles.black}`} onClick={() => setSelectedColor('black')}></div>
-              <div className={`${styles.color} ${styles.brown}`} onClick={() => setSelectedColor('brown')}></div>
-              <div className={`${styles.color} ${styles.navy}`} onClick={() => setSelectedColor('navy')}></div>
+          {specs.map((spec, index) => (
+            <div key={index} className={styles.option}>
+              <label className={styles.label}>{spec.name}</label>
+              <div className={styles.sizes}>
+                {spec.attributes.map((attr: any, i: number) => (
+                  <button 
+                    key={i} 
+                    className={`${styles.sizeBtn} ${selectedSpecs[spec.name] === attr.name ? styles.selected : ''}`}
+                    onClick={() => handleSpecSelection(spec.name, attr.name)}
+                  >
+                    {attr.name}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-
-          <div className={styles.option}>
-            <label className={styles.label}>Size</label>
-            <div className={styles.sizes}>
-              {['XS', 'S', 'M', 'L', 'XL'].map(size => (
-                <button
-                  key={size}
-                  className={`${styles.sizeBtn} ${selectedSize === size ? styles.selected : ''}`}
-                  onClick={() => setSelectedSize(size)}
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
-          </div>
+          ))}
 
           <button className={styles.addBtn}>Add to Bag</button>
           <p className={styles.shipping}>Free shipping on orders over $200</p>
