@@ -4,32 +4,47 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getAuthUser } from '@/lib/auth'
+import { decryptData } from '@/lib/clientEncryption'
+import CustomerHeader from '@/components/CustomerHeader'
+import CustomerFooter from '@/components/CustomerFooter'
 
 export default function Category() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [products, setProducts] = useState<any[]>([])
+  const [subCategories, setSubCategories] = useState<any[]>([])
+  const [sortBy, setSortBy] = useState('newest')
   const category = searchParams.get('type') || 'women'
 
   useEffect(() => {
     setUser(getAuthUser())
-  }, [])
+    fetchProducts()
+    fetchSubCategories()
+  }, [category, sortBy])
 
-  const products = [
-    { name: 'Tailored Trousers', price: '$325' },
-    { name: 'Camel Overcoat', price: '$895' },
-    { name: 'Essential Silk Blouse', price: '$285' },
-    { name: 'Cashmere Crewneck', price: '$395' },
-    { name: 'Merino Knit Dress', price: '$425' },
-    { name: 'Structured Leather Bag', price: '$645' },
-    { name: 'Sculpted Wool Jacket', price: '$495' },
-    { name: 'Leather Loafers', price: '$385' },
-    { name: 'Linen Button-Down', price: '$245' },
-    { name: 'Leather Ankle Boots', price: '$485' },
-    { name: 'Silk Camisole', price: '$195' },
-    { name: 'Structured Blazer', price: '$595' },
-  ]
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch(`/api/products/category/${encodeURIComponent(category)}?sort=${sortBy}`)
+      const result = await res.json()
+      const decrypted = decryptData(result.data)
+      setProducts(decrypted.products || [])
+    } catch (error) {
+      console.error('Failed to fetch products:', error)
+    }
+  }
+
+  const fetchSubCategories = async () => {
+    try {
+      const res = await fetch(`/api/subcategories?categoryName=${encodeURIComponent(category)}&activeOnly=true`)
+      const result = await res.json()
+      const decrypted = decryptData(result.data)
+      setSubCategories(decrypted.subcategories || [])
+    } catch (error) {
+      console.error('Failed to fetch subcategories:', error)
+    }
+  }
 
   const cartItems = [
     { name: 'Sculpted Wool Blazer', color: 'Black', size: 'M', price: 485, quantity: 1 },
@@ -43,86 +58,48 @@ export default function Category() {
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.logo}>369</div>
-        <nav className={styles.nav}>
-          <Link href="/customer/shop" className={styles.navLink}>Home</Link>
-          <Link href="/customer/category?type=women" className={`${styles.navLink} ${category === 'women' ? styles.active : ''}`}>Women</Link>
-          <Link href="/customer/category?type=men" className={`${styles.navLink} ${category === 'men' ? styles.active : ''}`}>Men</Link>
-        </nav>
-        <div className={styles.icons}>
-          <span className={styles.icon}>🔍</span>
-          <span className={styles.icon} onClick={() => setIsCartOpen(true)} style={{ cursor: 'pointer' }}>🛒</span>
-          {user ? (
-            <span className={styles.icon}>👤</span>
-          ) : (
-            <button className={styles.loginBtn} onClick={() => router.push('/signin')}>Login</button>
-          )}
-        </div>
-      </header>
+      <CustomerHeader user={user} onCartOpen={() => setIsCartOpen(true)} />
 
       <div className={styles.content}>
-        <h1 className={styles.title}>{category === 'men' ? 'Men' : 'Women'}</h1>
+        <h1 className={styles.title}>{category.charAt(0).toUpperCase() + category.slice(1)}</h1>
 
         <div className={styles.filterBar}>
           <div className={styles.filters}>
-            <button className={styles.filterBtn}>Coats</button>
-            <button className={styles.filterBtn}>Knitwear</button>
-            <button className={styles.filterBtn}>Trousers</button>
-            <button className={styles.filterBtn}>Dresses</button>
-            <button className={styles.filterBtn}>Bags</button>
+            {subCategories.map((subCat) => (
+              <button key={subCat.id} className={styles.filterBtn}>{subCat.name}</button>
+            ))}
           </div>
           <div className={styles.sort}>
             <span>Sort by</span>
-            <select className={styles.sortSelect}>
-              <option>Newest</option>
+            <select className={styles.sortSelect} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="price_low">Price: Low to High</option>
+              <option value="price_high">Price: High to Low</option>
             </select>
           </div>
         </div>
 
         <div className={styles.products}>
-          {products.map((product, index) => (
-            <div key={index} className={styles.product} onClick={() => router.push('/customer/product')}>
-              <div className={styles.productImage}>
-                <img src="https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png" alt={product.name} />
-              </div>
-              <div className={styles.productName}>{product.name}</div>
-              <div className={styles.productPrice}>{product.price}</div>
+          {products.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px', color: '#666', gridColumn: '1 / -1' }}>
+              <p>No products available in this category</p>
             </div>
-          ))}
+          ) : (
+            products.map((product) => (
+              <div key={product.id} className={styles.product} onClick={() => router.push(`/customer/product?id=${product.id}`)}>
+                <div className={styles.productImage}>
+                  <img src={product.prodImg || "https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png"} alt={product.prodName} />
+                </div>
+                <div className={styles.productName}>{product.prodName}</div>
+                <div className={styles.productPrice}>LKR {product.prodPrice}</div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
-      <footer className={styles.footer}>
-        <div className={styles.footerSection}>
-          <h3>369</h3>
-          <p>Refined essentials for the modern wardrobe.</p>
-        </div>
-        <div className={styles.footerSection}>
-          <h3>Shop</h3>
-          <div className={styles.footerLinks}>
-            <a href="#" className={styles.footerLink}>Women</a>
-            <a href="#" className={styles.footerLink}>Men</a>
-            <a href="#" className={styles.footerLink}>New Arrivals</a>
-          </div>
-        </div>
-        <div className={styles.footerSection}>
-          <h3>Help</h3>
-          <div className={styles.footerLinks}>
-            <a href="#" className={styles.footerLink}>Contact</a>
-            <a href="#" className={styles.footerLink}>Shipping</a>
-            <a href="#" className={styles.footerLink}>Returns</a>
-          </div>
-        </div>
-        <div className={styles.footerSection}>
-          <h3>About</h3>
-          <div className={styles.footerLinks}>
-            <a href="#" className={styles.footerLink}>Our Story</a>
-            <a href="#" className={styles.footerLink}>Sustainability</a>
-            <a href="#" className={styles.footerLink}>Careers</a>
-          </div>
-        </div>
-      </footer>
+      <CustomerFooter />
 
       {isCartOpen && (
         <>

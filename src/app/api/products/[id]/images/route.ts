@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { requireAdmin } from '@/lib/apiMiddleware'
+import { encrypt } from '@/lib/encryption'
 
 const prisma = new PrismaClient()
 
@@ -36,7 +37,7 @@ const getHandler = async (req: NextRequest, { params }: { params: { id: string }
       orderBy: { isPrimary: 'desc' }
     })
 
-    return NextResponse.json({ images })
+    return NextResponse.json({ data: encrypt(JSON.stringify(images)) })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

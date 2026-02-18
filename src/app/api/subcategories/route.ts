@@ -9,12 +9,14 @@ const getHandler = async (req: NextRequest, user: any) => {
   try {
     const { searchParams } = new URL(req.url)
     const categoryId = searchParams.get('categoryId')
+    const categoryName = searchParams.get('categoryName')
     const name = searchParams.get('name')
     const description = searchParams.get('description')
     const activeOnly = searchParams.get('activeOnly')
 
     const where: any = {}
     if (categoryId) where.categoryId = parseInt(categoryId)
+    if (categoryName) where.category = { name: categoryName }
     if (name) where.name = { contains: name }
     if (description) where.description = { contains: description }
     if (activeOnly === 'true') where.isActive = true
@@ -76,5 +78,34 @@ const postHandler = async (req: NextRequest, user: any) => {
   }
 }
 
-export const GET = requireAdmin(getHandler)
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url)
+    const categoryId = searchParams.get('categoryId')
+    const categoryName = searchParams.get('categoryName')
+    const name = searchParams.get('name')
+    const description = searchParams.get('description')
+    const activeOnly = searchParams.get('activeOnly')
+
+    const where: any = {}
+    if (categoryId) where.categoryId = parseInt(categoryId)
+    if (categoryName) where.category = { name: categoryName }
+    if (name) where.name = { contains: name }
+    if (description) where.description = { contains: description }
+    if (activeOnly === 'true') where.isActive = true
+    else if (activeOnly === 'false') where.isActive = false
+
+    const subcategories = await prisma.subCategory.findMany({
+      where,
+      include: { category: true },
+      orderBy: { name: 'asc' },
+    })
+
+    const encrypted = encrypt(JSON.stringify({ subcategories }))
+    return NextResponse.json({ data: encrypted })
+  } catch (error: any) {
+    const encrypted = encrypt(JSON.stringify({ error: error.message }))
+    return NextResponse.json({ data: encrypted }, { status: 500 })
+  }
+}
 export const POST = requireAdmin(postHandler)

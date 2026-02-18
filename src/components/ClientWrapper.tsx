@@ -2,9 +2,11 @@
 import { LoadingProvider } from '@/lib/LoadingContext'
 import LoadingScreen from '@/components/LoadingScreen'
 import { useLoading } from '@/lib/LoadingContext'
+import { useFetchInterceptor } from '@/lib/useFetchInterceptor'
 
 function LoadingScreenWrapper() {
   const { isLoading } = useLoading()
+  useFetchInterceptor()
   return <LoadingScreen isLoading={isLoading} />
 }
 

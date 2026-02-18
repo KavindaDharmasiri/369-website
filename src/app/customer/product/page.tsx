@@ -5,12 +5,16 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuthUser } from '@/lib/auth'
 import { decryptData } from '@/lib/clientEncryption'
+import { useLoading } from '@/lib/LoadingContext'
 import Cart from '@/components/Cart'
+import CustomerHeader from '@/components/CustomerHeader'
+import CustomerFooter from '@/components/CustomerFooter'
 
 export default function Product() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const productId = searchParams.get('id')
+  const { showLoading, hideLoading } = useLoading()
   const [product, setProduct] = useState<any>(null)
   const [images, setImages] = useState<string[]>([])
   const [defaultImages, setDefaultImages] = useState<string[]>([])
@@ -21,15 +25,24 @@ export default function Product() {
   const [selectedColor, setSelectedColor] = useState('beige')
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [isTransitioning, setIsTransitioning] = useState(false)
 
   useEffect(() => {
     setUser(getAuthUser())
     if (productId) {
-      fetchProduct()
-      fetchImages()
-      fetchSpecs()
+      loadProductData()
     }
   }, [productId])
+
+  const loadProductData = async () => {
+    showLoading()
+    await Promise.all([
+      fetchProduct(),
+      fetchImages(),
+      fetchSpecs()
+    ])
+    hideLoading()
+  }
 
   useEffect(() => {
     if (Object.keys(selectedSpecs).length > 0) {
@@ -46,43 +59,50 @@ export default function Product() {
 
   const fetchImages = async () => {
     const res = await fetch(`/api/products/${productId}/images`)
-    const data = await res.json()
-    const imgs = data.images?.map((img: any) => img.imageUrl) || []
-    setImages(imgs)
-    setDefaultImages(imgs)
+    const result = await res.json()
+    const imgs = decryptData(result.data)
+    const imageUrls = imgs?.map((img: any) => img.imageUrl) || []
+    setImages(imageUrls)
+    setDefaultImages(imageUrls)
   }
 
   const fetchSpecs = async () => {
     const res = await fetch(`/api/products/${productId}/specs`)
-    const data = await res.json()
-    setSpecs(data || [])
+    const result = await res.json()
+    const specs = decryptData(result.data)
+    setSpecs(specs || [])
   }
 
   const fetchSkuBySpecs = async () => {
+    setIsTransitioning(true)
     const variantKeys = Object.values(selectedSpecs).join(', ')
     const res = await fetch(`/api/products/${productId}/skus?variantKeys=${encodeURIComponent(variantKeys)}`)
     const data = await res.json()
-    if (data.length > 0) {
-      const sku = data[0]
-      setSelectedSku(sku)
-      if (sku.images) {
-        const skuImages = JSON.parse(sku.images)
-        if (skuImages.length > 0) {
-          setImages(skuImages)
+    
+    setTimeout(() => {
+      if (data.length > 0) {
+        const sku = data[0]
+        setSelectedSku(sku)
+        if (sku.images) {
+          const skuImages = JSON.parse(sku.images)
+          if (skuImages.length > 0) {
+            setImages(skuImages)
+          } else {
+            setImages(defaultImages)
+          }
         } else {
           setImages(defaultImages)
         }
-      } else {
-        setImages(defaultImages)
       }
-    }
+      setTimeout(() => setIsTransitioning(false), 50)
+    }, 300)
   }
 
   const handleSpecSelection = (specName: string, attrName: string) => {
     setSelectedSpecs(prev => ({...prev, [specName]: attrName}))
   }
 
-  if (!product) return <div>Loading...</div>
+  if (!product) return null
 
   const relatedProducts = [
     { name: 'Cashmere Crewneck', price: '$495' },
@@ -93,25 +113,10 @@ export default function Product() {
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.logo}>369</div>
-        <nav className={styles.nav}>
-          <Link href="/customer/shop" className={styles.navLink}>Gallery</Link>
-          <Link href="/customer/category?type=men" className={styles.navLink}>Men</Link>
-          <Link href="/customer/category?type=women" className={styles.navLink}>Women</Link>
-        </nav>
-        <div className={styles.icons}>
-          <span className={styles.icon} onClick={() => setIsCartOpen(true)}>🛒</span>
-          {user ? (
-            <span className={styles.icon}>👤</span>
-          ) : (
-            <button className={styles.loginBtn} onClick={() => router.push('/signin')}>Login</button>
-          )}
-        </div>
-      </header>
+      <CustomerHeader user={user} onCartOpen={() => setIsCartOpen(true)} />
 
       <div className={styles.content}>
-        <div className={styles.images}>
+        <div className={`${styles.images} ${isTransitioning ? styles.fadeOut : styles.fadeIn}`}>
           {images.length > 0 ? images.map((img, index) => (
             <div key={index} className={styles.imageBox}>
               <img src={img} alt={`Product ${index + 1}`} />
@@ -125,10 +130,10 @@ export default function Product() {
 
         <div className={styles.details}>
           <h1 className={styles.title}>{product.prodName}</h1>
-          <div className={styles.price}>LKR {selectedSku?.price || product.prodPrice}</div>
+          <div className={`${styles.price} ${isTransitioning ? styles.fadeOut : styles.fadeIn}`}>LKR {selectedSku?.price || product.prodPrice}</div>
           <p className={styles.description}>{product.prodDescription}</p>
-          {selectedSku && selectedSku.stock > 0 && <p style={{color: 'green', fontSize: '14px'}}>In Stock: {selectedSku.stock} available</p>}
-          {selectedSku && selectedSku.stock === 0 && <p style={{color: 'red', fontSize: '14px'}}>Out of Stock</p>}
+          {selectedSku && selectedSku.stock > 0 && <p className={`${styles.stockInfo} ${isTransitioning ? styles.fadeOut : styles.fadeIn}`}>In Stock: {selectedSku.stock} available</p>}
+          {selectedSku && selectedSku.stock === 0 && <p className={`${styles.stockInfo} ${styles.outOfStock} ${isTransitioning ? styles.fadeOut : styles.fadeIn}`}>Out of Stock</p>}
 
           {specs.map((spec, index) => (
             <div key={index} className={styles.option}>
@@ -191,38 +196,7 @@ export default function Product() {
         </div>
       </section>
 
-      <footer className={styles.footer}>
-        <div className={styles.footerSection}>
-          <h3>369</h3>
-          <p>Everyday quiet luxury for the modern wardrobe.</p>
-        </div>
-        <div className={styles.footerSection}>
-          <h3>Shop</h3>
-          <div className={styles.footerLinks}>
-            <a href="#" className={styles.footerLink}>New Arrivals</a>
-            <a href="#" className={styles.footerLink}>Women</a>
-            <a href="#" className={styles.footerLink}>Men</a>
-            <a href="#" className={styles.footerLink}>Gallery</a>
-          </div>
-        </div>
-        <div className={styles.footerSection}>
-          <h3>Help</h3>
-          <div className={styles.footerLinks}>
-            <a href="#" className={styles.footerLink}>Customer Service</a>
-            <a href="#" className={styles.footerLink}>Shipping & Returns</a>
-            <a href="#" className={styles.footerLink}>Size Guide</a>
-            <a href="#" className={styles.footerLink}>Contact Us</a>
-          </div>
-        </div>
-        <div className={styles.footerSection}>
-          <h3>Follow</h3>
-          <div className={styles.footerLinks}>
-            <a href="#" className={styles.footerLink}>Instagram</a>
-            <a href="#" className={styles.footerLink}>Pinterest</a>
-            <a href="#" className={styles.footerLink}>Journal</a>
-          </div>
-        </div>
-      </footer>
+      <CustomerFooter />
 
       <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>

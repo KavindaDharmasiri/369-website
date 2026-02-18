@@ -68,9 +68,6 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const auth = checkAdminAuth(req)
-  if (!auth.authorized) return auth.response
-
   try {
     const { searchParams } = new URL(req.url)
     const name = searchParams.get('name')

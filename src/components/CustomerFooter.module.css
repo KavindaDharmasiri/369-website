@@ -1,0 +1,41 @@
+.footer {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 60px;
+  padding: 60px;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 60px;
+  background: #FFFFFF;
+}
+
+.footerSection h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  font-family: 'Inter', sans-serif;
+}
+
+.footerSection p {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.footerLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footerLink {
+  color: #666;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 400;
+  transition: color 0.2s;
+}
+
+.footerLink:hover {
+  color: #000;
+}

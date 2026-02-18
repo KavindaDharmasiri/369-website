@@ -2,12 +2,15 @@
 import styles from './shop.module.css'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuthUser } from '@/lib/auth'
 import { decryptData } from '@/lib/clientEncryption'
+import CustomerHeader from '@/components/CustomerHeader'
+import CustomerFooter from '@/components/CustomerFooter'
 
 export default function Shop() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [activeTab, setActiveTab] = useState('personalized')
@@ -18,9 +21,13 @@ export default function Shop() {
 
   useEffect(() => {
     setUser(getAuthUser())
+    const tab = searchParams.get('tab')
+    if (tab === 'new') {
+      setActiveTab('new')
+    }
     fetchNewArrivals()
     fetchFeaturedProducts()
-  }, [])
+  }, [searchParams])
 
   const fetchNewArrivals = async () => {
     const res = await fetch('/api/products/new-arrivals')
@@ -44,8 +51,9 @@ export default function Shop() {
     const imagesMap: {[key: number]: string[]} = {}
     for (const product of products) {
       const res = await fetch(`/api/products/${product.id}/images`)
-      const data = await res.json()
-      imagesMap[product.id] = data.images?.map((img: any) => img.imageUrl) || [product.prodImg]
+      const result = await res.json()
+      const imgs = decryptData(result.data)
+      imagesMap[product.id] = imgs?.map((img: any) => img.imageUrl) || [product.prodImg]
     }
     setProductImages(prev => ({...prev, ...imagesMap}))
   }
@@ -80,23 +88,7 @@ export default function Shop() {
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.logo}>369</div>
-        <nav className={styles.nav}>
-          <Link href="/customer/shop" className={`${styles.navLink} ${styles.active}`}>Home</Link>
-          <Link href="/customer/category?type=women" className={styles.navLink}>Women</Link>
-          <Link href="/customer/category?type=men" className={styles.navLink}>Men</Link>
-        </nav>
-        <div className={styles.icons}>
-          <span className={styles.icon}>🔍</span>
-          <span className={styles.icon} onClick={() => setIsCartOpen(true)} style={{ cursor: 'pointer' }}>🛒</span>
-          {user ? (
-            <span className={styles.icon}>👤</span>
-          ) : (
-            <button className={styles.loginBtn} onClick={() => router.push('/signin')}>Login</button>
-          )}
-        </div>
-      </header>
+      <CustomerHeader user={user} onCartOpen={() => setIsCartOpen(true)} />
 
       <section className={styles.hero}>
         <div className={styles.heroText}>
@@ -158,36 +150,7 @@ export default function Shop() {
         )}
       </section>
 
-      <footer className={styles.footer}>
-        <div className={styles.footerSection}>
-          <h3>369</h3>
-          <p>Refined essentials for the modern wardrobe.</p>
-        </div>
-        <div className={styles.footerSection}>
-          <h3>Shop</h3>
-          <div className={styles.footerLinks}>
-            <a href="#" className={styles.footerLink}>Women</a>
-            <a href="#" className={styles.footerLink}>Men</a>
-            <a href="#" className={styles.footerLink}>New Arrivals</a>
-          </div>
-        </div>
-        <div className={styles.footerSection}>
-          <h3>Help</h3>
-          <div className={styles.footerLinks}>
-            <a href="#" className={styles.footerLink}>Contact</a>
-            <a href="#" className={styles.footerLink}>Shipping</a>
-            <a href="#" className={styles.footerLink}>Returns</a>
-          </div>
-        </div>
-        <div className={styles.footerSection}>
-          <h3>About</h3>
-          <div className={styles.footerLinks}>
-            <a href="#" className={styles.footerLink}>Our Story</a>
-            <a href="#" className={styles.footerLink}>Sustainability</a>
-            <a href="#" className={styles.footerLink}>Careers</a>
-          </div>
-        </div>
-      </footer>
+      <CustomerFooter />
 
       {isCartOpen && (
         <>

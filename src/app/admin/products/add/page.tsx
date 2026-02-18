@@ -90,7 +90,7 @@ export default function AddProduct() {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const imagesData = await imagesRes.json()
-    const images = imagesData.images || []
+    const images = decryptData(imagesData.data)
     setProductImages(images.map((img: any) => img.imageUrl))
     
     setFormData({
@@ -126,8 +126,9 @@ export default function AddProduct() {
     const res = await fetch(`/api/products/${prodId}/specs`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-    const data = await res.json()
-    setSpecs(data || [])
+    const result = await res.json()
+    const specs = decryptData(result.data)
+    setSpecs(specs || [])
   }
 
   const fetchSkus = async (prodId: string) => {

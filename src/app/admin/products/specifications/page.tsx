@@ -3,6 +3,7 @@ import styles from './specifications.module.css'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuthUser } from '@/lib/auth'
+import { decryptData } from '@/lib/clientEncryption'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 
@@ -57,8 +58,9 @@ export default function ProductSpecifications() {
     const res = await fetch(`/api/products/${prodId}/specs`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-    const data = await res.json()
-    setSpecs(data || [])
+    const result = await res.json()
+    const specs = decryptData(result.data)
+    setSpecs(specs || [])
   }
 
   const handleSaveSpec = async () => {

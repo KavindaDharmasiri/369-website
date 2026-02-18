@@ -71,6 +71,15 @@
   position: sticky;
   top: 0;
   padding-right: 20px;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.fadeOut {
+  opacity: 0;
+}
+
+.fadeIn {
+  opacity: 1;
 }
 
 .images::-webkit-scrollbar {
@@ -102,13 +111,16 @@
 .title {
   font-size: 32px;
   font-weight: 400;
-  font-family: serif;
+  font-family: 'Playfair Display', serif;
   margin-bottom: 10px;
+  letter-spacing: -0.01em;
 }
 
 .price {
   font-size: 24px;
   margin-bottom: 20px;
+  transition: opacity 0.3s ease-in-out;
+  font-weight: 400;
 }
 
 .description {
@@ -172,12 +184,30 @@
   background: white;
   cursor: pointer;
   font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.sizeBtn:hover {
+  border-color: #666;
+  transform: translateY(-1px);
 }
 
 .sizeBtn.selected {
   border-color: #000;
   background: #000;
   color: white;
+  transform: scale(1.05);
+}
+
+.stockInfo {
+  font-size: 14px;
+  margin-bottom: 10px;
+  transition: opacity 0.3s ease-in-out;
+  color: green;
+}
+
+.stockInfo.outOfStock {
+  color: red;
 }
 
 .addBtn {
@@ -293,8 +323,9 @@
 .relatedTitle {
   font-size: 32px;
   font-weight: 400;
-  font-family: serif;
+  font-family: 'Playfair Display', serif;
   margin-bottom: 40px;
+  letter-spacing: -0.01em;
 }
 
 .relatedProducts {
