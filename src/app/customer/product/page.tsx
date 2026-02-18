@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuthUser } from '@/lib/auth'
 import { decryptData } from '@/lib/clientEncryption'
-import { useLoading } from '@/lib/LoadingContext'
+import { useAuditTrail } from '@/lib/useAuditTrail'
 import Cart from '@/components/Cart'
 import CustomerHeader from '@/components/CustomerHeader'
 import CustomerFooter from '@/components/CustomerFooter'
@@ -14,7 +14,7 @@ export default function Product() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const productId = searchParams.get('id')
-  const { showLoading, hideLoading } = useLoading()
+  const { logActivity } = useAuditTrail()
   const [product, setProduct] = useState<any>(null)
   const [images, setImages] = useState<string[]>([])
   const [defaultImages, setDefaultImages] = useState<string[]>([])
@@ -35,13 +35,11 @@ export default function Product() {
   }, [productId])
 
   const loadProductData = async () => {
-    showLoading()
     await Promise.all([
       fetchProduct(),
       fetchImages(),
       fetchSpecs()
     ])
-    hideLoading()
   }
 
   useEffect(() => {
@@ -55,6 +53,11 @@ export default function Product() {
     const result = await res.json()
     const decrypted = decryptData(result.data)
     setProduct(decrypted)
+    logActivity('VIEW_PRODUCT', 'product', productId, { 
+      productName: decrypted.prodName, 
+      category: decrypted.prodCategoryName,
+      price: decrypted.prodPrice 
+    })
   }
 
   const fetchImages = async () => {
@@ -100,6 +103,7 @@ export default function Product() {
 
   const handleSpecSelection = (specName: string, attrName: string) => {
     setSelectedSpecs(prev => ({...prev, [specName]: attrName}))
+    logActivity('SELECT_SPEC', 'product', productId, { specName, attrName })
   }
 
   if (!product) return null
@@ -152,7 +156,12 @@ export default function Product() {
             </div>
           ))}
 
-          <button className={styles.addBtn}>Add to Bag</button>
+          <button className={styles.addBtn} onClick={() => {
+            logActivity('ADD_TO_CART', 'product', productId, { 
+              price: selectedSku?.price || product.prodPrice,
+              specs: selectedSpecs 
+            })
+          }}>Add to Bag</button>
           <p className={styles.shipping}>Free shipping on orders over $200</p>
 
           <div className={styles.tryOn}>

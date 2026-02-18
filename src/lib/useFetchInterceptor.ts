@@ -12,7 +12,7 @@ export function useFetchInterceptor() {
     window.fetch = async (...args) => {
       activeRequests++
       if (activeRequests === 1) {
-        showLoading()
+        setTimeout(() => showLoading(), 0)
       }
 
       try {
@@ -21,7 +21,7 @@ export function useFetchInterceptor() {
       } finally {
         activeRequests--
         if (activeRequests === 0) {
-          hideLoading()
+          setTimeout(() => hideLoading(), 0)
         }
       }
     }

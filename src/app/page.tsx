@@ -1,40 +1,66 @@
 'use client'
-import styles from './page.module.css'
+import styles from './landing.module.css'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 import { getAuthUser } from '@/lib/auth'
+import { decryptData } from '@/lib/clientEncryption'
 
-export default function Home() {
+export default function Landing() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
-  const heroImage = 'https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png'
+  const [categories, setCategories] = useState<any[]>([])
 
   useEffect(() => {
     setUser(getAuthUser())
+    fetchCategories()
   }, [])
 
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/categories')
+      const result = await res.json()
+      const decrypted = decryptData(result.data)
+      const activeCategories = (decrypted.categories || []).filter((cat: any) => cat.isActive === true)
+      setCategories(activeCategories)
+    } catch (error) {
+      console.error('Failed to fetch categories:', error)
+    }
+  }
+
   return (
-    <main className={styles.container}>
-      {!user && (
-        <button className={styles.loginBtn} onClick={() => router.push('/signin')}>
-          Login
+    <div className={styles.container}>
+      <header className={styles.header}>
+        <div className={styles.logo}>369</div>
+        {user ? (
+          <span className={styles.userIcon}>👤</span>
+        ) : (
+          <button className={styles.loginBtn} onClick={() => router.push('/signin')}>Login</button>
+        )}
+      </header>
+
+      <main className={styles.main}>
+        <div className={styles.heroImage}>
+          <img src="https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png" alt="Hero" />
+        </div>
+
+        <h1 className={styles.title}>Everyday Quiet Luxury</h1>
+
+        <div className={styles.buttons}>
+          {categories.map((category) => (
+            <button 
+              key={category.id}
+              className={styles.shopBtn} 
+              onClick={() => router.push(`/customer/category?type=${category.name.toLowerCase()}`)}
+            >
+              Shop {category.name}
+            </button>
+          ))}
+        </div>
+
+        <button className={styles.browseLink} onClick={() => router.push('/customer/shop?tab=new')}>
+          Browse New Arrivals
         </button>
-      )}
-      
-      <header className={styles.logo}>369</header>
-      
-      <div className={styles.heroImage}>
-        <img src={heroImage} alt="Fashion model" />
-      </div>
-      
-      <h1 className={styles.title}>Everyday Quiet Luxury</h1>
-      
-      <div className={styles.buttons}>
-        <button className={styles.btn} onClick={() => router.push('/customer/shop')}>Shop Women</button>
-        <button className={styles.btn} onClick={() => router.push('/customer/shop')}>Shop Men</button>
-      </div>
-      
-      <a onClick={() => router.push('/customer/shop')} className={styles.link} style={{ cursor: 'pointer' }}>Browse New Arrivals</a>
-    </main>
+      </main>
+    </div>
   )
 }

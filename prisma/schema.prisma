@@ -157,3 +157,21 @@ model CommonIndex {
 
   @@map("common_indexes")
 }
+
+model AuditTrail {
+  id         Int      @id @default(autoincrement()) @map("audit_id")
+  userId     Int      @map("user_id")
+  userEmail  String   @map("user_email")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  metadata   String?  @db.Text
+  ipAddress  String   @map("ip_address")
+  userAgent  String   @db.Text @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@map("audit_trails")
+}

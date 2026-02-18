@@ -82,23 +82,12 @@ export default function SignUp() {
   return (
     <main className={styles.container}>
       <Toaster position="top-center" />
-      <header className={styles.header}>
-        <nav className={styles.nav}>
-          <a href="/shop" className={styles.navLink}>Gallery</a>
-          <a href="/men" className={styles.navLink}>Men</a>
-          <a href="/women" className={styles.navLink}>Women</a>
-        </nav>
-        <div className={styles.logo}>369</div>
-        <div className={styles.icons}>
-          <span className={styles.icon}>🔍</span>
-          <span className={styles.icon}>👤</span>
-        </div>
-      </header>
+      <header className={styles.logo} onClick={() => router.push('/')} style={{ cursor: 'pointer' }}>369</header>
 
       <div className={styles.content}>
         <p className={styles.membership}>Membership</p>
         <h1 className={styles.title}>Create Account</h1>
-        <p className={styles.subtitle}>Join our community for exclusive access to new arrivals and personalized galleries.</p>
+        <p className={styles.subtitle}>Join our community for exclusive access to<br />new arrivals and personalized galleries.</p>
 
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.field}>
@@ -165,8 +154,19 @@ export default function SignUp() {
 
           <button type="submit" className={styles.btn} disabled={!agreed}>Create Account</button>
 
+          {/* <p className={styles.divider}>Or continue with</p>
+
+          <div className={styles.socialBtns}>
+            <button type="button" className={styles.socialBtn}>
+              <span>G</span> Google
+            </button>
+            <button type="button" className={styles.socialBtn}>
+              <span></span> Apple
+            </button>
+          </div> */}
+
           <p className={styles.login}>
-            Already have an account? <a href="/signin" className={styles.link}>Log in</a>
+            Already have an account? <a href="/signin" className={styles.link}>Log In</a>
           </p>
         </form>
       </div>

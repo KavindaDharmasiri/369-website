@@ -53,7 +53,7 @@ export default function SignIn() {
   return (
     <main className={styles.container}>
       <Toaster position="top-center" />
-      <header className={styles.logo}>369</header>
+      <header className={styles.logo} onClick={() => router.push('/')} style={{ cursor: 'pointer' }}>369</header>
       
       <h1 className={styles.title}>Sign In</h1>
       
@@ -84,7 +84,7 @@ export default function SignIn() {
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
         
-        <a href="#" className={styles.guestLink}>Continue as guest</a>
+        <a href="/customer/shop" className={styles.guestLink}>Continue as guest</a>
       </form>
     </main>
   )

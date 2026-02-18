@@ -3,10 +3,12 @@ import { LoadingProvider } from '@/lib/LoadingContext'
 import LoadingScreen from '@/components/LoadingScreen'
 import { useLoading } from '@/lib/LoadingContext'
 import { useFetchInterceptor } from '@/lib/useFetchInterceptor'
+import { useActivityTracker } from '@/lib/useActivityTracker'
 
 function LoadingScreenWrapper() {
   const { isLoading } = useLoading()
   useFetchInterceptor()
+  useActivityTracker()
   return <LoadingScreen isLoading={isLoading} />
 }
 

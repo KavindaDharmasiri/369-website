@@ -1,66 +1,43 @@
 .container {
   min-height: 100vh;
   background: #FFFFFF;
-}
-
-.header {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  padding: 20px 60px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.nav {
-  display: flex;
-  gap: 40px;
-}
-
-.navLink {
-  color: #666;
-  text-decoration: none;
-  font-size: 14px;
+  padding: 40px 20px;
 }
 
 .logo {
-  font-size: 24px;
-  font-family: serif;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.icons {
-  display: flex;
-  gap: 20px;
-}
-
-.icon {
-  font-size: 20px;
-  cursor: pointer;
+  font-size: 32px;
+  font-family: 'Playfair Display', serif;
+  font-weight: 400;
+  margin-bottom: 60px;
+  letter-spacing: 0.05em;
 }
 
 .content {
   max-width: 450px;
-  margin: 80px auto;
-  padding: 0 20px;
+  width: 100%;
 }
 
 .membership {
   text-align: center;
-  font-size: 12px;
-  color: #666;
+  font-size: 11px;
+  color: #999;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 10px;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
 }
 
 .title {
   text-align: center;
   font-size: 36px;
-  font-weight: 400;
-  font-family: serif;
+  font-weight: 300;
+  font-family: 'Playfair Display', serif;
   margin: 0 0 15px;
+  letter-spacing: 0.02em;
 }
 
 .subtitle {
@@ -69,6 +46,8 @@
   font-size: 14px;
   line-height: 1.6;
   margin-bottom: 40px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
 }
 
 .form {
@@ -83,9 +62,11 @@
 }
 
 .label {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 400;
   margin-bottom: 8px;
+  font-family: 'Inter', sans-serif;
+  color: #1a1a1a;
 }
 
 .input {
@@ -94,23 +75,29 @@
   border-radius: 6px;
   font-size: 14px;
   outline: none;
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
 }
 
 .input:focus {
-  border-color: #000;
+  border-color: #1a1a1a;
 }
 
 .hint {
   font-size: 12px;
-  color: #666;
+  color: #999;
   margin: 5px 0 0;
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
 }
 
 .checkbox {
   display: flex;
   gap: 10px;
-  font-size: 14px;
+  font-size: 13px;
   align-items: flex-start;
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
 }
 
 .checkbox input {
@@ -118,19 +105,21 @@
 }
 
 .link {
-  color: #000;
+  color: #1a1a1a;
   text-decoration: underline;
 }
 
 .btn {
-  padding: 14px;
+  padding: 16px;
   background: #1a1a1a;
   color: white;
   border: none;
   border-radius: 32px;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
   margin-top: 10px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
 }
 
 .btn:disabled {
@@ -146,16 +135,19 @@
   color: #dc2626;
   font-size: 12px;
   margin: 5px 0 0;
+  font-family: 'Inter', sans-serif;
 }
 
-.or {
+.divider {
   text-align: center;
-  color: #666;
-  font-size: 14px;
-  margin: 10px 0;
+  color: #999;
+  font-size: 13px;
+  margin: 20px 0;
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
 }
 
-.social {
+.socialBtns {
   display: flex;
   gap: 15px;
 }
@@ -172,11 +164,15 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
 }
 
 .login {
   text-align: center;
-  font-size: 14px;
+  font-size: 13px;
   color: #666;
-  margin-top: 10px;
+  margin-top: 20px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
 }
