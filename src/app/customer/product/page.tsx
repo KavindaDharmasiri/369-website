@@ -1,13 +1,21 @@
 'use client'
 import styles from './product.module.css'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { getAuthUser } from '@/lib/auth'
 import Cart from '@/components/Cart'
 
 export default function Product() {
+  const router = useRouter()
   const [selectedSize, setSelectedSize] = useState('M')
   const [selectedColor, setSelectedColor] = useState('beige')
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    setUser(getAuthUser())
+  }, [])
 
   const relatedProducts = [
     { name: 'Cashmere Crewneck', price: '$495' },
@@ -27,7 +35,11 @@ export default function Product() {
         </nav>
         <div className={styles.icons}>
           <span className={styles.icon} onClick={() => setIsCartOpen(true)}>🛒</span>
-          <span className={styles.icon}>👤</span>
+          {user ? (
+            <span className={styles.icon}>👤</span>
+          ) : (
+            <button className={styles.loginBtn} onClick={() => router.push('/signin')}>Login</button>
+          )}
         </div>
       </header>
 

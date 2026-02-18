@@ -22,7 +22,9 @@ export default function GeneratedSKU() {
   const [variantDetails, setVariantDetails] = useState('')
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
-  const [skuImage, setSkuImage] = useState<File | null>(null)
+  const [skuImages, setSkuImages] = useState<string[]>([])
+  const [showImageModal, setShowImageModal] = useState(false)
+  const [selectedImage, setSelectedImage] = useState('')
 
   useEffect(() => {
     const authUser = getAuthUser()
@@ -79,17 +81,39 @@ export default function GeneratedSKU() {
     setVariantDetails(sku.variantDetails || '')
     setDescription(sku.description || '')
     setPrice(sku.price.toString())
-    setSkuImage(null)
+    setSkuImages(sku.images ? JSON.parse(sku.images) : [])
     setEditModal(true)
+  }
+
+  const handleImageUpload = async (e: any) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    const token = localStorage.getItem('authToken')
+    const uploadedUrls: string[] = []
+
+    for (const file of files) {
+      const formData = new FormData()
+      formData.append('file', file as File)
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      })
+      const data = await res.json()
+      if (data.url) uploadedUrls.push(data.url)
+    }
+
+    setSkuImages([...skuImages, ...uploadedUrls])
+  }
+
+  const handleRemoveImage = (index: number) => {
+    setSkuImages(skuImages.filter((_, i) => i !== index))
   }
 
   const handleUpdate = async () => {
     if (!productId || !selectedSku) return
-
-    const formData = new FormData()
-    if (description) formData.append('description', description)
-    if (price) formData.append('price', price)
-    if (skuImage) formData.append('skuImage', skuImage)
 
     const token = localStorage.getItem('authToken')
     const res = await fetch(`/api/products/${productId}/skus/${selectedSku.id}`, {
@@ -101,7 +125,7 @@ export default function GeneratedSKU() {
       body: JSON.stringify({
         description,
         price: parseFloat(price),
-        skuImage: skuImage?.name || null
+        images: JSON.stringify(skuImages)
       })
     })
 
@@ -233,19 +257,33 @@ export default function GeneratedSKU() {
                 <input type="number" className={styles.input} value={price} onChange={(e) => setPrice(e.target.value)} />
               </div>
               <div className={styles.field}>
-                <label>SKU Image</label>
-                <div className={styles.fileUpload}>
-                  <input type="file" id="skuImage" accept="image/*" onChange={(e) => setSkuImage(e.target.files?.[0] || null)} style={{display: 'none'}} />
-                  <label htmlFor="skuImage" className={styles.fileBtn}>Choose File</label>
-                  <span className={styles.fileName}>{skuImage?.name || 'No file chosen'}</span>
-                  <button className={styles.downloadBtn}>Download</button>
-                </div>
+                <label>SKU Images</label>
+                <input type="file" multiple accept="image/*" onChange={handleImageUpload} className={styles.fileInput} />
+                {skuImages.length > 0 && (
+                  <div className={styles.imagesGrid}>
+                    {skuImages.map((url, index) => (
+                      <div key={index} className={styles.imageItem}>
+                        <img src={url} alt={`SKU ${index + 1}`} onClick={() => { setSelectedImage(url); setShowImageModal(true); }} />
+                        <button type="button" className={styles.removeBtn} onClick={() => handleRemoveImage(index)}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div className={styles.modalFooter}>
               <button className={styles.closeModalBtn} onClick={() => setEditModal(false)}>Close</button>
               <button className={styles.applyBtn} onClick={handleUpdate}>Apply</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showImageModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowImageModal(false)}>
+          <div className={styles.imageModal}>
+            <button className={styles.closeBtn} onClick={() => setShowImageModal(false)}>✕</button>
+            <img src={selectedImage} alt="SKU" />
           </div>
         </div>
       )}

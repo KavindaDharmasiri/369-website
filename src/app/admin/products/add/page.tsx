@@ -20,6 +20,7 @@ export default function AddProduct() {
   const [activeTab, setActiveTab] = useState('details')
   const [specs, setSpecs] = useState<any[]>([])
   const [skus, setSkus] = useState<any[]>([])
+  const [showImageModal, setShowImageModal] = useState(false)
   const [formData, setFormData] = useState({
     status: 'INACTIVE',
     stockStatus: true,
@@ -63,7 +64,8 @@ export default function AddProduct() {
     const res = await fetch(`/api/products/${id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-    const product = await res.json()
+    const result = await res.json()
+    const product = decryptData(result.data)
     setFormData({
       status: product.status,
       stockStatus: product.stockStatus,
@@ -157,6 +159,24 @@ export default function AddProduct() {
     setFormData(prev => ({ ...prev, prodImg: data.url }))
   }
 
+  const handlePolicyUpload = async (e: any) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const token = localStorage.getItem('authToken')
+    const res = await fetch('/api/upload', { 
+      method: 'POST', 
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData 
+    })
+    const data = await res.json()
+    const isPdf = file.type === 'application/pdf'
+    setFormData(prev => ({ ...prev, returnPolicyDoc: data.url, returnPolicyType: isPdf ? 'pdf' : 'image' }))
+  }
+
   const handleSubmit = async (e: any) => {
     e.preventDefault()
 
@@ -174,7 +194,8 @@ export default function AddProduct() {
     })
 
     if (res.ok) {
-      const product = await res.json()
+      const result = await res.json()
+      const product = decryptData(result.data)
       const targetProductId = productId || product.id
       if (!productId) {
         sessionStorage.setItem('currentProductId', targetProductId)
@@ -276,7 +297,12 @@ export default function AddProduct() {
                 <div className={styles.field}>
                   <label>Product Image *</label>
                   <input type="file" className={styles.fileInput} onChange={handleImageUpload} required={!formData.prodImg} disabled={isViewMode} />
-                  {formData.prodImg && <span>✓ Uploaded</span>}
+                  {formData.prodImg && (
+                    <div className={styles.imagePreview}>
+                      <img src={formData.prodImg} alt="Product" onClick={() => setShowImageModal(true)} />
+                      <span>✓ Uploaded</span>
+                    </div>
+                  )}
                 </div>
                 <div className={styles.field}>
                   <label>Product Price (RS) *</label>
@@ -334,17 +360,6 @@ export default function AddProduct() {
               </div>
             </div>
 
-            <div className={styles.section}>
-              <h2 className={styles.sectionTitle}>Return Policy</h2>
-              
-              <div className={styles.row}>
-                <div className={styles.field}>
-                  <label>Return Policy</label>
-                  <input type="file" className={styles.fileInput} />
-                </div>
-              </div>
-            </div>
-
             <div className={styles.actions}>
               {isViewMode ? (
                 <button type="button" onClick={() => router.push('/admin/products')} className={styles.submitBtn}>Back to Products</button>
@@ -355,6 +370,15 @@ export default function AddProduct() {
           </form>
         </div>
       </main>
+
+      {showImageModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowImageModal(false)}>
+          <div className={styles.imageModal}>
+            <button className={styles.closeBtn} onClick={() => setShowImageModal(false)}>✕</button>
+            <img src={formData.prodImg} alt="Product" />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

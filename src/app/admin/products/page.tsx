@@ -3,6 +3,7 @@ import styles from './products.module.css'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getAuthUser } from '@/lib/auth'
+import { decryptData } from '@/lib/clientEncryption'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 
@@ -25,12 +26,20 @@ export default function AdminProducts() {
   }, [router])
 
   const fetchProducts = async () => {
-    const token = localStorage.getItem('authToken')
-    const res = await fetch('/api/products', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await res.json()
-    setProducts(data || [])
+    try {
+      const token = localStorage.getItem('authToken')
+      const res = await fetch('/api/products', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (data.data) {
+        const decrypted = decryptData(data.data)
+        setProducts(decrypted.products || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch products:', error)
+      setProducts([])
+    }
   }
 
   if (!user) return null

@@ -1,12 +1,18 @@
 'use client'
 import styles from './shop.module.css'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { getAuthUser } from '@/lib/auth'
 
 export default function Shop() {
   const router = useRouter()
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    setUser(getAuthUser())
+  }, [])
 
   const products = [
     { name: 'Sculpted Wool Jacket', price: '$495' },
@@ -41,7 +47,11 @@ export default function Shop() {
         <div className={styles.icons}>
           <span className={styles.icon}>🔍</span>
           <span className={styles.icon} onClick={() => setIsCartOpen(true)} style={{ cursor: 'pointer' }}>🛒</span>
-          <span className={styles.icon}>👤</span>
+          {user ? (
+            <span className={styles.icon}>👤</span>
+          ) : (
+            <button className={styles.loginBtn} onClick={() => router.push('/signin')}>Login</button>
+          )}
         </div>
       </header>
 

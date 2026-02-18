@@ -16,11 +16,19 @@ const handler = async (req: NextRequest, user: any) => {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
+    const isPdf = file.type === 'application/pdf'
+
     const result = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream({ folder: 'products' }, (error, result) => {
-        if (error) reject(error)
-        else resolve(result)
-      }).end(buffer)
+      cloudinary.uploader.upload_stream(
+        { 
+          folder: 'products',
+          resource_type: isPdf ? 'raw' : 'auto'
+        }, 
+        (error, result) => {
+          if (error) reject(error)
+          else resolve(result)
+        }
+      ).end(buffer)
     })
 
     return NextResponse.json({ url: (result as any).secure_url })

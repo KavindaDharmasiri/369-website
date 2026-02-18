@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { requireAdmin } from '@/lib/apiMiddleware'
+import { encrypt } from '@/lib/encryption'
 
 const prisma = new PrismaClient()
 
@@ -15,7 +16,7 @@ const getHandler = async (req: NextRequest, user: any, { params }: { params: { i
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
-    return NextResponse.json(product)
+    return NextResponse.json({ data: encrypt(JSON.stringify(product)) })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -52,7 +53,7 @@ const putHandler = async (req: NextRequest, user: any, { params }: { params: { i
       },
     })
 
-    return NextResponse.json(product)
+    return NextResponse.json({ data: encrypt(JSON.stringify(product)) })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

@@ -140,7 +140,7 @@ model ProductSku {
   description    String?  @db.Text
   price          Decimal  @db.Decimal(10, 2)
   stock          Int      @default(0)
-  skuImage       String?  @map("sku_image")
+  images         String?  @db.Text
   isActive       Boolean  @default(true) @map("is_active")
   createdAt      DateTime @default(now()) @map("created_at")
   product        Product  @relation(fields: [productId], references: [id])

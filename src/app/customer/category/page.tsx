@@ -3,12 +3,18 @@ import styles from './category.module.css'
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { getAuthUser } from '@/lib/auth'
 
 export default function Category() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
   const category = searchParams.get('type') || 'women'
+
+  useEffect(() => {
+    setUser(getAuthUser())
+  }, [])
 
   const products = [
     { name: 'Tailored Trousers', price: '$325' },
@@ -47,7 +53,11 @@ export default function Category() {
         <div className={styles.icons}>
           <span className={styles.icon}>🔍</span>
           <span className={styles.icon} onClick={() => setIsCartOpen(true)} style={{ cursor: 'pointer' }}>🛒</span>
-          <span className={styles.icon}>👤</span>
+          {user ? (
+            <span className={styles.icon}>👤</span>
+          ) : (
+            <button className={styles.loginBtn} onClick={() => router.push('/signin')}>Login</button>
+          )}
         </div>
       </header>
 

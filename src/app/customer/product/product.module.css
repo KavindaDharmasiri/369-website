@@ -30,12 +30,28 @@
 .icons {
   display: flex;
   gap: 20px;
+  align-items: center;
 }
 
 .icon {
   width: 20px;
   height: 20px;
   cursor: pointer;
+}
+
+.loginBtn {
+  padding: 8px 20px;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.loginBtn:hover {
+  background: #333;
 }
 
 .content {
