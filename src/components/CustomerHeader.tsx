@@ -13,10 +13,19 @@ interface CustomerHeaderProps {
 export default function CustomerHeader({ user, onCartOpen }: CustomerHeaderProps) {
   const router = useRouter()
   const [categories, setCategories] = useState<any[]>([])
+  const [showDropdown, setShowDropdown] = useState(false)
 
   useEffect(() => {
     fetchCategories()
   }, [])
+
+  useEffect(() => {
+    const handleClickOutside = () => setShowDropdown(false)
+    if (showDropdown) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [showDropdown])
 
   const fetchCategories = async () => {
     try {
@@ -53,7 +62,21 @@ export default function CustomerHeader({ user, onCartOpen }: CustomerHeaderProps
       <div className={styles.icons}>
         <span className={styles.icon} onClick={onCartOpen}>🛒</span>
         {user ? (
-          <span className={styles.icon}>👤</span>
+          <div className={styles.userMenu}>
+            <span className={styles.icon} onClick={(e) => {
+              e.stopPropagation()
+              setShowDropdown(!showDropdown)
+            }}>👤</span>
+            {showDropdown && (
+              <div className={styles.dropdown}>
+                <button onClick={() => {
+                  localStorage.removeItem('authToken')
+                  document.cookie = 'authToken=; path=/; max-age=0'
+                  router.push('/')
+                }}>Logout</button>
+              </div>
+            )}
+          </div>
         ) : (
           <button className={styles.loginBtn} onClick={() => router.push('/signin')}>Login</button>
         )}

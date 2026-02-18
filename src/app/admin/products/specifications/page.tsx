@@ -6,6 +6,7 @@ import { getAuthUser } from '@/lib/auth'
 import { decryptData } from '@/lib/clientEncryption'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
+import Swal from 'sweetalert2'
 
 export default function ProductSpecifications() {
   const router = useRouter()
@@ -16,7 +17,6 @@ export default function ProductSpecifications() {
   const [showModal, setShowModal] = useState(false)
   const [viewModal, setViewModal] = useState(false)
   const [editModal, setEditModal] = useState(false)
-  const [deleteModal, setDeleteModal] = useState(false)
   const [selectedSpec, setSelectedSpec] = useState<any>(null)
   const [showOptionsMenu, setShowOptionsMenu] = useState<number | null>(null)
   const [specs, setSpecs] = useState<any[]>([])
@@ -70,6 +70,28 @@ export default function ProductSpecifications() {
     const url = selectedSpec ? `/api/products/${productId}/specs/${selectedSpec.id}` : `/api/products/${productId}/specs`
     const method = selectedSpec ? 'PUT' : 'POST'
 
+    const filteredAttributes = attributes
+      .filter(a => a.name && a.value)
+      .map(a => ({
+        ...a,
+        type: attributeType,
+        value: attributeType === 'color' && !a.value ? '#0d0c0c' : a.value
+      }))
+    
+    // For color type, also include attributes with name but no value
+    const allAttributes = attributeType === 'color' 
+      ? attributes
+          .filter(a => a.name)
+          .map(a => ({
+            ...a,
+            type: attributeType,
+            value: a.value || '#0d0c0c'
+          }))
+      : filteredAttributes
+
+    console.log('All attributes:', attributes)
+    console.log('Filtered attributes:', allAttributes)
+
     const res = await fetch(url, {
       method,
       headers: {
@@ -79,7 +101,7 @@ export default function ProductSpecifications() {
       body: JSON.stringify({
         name: specName,
         description: specDesc,
-        attributes: attributes.filter(a => a.name && a.value).map(a => ({ ...a, type: attributeType }))
+        attributes: allAttributes
       })
     })
 
@@ -207,7 +229,29 @@ export default function ProductSpecifications() {
                             </button>
                             {showOptionsMenu === spec.id && (
                               <div className={styles.optionsDropdown}>
-                                <button onClick={() => { setSelectedSpec(spec); setDeleteModal(true); setShowOptionsMenu(null); }}>
+                              <button onClick={async () => {
+                                setShowOptionsMenu(null)
+                                const result = await Swal.fire({
+                                  title: 'Delete Specification',
+                                  text: `Are you sure you want to delete ${spec.name}?`,
+                                  icon: 'warning',
+                                  showCancelButton: true,
+                                  confirmButtonColor: '#d33',
+                                  cancelButtonColor: '#3085d6',
+                                  confirmButtonText: 'Delete'
+                                })
+                                
+                                if (result.isConfirmed && productId) {
+                                  const token = localStorage.getItem('authToken')
+                                  const res = await fetch(`/api/products/${productId}/specs/${spec.id}`, {
+                                    method: 'DELETE',
+                                    headers: { 'Authorization': `Bearer ${token}` }
+                                  })
+                                  if (res.ok) {
+                                    fetchSpecs(productId)
+                                  }
+                                }
+                              }}>
                                   Delete
                                 </button>
                               </div>
@@ -327,7 +371,7 @@ export default function ProductSpecifications() {
                         }}
                       />
                     )}
-                    <button className={styles.deleteAttrBtn} onClick={() => attributes.length > 1 && setAttributes(attributes.filter((_, i) => i !== index))} disabled={attributes.length === 1}>
+                    <button className={styles.deleteAttrBtn} onClick={() => setAttributes(attributes.filter((_, i) => i !== index))} disabled={attributes.length === 1}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                       </svg>
@@ -446,23 +490,6 @@ export default function ProductSpecifications() {
             <div className={styles.modalFooter}>
               <button className={styles.saveBtn} onClick={handleSaveSpec}>UPDATE</button>
               <button className={styles.closeModalBtn} onClick={() => setEditModal(false)}>CLOSE</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {deleteModal && selectedSpec && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <div className={styles.modalHeader}>
-              <h2>Delete Specification</h2>
-            </div>
-            <div className={styles.modalContent}>
-              <p>Are you sure you want to delete <strong>{selectedSpec.name}</strong>?</p>
-            </div>
-            <div className={styles.modalFooter}>
-              <button className={styles.closeModalBtn} onClick={() => setDeleteModal(false)}>Cancel</button>
-              <button className={styles.closeModalBtn} onClick={handleDelete}>Delete</button>
             </div>
           </div>
         </div>

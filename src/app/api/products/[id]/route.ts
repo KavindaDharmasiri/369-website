@@ -63,3 +63,29 @@ export async function GET(req: NextRequest, context: any) {
   return getHandler(req, context)
 }
 export const PUT = (req: NextRequest, context: any) => requireAdmin((r: NextRequest, u: any) => putHandler(r, u, context))(req)
+
+const deleteHandler = async (req: NextRequest, user: any, { params }: { params: { id: string } }) => {
+  try {
+    const productId = parseInt(params.id)
+    
+    // Delete related data first
+    await prisma.productImage.deleteMany({ where: { productId } })
+    await prisma.productSku.deleteMany({ where: { productId } })
+    
+    // Delete specs and their attributes
+    const specs = await prisma.productSpec.findMany({ where: { productId } })
+    for (const spec of specs) {
+      await prisma.productSpecAttr.deleteMany({ where: { specId: spec.id } })
+    }
+    await prisma.productSpec.deleteMany({ where: { productId } })
+    
+    // Finally delete the product
+    await prisma.product.delete({ where: { id: productId } })
+    
+    return NextResponse.json({ data: encrypt(JSON.stringify({ success: true })) })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+export const DELETE = (req: NextRequest, context: any) => requireAdmin((r: NextRequest, u: any) => deleteHandler(r, u, context))(req)

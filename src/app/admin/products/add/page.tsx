@@ -90,8 +90,10 @@ export default function AddProduct() {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const imagesData = await imagesRes.json()
-    const images = decryptData(imagesData.data)
-    setProductImages(images.map((img: any) => img.imageUrl))
+    if (imagesData.data) {
+      const images = decryptData(imagesData.data)
+      setProductImages(images.map((img: any) => img.imageUrl))
+    }
     
     setFormData({
       status: product.status,
@@ -263,7 +265,7 @@ export default function AddProduct() {
     if (res.ok) {
       const result = await res.json()
       const product = decryptData(result.data)
-      const targetProductId = productId || product.productId
+      const targetProductId = productId || product.id
       
       // Save product images
       if (productImages.length > 0) {

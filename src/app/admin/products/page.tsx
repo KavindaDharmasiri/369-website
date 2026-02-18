@@ -6,6 +6,7 @@ import { getAuthUser } from '@/lib/auth'
 import { decryptData } from '@/lib/clientEncryption'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
+import Swal from 'sweetalert2'
 
 export default function AdminProducts() {
   const router = useRouter()
@@ -135,7 +136,36 @@ export default function AdminProducts() {
                       <td>
                         <button className={styles.actionBtn} onClick={() => router.push(`/admin/products/add?id=${product.id}&mode=view`)} title="View">◎</button>
                         <button className={styles.actionBtn} onClick={() => router.push(`/admin/products/add?id=${product.id}&mode=edit`)} title="Edit">✎</button>
-                        <button className={styles.actionBtn} onClick={() => alert('Delete product: ' + product.prodName)} title="Delete">✕</button>
+                        <button className={styles.actionBtn} onClick={async () => {
+                          const result = await Swal.fire({
+                            title: 'Delete Product',
+                            text: `Are you sure you want to delete ${product.prodName}?`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#3085d6',
+                            confirmButtonText: 'Delete'
+                          })
+                          
+                          if (result.isConfirmed) {
+                            try {
+                              const token = localStorage.getItem('authToken')
+                              const res = await fetch(`/api/products/${product.id}`, {
+                                method: 'DELETE',
+                                headers: { 'Authorization': `Bearer ${token}` }
+                              })
+                              
+                              if (res.ok) {
+                                Swal.fire('Deleted!', 'Product has been deleted.', 'success')
+                                fetchProducts()
+                              } else {
+                                Swal.fire('Error!', 'Failed to delete product.', 'error')
+                              }
+                            } catch (error) {
+                              Swal.fire('Error!', 'Failed to delete product.', 'error')
+                            }
+                          }
+                        }} title="Delete">✕</button>
                       </td>
                     </tr>
                   ))

@@ -7,6 +7,7 @@ import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 import toast, { Toaster } from 'react-hot-toast'
 import { encryptData, decryptData } from '@/lib/clientEncryption'
+import Swal from 'sweetalert2'
 
 interface Category {
   id: number
@@ -43,7 +44,6 @@ export default function SubCategoryManagement() {
   const [categoryError, setCategoryError] = useState('')
   const [viewModal, setViewModal] = useState(false)
   const [editModal, setEditModal] = useState(false)
-  const [deleteModal, setDeleteModal] = useState(false)
   const [selectedSubCategory, setSelectedSubCategory] = useState<SubCategory | null>(null)
   const [perPage, setPerPage] = useState(5)
   const [currentPage, setCurrentPage] = useState(1)
@@ -228,35 +228,39 @@ export default function SubCategoryManagement() {
     }
   }
 
-  const handleDeleteClick = (subcategory: SubCategory) => {
-    setSelectedSubCategory(subcategory)
-    setDeleteModal(true)
-  }
+  const handleDeleteClick = async (subcategory: SubCategory) => {
+    const result = await Swal.fire({
+      title: 'Delete Sub Category',
+      text: `Are you sure you want to delete ${subcategory.name}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Delete'
+    })
+    
+    if (result.isConfirmed) {
+      setLoading(true)
+      try {
+        const token = getAuthToken()
+        const res = await fetch(`/api/subcategories/${subcategory.id}`, { 
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const data = await res.json()
+        const decrypted = decryptData(data.data)
 
-  const handleDelete = async () => {
-    if (!selectedSubCategory) return
-
-    setLoading(true)
-    try {
-      const token = getAuthToken()
-      const res = await fetch(`/api/subcategories/${selectedSubCategory.id}`, { 
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const data = await res.json()
-      const decrypted = decryptData(data.data)
-
-      if (res.ok) {
-        toast.success('Sub category deleted successfully!')
-        setDeleteModal(false)
-        fetchSubcategories()
-      } else {
-        toast.error(decrypted.error || 'Failed to delete sub category')
+        if (res.ok) {
+          toast.success('Sub category deleted successfully!')
+          fetchSubcategories()
+        } else {
+          toast.error(decrypted.error || 'Failed to delete sub category')
+        }
+      } catch (error) {
+        toast.error('An error occurred')
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      toast.error('An error occurred')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -562,26 +566,6 @@ export default function SubCategoryManagement() {
               <button className={styles.cancelBtn} onClick={() => setEditModal(false)}>Cancel</button>
               <button className={styles.addSubCategoryBtn} onClick={handleUpdate} disabled={loading}>
                 {loading ? 'Updating...' : 'Update Sub Category'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {deleteModal && selectedSubCategory && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <div className={styles.modalHeader}>
-              <h2>Delete Sub Category</h2>
-            </div>
-            <div className={styles.modalContent}>
-              <p>Are you sure you want to delete <strong>{selectedSubCategory.name}</strong>?</p>
-              <p className={styles.warningText}>This action cannot be undone.</p>
-            </div>
-            <div className={styles.modalFooter}>
-              <button className={styles.cancelBtn} onClick={() => setDeleteModal(false)}>Cancel</button>
-              <button className={styles.deleteBtn} onClick={handleDelete} disabled={loading}>
-                {loading ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>

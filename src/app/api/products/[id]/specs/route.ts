@@ -22,13 +22,18 @@ const getHandler = async (req: NextRequest, { params }: { params: { id: string }
 const postHandler = async (req: NextRequest, user: any, { params }: { params: { id: string } }) => {
   try {
     const body = await req.json()
+    const productId = parseInt(params.id)
+
+    if (isNaN(productId)) {
+      return NextResponse.json({ error: 'Invalid product ID' }, { status: 400 })
+    }
 
     const spec = await prisma.productSpec.create({
       data: {
-        productId: parseInt(params.id),
+        productId,
         name: body.name,
         description: body.description,
-        orderNo: await prisma.productSpec.count({ where: { productId: parseInt(params.id) } }) + 1,
+        orderNo: await prisma.productSpec.count({ where: { productId } }) + 1,
         attributes: {
           create: body.attributes.map((attr: any) => ({
             name: attr.name,

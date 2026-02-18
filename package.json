@@ -21,7 +21,8 @@
     "react": "^18",
     "react-dom": "^18",
     "react-hot-toast": "^2.4.1",
-    "react-image-crop": "^11.0.10"
+    "react-image-crop": "^11.0.10",
+    "sweetalert2": "^11.26.18"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
