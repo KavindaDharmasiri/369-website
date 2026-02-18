@@ -3,7 +3,7 @@ import styles from './CustomerHeader.module.css'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { decryptData } from '@/lib/clientEncryption'
+import { decryptData, encryptData } from '@/lib/clientEncryption'
 
 interface CustomerHeaderProps {
   user: any
@@ -20,7 +20,12 @@ export default function CustomerHeader({ user, onCartOpen }: CustomerHeaderProps
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch('/api/categories')
+      const encrypted = encryptData({ endpoint: '/api/categories', method: 'GET' })
+      const res = await fetch('/api/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: encrypted })
+      })
       const result = await res.json()
       const decrypted = decryptData(result.data)
       const activeCategories = (decrypted.categories || []).filter((cat: any) => cat.isActive === true)
