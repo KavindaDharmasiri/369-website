@@ -4,99 +4,6 @@
   background: #f8f9fa;
 }
 
-.sidebar {
-  width: 260px;
-  background: white;
-  border-right: 1px solid #e9ecef;
-  display: flex;
-  flex-direction: column;
-  padding: 32px 0;
-}
-
-.logo {
-  font-size: 28px;
-  font-family: 'Playfair Display', serif;
-  padding: 0 28px 48px;
-  font-weight: 500;
-}
-
-.nav {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 0 16px;
-  flex: 1;
-}
-
-.navLink {
-  padding: 12px 20px;
-  color: #6c757d;
-  text-decoration: none;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font-size: 15px;
-  transition: all 0.2s;
-}
-
-.navLink:hover {
-  background: #f8f9fa;
-  color: #212529;
-}
-
-.navLink.active {
-  background: #f8f9fa;
-  color: #212529;
-}
-
-.icon {
-  font-size: 18px;
-}
-
-.userProfile {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 20px 28px;
-  border-top: 1px solid #e9ecef;
-  margin-top: auto;
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #dee2e6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 15px;
-}
-
-.userInfo {
-  flex: 1;
-}
-
-.userName {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.userEmail {
-  font-size: 11px;
-  color: #6c757d;
-}
-
-.menuBtn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #6c757d;
-}
-
 .main {
   flex: 1;
   overflow-y: auto;
@@ -141,10 +48,10 @@
 }
 
 .form {
-  background: white;
-  padding: 32px;
-  border-radius: 12px;
-  border: 1px solid #e9ecef;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  border: none;
 }
 
 .topRow {
@@ -214,16 +121,6 @@
   cursor: pointer;
 }
 
-.fileInput {
-  padding: 10px 14px;
-  border: 1px solid #ced4da;
-  border-radius: 6px;
-  font-size: 14px;
-  color: #212529;
-  background: white;
-  cursor: pointer;
-}
-
 .radioGroup {
   display: flex;
   gap: 16px;
@@ -285,35 +182,6 @@
   background: #000;
 }
 
-.imagePreview {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.imagePreview img {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
-}
-
-.imagePreview span {
-  color: #28a745;
-  font-size: 14px;
-}
-
-.imagePreview img {
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.imagePreview img:hover {
-  transform: scale(1.2);
-}
-
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -356,64 +224,303 @@
   justify-content: center;
 }
 
-.pdfPreview {
-  width: 80px;
-  height: 80px;
+.mediaManager {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 20px;
+  background: white;
+}
+
+.mediaHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.mediaTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: #212529;
+}
+
+.mediaTabs {
+  display: flex;
+  gap: 0;
+  background: #f1f3f5;
+  border-radius: 6px;
+  padding: 3px;
+}
+
+.mediaTabBtn {
+  padding: 7px 18px;
+  background: transparent;
+  color: #868e96;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 400;
+}
+
+.mediaTabBtn.active {
+  background: white;
+  color: #212529;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.mediaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.mediaItem {
+  position: relative;
+  width: 180px;
+  height: 240px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e9ecef;
+  background: white;
+}
+
+.mediaItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.mediaItem img:hover {
+  transform: scale(1.05);
+}
+
+.mainBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #495057;
+  color: white;
+  padding: 5px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  z-index: 1;
+}
+
+.addMedia {
+  width: 180px;
+  height: 240px;
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafbfc;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addMedia:hover {
+  border-color: #adb5bd;
+  background: #f8f9fa;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.addMediaLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #868e96;
+}
+
+.addMediaLabel span:first-child {
+  font-size: 40px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.addMediaLabel span:last-child {
+  font-size: 14px;
+  color: #868e96;
+}
+
+.aiStudio {
+  padding: 20px;
+  background: #fafbfc;
+  border-radius: 8px;
+}
+
+.aiHeader {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  color: #212529;
+}
+
+.aiContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.refImage {
+  width: 100px;
+  height: 120px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #868e96;
+}
+
+.aiOption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #dee2e6;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+.switch input:checked + .slider {
+  background-color: #212529;
+}
+
+.switch input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.generateBtn {
+  width: 100%;
+  padding: 12px;
+  background: #212529;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.generateBtn:hover {
+  background: #000;
+}
+
+.card {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  margin-bottom: 20px;
+}
+
+.card:last-of-type {
+  margin-bottom: 0;
+}
+
+.removeImgBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: background 0.2s;
+}
+
+.removeImgBtn:hover {
+  background: #c82333;
+}
+
+.loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(248, 249, 250, 0.8);
+  backdrop-filter: blur(4px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: transform 0.2s;
-  background: #f8f9fa;
+  z-index: 9999;
 }
 
-.pdfPreview:hover {
-  transform: scale(1.2);
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e9ecef;
+  border-top: 4px solid #212529;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
 }
 
-.pdfPreview span:first-child {
-  font-size: 32px;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.pdfPreview span:last-child {
-  font-size: 12px;
-  color: #6c757d;
-}
-
-.pdfViewer {
-  width: 80vw;
-  height: 90vh;
-  border: none;
-  border-radius: 8px;
-}
-
-.pdfViewerContainer {
-  background: white;
-  padding: 40px;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.pdfViewerContainer p {
-  font-size: 18px;
-  margin-bottom: 20px;
+.loadingOverlay p {
+  font-size: 16px;
   color: #212529;
-}
-
-.pdfLink {
-  display: inline-block;
-  padding: 12px 24px;
-  background: #212529;
-  color: white;
-  text-decoration: none;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: background 0.2s;
-}
-
-.pdfLink:hover {
-  background: #000;
+  font-weight: 500;
 }

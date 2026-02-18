@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuthUser } from '@/lib/auth'
 import { decryptData } from '@/lib/clientEncryption'
+import { useLoading } from '@/lib/LoadingContext'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 
 export default function AddProduct() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { showLoading, hideLoading } = useLoading()
   const productId = searchParams.get('id')
   const mode = searchParams.get('mode') || 'add'
   const isViewMode = mode === 'view'
@@ -21,6 +23,11 @@ export default function AddProduct() {
   const [specs, setSpecs] = useState<any[]>([])
   const [skus, setSkus] = useState<any[]>([])
   const [showImageModal, setShowImageModal] = useState(false)
+  const [mediaTab, setMediaTab] = useState('device')
+  const [productImages, setProductImages] = useState<string[]>([])
+  const [selectedImage, setSelectedImage] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
     status: 'INACTIVE',
     stockStatus: true,
@@ -51,12 +58,17 @@ export default function AddProduct() {
       return
     }
     setUser(authUser)
-    fetchCategories()
-    if (productId) {
-      fetchProduct(productId)
-      fetchSpecs(productId)
-      fetchSkus(productId)
+    const loadData = async () => {
+      showLoading()
+      await fetchCategories()
+      if (productId) {
+        await fetchProduct(productId)
+        await fetchSpecs(productId)
+        await fetchSkus(productId)
+      }
+      hideLoading()
     }
+    loadData()
   }, [router, productId])
 
   const fetchProduct = async (id: string) => {
@@ -66,6 +78,15 @@ export default function AddProduct() {
     })
     const result = await res.json()
     const product = decryptData(result.data)
+    
+    // Fetch product images
+    const imagesRes = await fetch(`/api/products/${id}/images`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const imagesData = await imagesRes.json()
+    const images = imagesData.images || []
+    setProductImages(images.map((img: any) => img.imageUrl))
+    
     setFormData({
       status: product.status,
       stockStatus: product.stockStatus,
@@ -143,20 +164,46 @@ export default function AddProduct() {
   }
 
   const handleImageUpload = async (e: any) => {
-    const file = e.target.files[0]
-    if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
 
-    const formData = new FormData()
-    formData.append('file', file)
-
+    setUploading(true)
+    showLoading()
     const token = localStorage.getItem('authToken')
-    const res = await fetch('/api/upload', { 
-      method: 'POST', 
-      headers: { 'Authorization': `Bearer ${token}` },
-      body: formData 
-    })
-    const data = await res.json()
-    setFormData(prev => ({ ...prev, prodImg: data.url }))
+    const uploadedUrls: string[] = []
+
+    for (const file of files) {
+      const formData = new FormData()
+      formData.append('file', file as File)
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      })
+      const data = await res.json()
+      if (data.url) uploadedUrls.push(data.url)
+    }
+
+    if (uploadedUrls.length > 0) {
+      const newImages = [...productImages, ...uploadedUrls]
+      setProductImages(newImages)
+      if (!formData.prodImg) {
+        setFormData(prev => ({ ...prev, prodImg: uploadedUrls[0] }))
+      }
+    }
+    hideLoading()
+    setUploading(false)
+  }
+
+  const handleRemoveImage = (index: number) => {
+    const newImages = productImages.filter((_, i) => i !== index)
+    setProductImages(newImages)
+    if (index === 0 && newImages.length > 0) {
+      setFormData(prev => ({ ...prev, prodImg: newImages[0] }))
+    } else if (newImages.length === 0) {
+      setFormData(prev => ({ ...prev, prodImg: '' }))
+    }
   }
 
   const handlePolicyUpload = async (e: any) => {
@@ -179,6 +226,8 @@ export default function AddProduct() {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault()
+    setSaving(true)
+    showLoading()
 
     const token = localStorage.getItem('authToken')
     const url = productId ? `/api/products/${productId}` : '/api/products'
@@ -196,12 +245,28 @@ export default function AddProduct() {
     if (res.ok) {
       const result = await res.json()
       const product = decryptData(result.data)
-      const targetProductId = productId || product.id
+      const targetProductId = productId || product.productId
+      
+      // Save product images
+      if (productImages.length > 0) {
+        await fetch(`/api/products/${targetProductId}/images`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ images: productImages })
+        })
+      }
+      
       if (!productId) {
         sessionStorage.setItem('currentProductId', targetProductId)
       }
+      hideLoading()
       router.push(`/admin/products/specifications?productId=${targetProductId}`)
     }
+    hideLoading()
+    setSaving(false)
   }
 
   if (!user) return null
@@ -226,35 +291,37 @@ export default function AddProduct() {
           </div>
 
           <form className={styles.form} onSubmit={handleSubmit}>
-            <div className={styles.topRow}>
-              <div className={styles.field}>
-                <label>Product Status</label>
-                <select className={styles.select} value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} disabled={isViewMode}>
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="INACTIVE">INACTIVE</option>
-                </select>
-              </div>
-              <div className={styles.field}>
-                <label>Stock Status</label>
-                <div className={styles.radioGroup}>
-                  <label className={styles.radio}>
-                    <input type="checkbox" checked={formData.stockStatus} onChange={(e) => setFormData({...formData, stockStatus: e.target.checked})} disabled={isViewMode} />
-                    <span>In Stock</span>
-                  </label>
+            <div className={styles.card}>
+              <h2 className={styles.sectionTitle}>Basic Information</h2>
+              <div className={styles.topRow}>
+                <div className={styles.field}>
+                  <label>Product Status</label>
+                  <select className={styles.select} value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} disabled={isViewMode}>
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="INACTIVE">INACTIVE</option>
+                  </select>
                 </div>
-              </div>
-              <div className={styles.field}>
-                <label>Marketplace</label>
-                <select className={styles.select} value={formData.prodMarket} onChange={(e) => setFormData({...formData, prodMarket: e.target.value})} disabled={isViewMode}>
-                  <option value="DRAFT">Draft</option>
-                  <option value="MARKETPLACE">Publish</option>
-                </select>
+                <div className={styles.field}>
+                  <label>Stock Status</label>
+                  <div className={styles.radioGroup}>
+                    <label className={styles.radio}>
+                      <input type="checkbox" checked={formData.stockStatus} onChange={(e) => setFormData({...formData, stockStatus: e.target.checked})} disabled={isViewMode} />
+                      <span>In Stock</span>
+                    </label>
+                  </div>
+                </div>
+                <div className={styles.field}>
+                  <label>Marketplace</label>
+                  <select className={styles.select} value={formData.prodMarket} onChange={(e) => setFormData({...formData, prodMarket: e.target.value})} disabled={isViewMode}>
+                    <option value="DRAFT">Draft</option>
+                    <option value="MARKETPLACE">Publish</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className={styles.section}>
-              <h2 className={styles.sectionTitle}>Product Details</h2>
-              
+            <div className={styles.card}>
+              <h2 className={styles.sectionTitle}>Product Classification</h2>
               <div className={styles.row}>
                 <div className={styles.field}>
                   <label>Product Type</label>
@@ -277,7 +344,10 @@ export default function AddProduct() {
                   </select>
                 </div>
               </div>
+            </div>
 
+            <div className={styles.card}>
+              <h2 className={styles.sectionTitle}>Product Information</h2>
               <div className={styles.row}>
                 <div className={styles.field}>
                   <label>Product Name/Title *</label>
@@ -292,18 +362,11 @@ export default function AddProduct() {
                   <input type="text" placeholder="Product description" className={styles.input} value={formData.prodDescription} onChange={(e) => setFormData({...formData, prodDescription: e.target.value})} required disabled={isViewMode} />
                 </div>
               </div>
+            </div>
 
+            <div className={styles.card}>
+              <h2 className={styles.sectionTitle}>Pricing</h2>
               <div className={styles.row}>
-                <div className={styles.field}>
-                  <label>Product Image *</label>
-                  <input type="file" className={styles.fileInput} onChange={handleImageUpload} required={!formData.prodImg} disabled={isViewMode} />
-                  {formData.prodImg && (
-                    <div className={styles.imagePreview}>
-                      <img src={formData.prodImg} alt="Product" onClick={() => setShowImageModal(true)} />
-                      <span>✓ Uploaded</span>
-                    </div>
-                  )}
-                </div>
                 <div className={styles.field}>
                   <label>Product Price (RS) *</label>
                   <input type="number" placeholder="0" className={styles.input} value={formData.prodPrice} onChange={(e) => setFormData({...formData, prodPrice: e.target.value})} required disabled={isViewMode} />
@@ -318,7 +381,79 @@ export default function AddProduct() {
               </div>
             </div>
 
-            <div className={styles.section}>
+            <div className={styles.card}>
+              <h2 className={styles.sectionTitle}>Product Images</h2>
+              <div className={styles.mediaManager}>
+                <div className={styles.mediaHeader}>
+                  <span className={styles.mediaTitle}>💼 Media Manager</span>
+                  <div className={styles.mediaTabs}>
+                    <button 
+                      type="button" 
+                      className={`${styles.mediaTabBtn} ${mediaTab === 'device' ? styles.active : ''}`}
+                      onClick={() => setMediaTab('device')}
+                    >
+                      Device Upload
+                    </button>
+                    <button 
+                      type="button" 
+                      className={`${styles.mediaTabBtn} ${mediaTab === 'ai' ? styles.active : ''}`}
+                      onClick={() => setMediaTab('ai')}
+                    >
+                      ✨ AI Studio
+                    </button>
+                  </div>
+                </div>
+                
+                {mediaTab === 'device' ? (
+                  <div className={styles.mediaGrid}>
+                    {productImages.map((url, index) => (
+                      <div key={index} className={styles.mediaItem}>
+                        {index === 0 && <span className={styles.mainBadge}>Main</span>}
+                        <img src={url} alt={`Product ${index + 1}`} onClick={() => { setSelectedImage(url); setShowImageModal(true); }} />
+                        <button type="button" className={styles.removeImgBtn} onClick={() => handleRemoveImage(index)}>✕</button>
+                      </div>
+                    ))}
+                    <div className={styles.addMedia}>
+                      <input type="file" multiple id="prodImg" className={styles.hiddenInput} onChange={handleImageUpload} disabled={isViewMode || uploading} />
+                      <label htmlFor="prodImg" className={styles.addMediaLabel}>
+                        {uploading ? (
+                          <>
+                            <span>⏳</span>
+                            <span>Uploading...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>+</span>
+                            <span>Add Media</span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={styles.aiStudio}>
+                    <div className={styles.aiHeader}>
+                      <span>✨ AI Studio Generator</span>
+                    </div>
+                    <div className={styles.aiContent}>
+                      <div className={styles.refImage}>
+                        <span>Ref Image</span>
+                      </div>
+                      <div className={styles.aiOption}>
+                        <span>Generate with Model?</span>
+                        <label className={styles.switch}>
+                          <input type="checkbox" />
+                          <span className={styles.slider}></span>
+                        </label>
+                      </div>
+                      <button type="button" className={styles.generateBtn}>Generate Variations →</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.card}>
               <h2 className={styles.sectionTitle}>Tags</h2>
               
               <div className={styles.row}>
@@ -337,7 +472,7 @@ export default function AddProduct() {
               </div>
             </div>
 
-            <div className={styles.section}>
+            <div className={styles.card}>
               <h2 className={styles.sectionTitle}>Product Visibility</h2>
               
               <div className={styles.row}>
@@ -364,18 +499,20 @@ export default function AddProduct() {
               {isViewMode ? (
                 <button type="button" onClick={() => router.push('/admin/products')} className={styles.submitBtn}>Back to Products</button>
               ) : (
-                <button type="submit" className={styles.submitBtn}>💾 {isEditMode ? 'Update' : 'Save as Draft'} & Next</button>
+                <button type="submit" className={styles.submitBtn} disabled={saving}>
+                  {saving ? 'Saving...' : `💾 ${isEditMode ? 'Update' : 'Save as Draft'} & Next`}
+                </button>
               )}
             </div>
           </form>
         </div>
       </main>
 
-      {showImageModal && (
+      {showImageModal && selectedImage && (
         <div className={styles.modalOverlay} onClick={() => setShowImageModal(false)}>
           <div className={styles.imageModal}>
             <button className={styles.closeBtn} onClick={() => setShowImageModal(false)}>✕</button>
-            <img src={formData.prodImg} alt="Product" />
+            <img src={selectedImage} alt="Product" />
           </div>
         </div>
       )}
