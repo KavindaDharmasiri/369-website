@@ -15,6 +15,7 @@ export default function Category() {
   const [user, setUser] = useState<any>(null)
   const [products, setProducts] = useState<any[]>([])
   const [subCategories, setSubCategories] = useState<any[]>([])
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState('newest')
   const category = searchParams.get('type') || 'women'
 
@@ -22,14 +23,20 @@ export default function Category() {
     setUser(getAuthUser())
     fetchProducts()
     fetchSubCategories()
-  }, [category, sortBy])
+  }, [category, sortBy, selectedSubCategory])
 
   const fetchProducts = async () => {
     try {
       const res = await fetch(`/api/products/category/${encodeURIComponent(category)}?sort=${sortBy}`)
       const result = await res.json()
       const decrypted = decryptData(result.data)
-      setProducts(decrypted.products || [])
+      let filteredProducts = decrypted.products || []
+      
+      if (selectedSubCategory) {
+        filteredProducts = filteredProducts.filter((p: any) => p.prodSubCategoryName === selectedSubCategory)
+      }
+      
+      setProducts(filteredProducts)
     } catch (error) {
       console.error('Failed to fetch products:', error)
     }
@@ -65,8 +72,20 @@ export default function Category() {
 
         <div className={styles.filterBar}>
           <div className={styles.filters}>
+            <button 
+              className={`${styles.filterBtn} ${!selectedSubCategory ? styles.active : ''}`}
+              onClick={() => setSelectedSubCategory(null)}
+            >
+              All
+            </button>
             {subCategories.map((subCat) => (
-              <button key={subCat.id} className={styles.filterBtn}>{subCat.name}</button>
+              <button 
+                key={subCat.id} 
+                className={`${styles.filterBtn} ${selectedSubCategory === subCat.name ? styles.active : ''}`}
+                onClick={() => setSelectedSubCategory(subCat.name)}
+              >
+                {subCat.name}
+              </button>
             ))}
           </div>
           <div className={styles.sort}>
