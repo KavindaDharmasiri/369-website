@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/db'
 import { encrypt, decrypt } from '@/lib/encryption'
 import { verifyToken } from '@/lib/auth'
-
-const prisma = new PrismaClient()
 
 function checkAdminAuth(req: NextRequest) {
   const authHeader = req.headers.get('authorization')

@@ -7,13 +7,12 @@ export const metadata: Metadata = {
   description: 'Full-stack Next.js application with SSR',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://res.cloudinary.com" />
+      </head>
       <body>
         <ClientWrapper>{children}</ClientWrapper>
       </body>

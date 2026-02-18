@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getAuthUser } from '@/lib/auth'
 import { decryptData } from '@/lib/clientEncryption'
+import Image from 'next/image'
 
 export default function Landing() {
   const router = useRouter()
@@ -40,7 +41,14 @@ export default function Landing() {
 
       <main className={styles.main}>
         <div className={styles.heroImage}>
-          <img src="https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png" alt="Hero" />
+          <Image 
+            src="https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png" 
+            alt="Hero" 
+            width={800}
+            height={600}
+            priority
+            quality={85}
+          />
         </div>
 
         <h1 className={styles.title}>Everyday Quiet Luxury</h1>

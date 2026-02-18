@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/db'
 import { requireAdmin } from '@/lib/apiMiddleware'
 import { encrypt } from '@/lib/encryption'
-
-const prisma = new PrismaClient()
 
 const getHandler = async (req: NextRequest, { params }: { params: { id: string } }) => {
   try {

@@ -53,6 +53,13 @@ model Product {
   productSkus        ProductSku[]
   productSpecs       ProductSpec[]
 
+  @@index([status, prodMarket, isDeleted])
+  @@index([prodCategoryName])
+  @@index([featuredOnHomepage])
+  @@index([showInNewArrivals])
+  @@index([createdAt])
+  @@index([categoryId])
+  @@index([subCategoryId])
   @@map("products")
 }
 
@@ -77,6 +84,8 @@ model Category {
   subcategories SubCategory[]
   products      Product[]
 
+  @@index([isActive])
+  @@index([name])
   @@map("categories")
 }
 
@@ -92,6 +101,8 @@ model SubCategory {
   products    Product[]
 
   @@unique([name, categoryId])
+  @@index([categoryId, isActive])
+  @@index([name])
   @@map("subcategories")
 }
 
@@ -103,6 +114,7 @@ model ProductImage {
   createdAt DateTime @default(now()) @map("created_at")
   product   Product  @relation(fields: [productId], references: [id])
 
+  @@index([productId])
   @@map("product_images")
 }
 
@@ -116,6 +128,7 @@ model ProductSpec {
   product     Product             @relation(fields: [productId], references: [id])
   attributes  ProductSpecAttr[]
 
+  @@index([productId])
   @@map("product_specs")
 }
 
@@ -128,6 +141,7 @@ model ProductSpecAttr {
   createdAt DateTime    @default(now()) @map("created_at")
   spec      ProductSpec @relation(fields: [specId], references: [id])
 
+  @@index([specId])
   @@map("product_spec_attrs")
 }
 
@@ -145,6 +159,7 @@ model ProductSku {
   createdAt      DateTime @default(now()) @map("created_at")
   product        Product  @relation(fields: [productId], references: [id])
 
+  @@index([productId])
   @@map("product_skus")
 }
 

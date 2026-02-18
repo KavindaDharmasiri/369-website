@@ -1,28 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/db'
 import { requireAdmin } from '@/lib/apiMiddleware'
 import { encrypt } from '@/lib/encryption'
-
-const prisma = new PrismaClient()
 
 const postHandler = async (req: NextRequest, user: any, { params }: { params: { id: string } }) => {
   try {
     const { images } = await req.json()
     const productId = parseInt(params.id)
 
-    // Delete existing images
-    await prisma.productImage.deleteMany({ where: { productId } })
-
-    // Create new images
-    if (images && images.length > 0) {
-      await prisma.productImage.createMany({
+    await prisma.$transaction([
+      prisma.productImage.deleteMany({ where: { productId } }),
+      ...(images?.length > 0 ? [prisma.productImage.createMany({
         data: images.map((url: string, index: number) => ({
           productId,
           imageUrl: url,
           isPrimary: index === 0
         }))
-      })
-    }
+      })] : [])
+    ])
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
@@ -34,10 +29,13 @@ const getHandler = async (req: NextRequest, { params }: { params: { id: string }
   try {
     const images = await prisma.productImage.findMany({
       where: { productId: parseInt(params.id) },
-      orderBy: { isPrimary: 'desc' }
+      orderBy: { isPrimary: 'desc' },
+      select: { id: true, imageUrl: true, isPrimary: true }
     })
 
-    return NextResponse.json({ data: encrypt(JSON.stringify(images)) })
+    return NextResponse.json(images, {
+      headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' }
+    })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

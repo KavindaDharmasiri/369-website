@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/db'
 import { requireAdmin } from '@/lib/apiMiddleware'
-
-const prisma = new PrismaClient()
 
 const putHandler = async (req: NextRequest, user: any, { params }: { params: { id: string, skuId: string } }) => {
   try {
