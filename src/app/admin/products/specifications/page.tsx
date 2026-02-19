@@ -130,21 +130,21 @@ export default function ProductSpecifications() {
     setEditModal(true)
   }
 
-  const handleDelete = async () => {
-    if (!productId || !selectedSpec) return
+  // const handleDelete = async () => {
+  //   if (!productId || !selectedSpec) return
 
-    const token = localStorage.getItem('authToken')
-    const res = await fetch(`/api/products/${productId}/specs/${selectedSpec.id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
+  //   const token = localStorage.getItem('authToken')
+  //   const res = await fetch(`/api/products/${productId}/specs/${selectedSpec.id}`, {
+  //     method: 'DELETE',
+  //     headers: { 'Authorization': `Bearer ${token}` }
+  //   })
 
-    if (res.ok) {
-      setDeleteModal(false)
-      setSelectedSpec(null)
-      fetchSpecs(productId)
-    }
-  }
+  //   if (res.ok) {
+  //     setDeleteModal(false)
+  //     setSelectedSpec(null)
+  //     fetchSpecs(productId)
+  //   }
+  // }
 
   const handleNext = async () => {
     if (!productId) return
