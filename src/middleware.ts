@@ -25,8 +25,11 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Protect customer routes
-  if (request.nextUrl.pathname.startsWith('/customer')) {
+  // Protect customer routes (except shop which is public)
+  if (request.nextUrl.pathname.startsWith('/customer') && 
+      !request.nextUrl.pathname.startsWith('/customer/shop') &&
+      !request.nextUrl.pathname.startsWith('/customer/category') &&
+      !request.nextUrl.pathname.startsWith('/customer/product')) {
     if (!token) {
       return NextResponse.redirect(new URL('/signin', request.url))
     }
