@@ -8,6 +8,8 @@ import { useLoading } from '@/lib/LoadingContext'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 
+export const dynamic = 'force-dynamic'
+
 export default function AddProduct() {
   const router = useRouter()
   const searchParams = useSearchParams()

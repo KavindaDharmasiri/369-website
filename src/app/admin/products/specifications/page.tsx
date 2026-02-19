@@ -8,6 +8,8 @@ import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 import Swal from 'sweetalert2'
 
+export const dynamic = 'force-dynamic'
+
 export default function ProductSpecifications() {
   const router = useRouter()
   const searchParams = useSearchParams()

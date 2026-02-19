@@ -8,6 +8,8 @@ import { decryptData } from '@/lib/clientEncryption'
 import CustomerHeader from '@/components/CustomerHeader'
 import CustomerFooter from '@/components/CustomerFooter'
 
+export const dynamic = 'force-dynamic'
+
 export default function Category() {
   const router = useRouter()
   const searchParams = useSearchParams()

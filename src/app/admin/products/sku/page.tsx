@@ -7,6 +7,8 @@ import { decryptData } from '@/lib/clientEncryption'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 
+export const dynamic = 'force-dynamic'
+
 export default function GeneratedSKU() {
   const router = useRouter()
   const searchParams = useSearchParams()
