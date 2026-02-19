@@ -1,6 +1,6 @@
 'use client'
 import styles from './shop.module.css'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuthUser } from '@/lib/auth'
@@ -8,7 +8,7 @@ import { decryptData } from '@/lib/clientEncryption'
 import CustomerHeader from '@/components/CustomerHeader'
 import CustomerFooter from '@/components/CustomerFooter'
 
-export default function Shop() {
+function ShopContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -205,5 +205,13 @@ export default function Shop() {
         </>
       )}
     </div>
+  )
+}
+
+export default function Shop() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ShopContent />
+    </Suspense>
   )
 }

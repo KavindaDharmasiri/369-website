@@ -1,6 +1,6 @@
 'use client'
 import styles from './add.module.css'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuthUser } from '@/lib/auth'
 import { decryptData } from '@/lib/clientEncryption'
@@ -8,7 +8,7 @@ import { useLoading } from '@/lib/LoadingContext'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 
-export default function AddProduct() {
+function AddProductContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { showLoading, hideLoading } = useLoading()
@@ -596,5 +596,13 @@ export default function AddProduct() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function AddProduct() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AddProductContent />
+    </Suspense>
   )
 }

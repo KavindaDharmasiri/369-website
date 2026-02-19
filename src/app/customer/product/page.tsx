@@ -1,6 +1,6 @@
 'use client'
 import styles from './product.module.css'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuthUser } from '@/lib/auth'
@@ -10,7 +10,7 @@ import Cart from '@/components/Cart'
 import CustomerHeader from '@/components/CustomerHeader'
 import CustomerFooter from '@/components/CustomerFooter'
 
-export default function Product() {
+function ProductContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const productId = searchParams.get('id')
@@ -209,5 +209,13 @@ export default function Product() {
 
       <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>
+  )
+}
+
+export default function Product() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProductContent />
+    </Suspense>
   )
 }

@@ -1,13 +1,13 @@
 'use client'
 import styles from './sku.module.css'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuthUser } from '@/lib/auth'
 import { decryptData } from '@/lib/clientEncryption'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 
-export default function GeneratedSKU() {
+function GeneratedSKUContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const urlProductId = searchParams.get('productId')
@@ -505,5 +505,13 @@ export default function GeneratedSKU() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function GeneratedSKU() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <GeneratedSKUContent />
+    </Suspense>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 import styles from './category.module.css'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getAuthUser } from '@/lib/auth'
@@ -8,7 +8,7 @@ import { decryptData } from '@/lib/clientEncryption'
 import CustomerHeader from '@/components/CustomerHeader'
 import CustomerFooter from '@/components/CustomerFooter'
 
-export default function Category() {
+function CategoryContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -173,5 +173,13 @@ export default function Category() {
         </>
       )}
     </div>
+  )
+}
+
+export default function Category() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CategoryContent />
+    </Suspense>
   )
 }
