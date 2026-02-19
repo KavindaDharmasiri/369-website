@@ -53,7 +53,7 @@ export default function Product() {
     const result = await res.json()
     const decrypted = decryptData(result.data)
     setProduct(decrypted)
-    logActivity('VIEW_PRODUCT', 'product', productId, { 
+    logActivity('VIEW_PRODUCT', 'product', productId!, { 
       productName: decrypted.prodName, 
       category: decrypted.prodCategoryName,
       price: decrypted.prodPrice 
@@ -103,7 +103,7 @@ export default function Product() {
 
   const handleSpecSelection = (specName: string, attrName: string) => {
     setSelectedSpecs(prev => ({...prev, [specName]: attrName}))
-    logActivity('SELECT_SPEC', 'product', productId, { specName, attrName })
+    logActivity('SELECT_SPEC', 'product', productId!, { specName, attrName })
   }
 
   if (!product) return null
@@ -157,7 +157,7 @@ export default function Product() {
           ))}
 
           <button className={styles.addBtn} onClick={() => {
-            logActivity('ADD_TO_CART', 'product', productId, { 
+            logActivity('ADD_TO_CART', 'product', productId!, { 
               price: selectedSku?.price || product.prodPrice,
               specs: selectedSpecs 
             })

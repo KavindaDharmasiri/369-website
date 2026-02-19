@@ -32,13 +32,13 @@ const postHandler = async (req: NextRequest, user: any, { params }: { params: { 
 
     for (let index = 0; index < combinations.length; index++) {
       const combo = combinations[index]
-      const variantCodes = combo.map(attr => {
+      const variantCodes = combo.map((attr: any) => {
         const code = attr.name.substring(0, 3).toUpperCase()
         return code
       })
       const skuCode = `${product.baseSku}-${variantCodes.join('-')}-${String(index + 1).padStart(3, '0')}`
-      const variantKeys = combo.map(attr => attr.name).join(', ')
-      const variantDetails = combo.map(attr => attr.value).join(', ')
+      const variantKeys = combo.map((attr: any) => attr.name).join(', ')
+      const variantDetails = combo.map((attr: any) => attr.value).join(', ')
 
       newSkuCodes.add(skuCode)
 
