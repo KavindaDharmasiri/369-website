@@ -12,6 +12,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
+ENV DATABASE_URL="mysql://avnadmin:AVNS_GLHz1hb36oM_ixcUxRX@mysql-1c6c42ff-kavindadarmasiri15-197a.g.aivencloud.com:25939/defaultdb?ssl-mode=REQUIRED"
 RUN npm run build
 
 FROM base AS runner
