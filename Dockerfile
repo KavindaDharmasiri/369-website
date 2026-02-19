@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y wget ca-certificates && \
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
+ENV DATABASE_URL="placeholder"
 RUN npm run build
 
 FROM base AS runner
