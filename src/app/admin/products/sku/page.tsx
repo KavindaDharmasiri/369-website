@@ -21,6 +21,7 @@ function GeneratedSKUContent() {
   const [viewModal, setViewModal] = useState(false)
   const [selectedSku, setSelectedSku] = useState<any>(null)
   const [skuCode, setSkuCode] = useState('')
+  const [variantKeys, setVariantKeys] = useState('')
   const [variantDetails, setVariantDetails] = useState('')
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
@@ -84,6 +85,7 @@ function GeneratedSKUContent() {
   const handleView = (sku: any) => {
     setSelectedSku(sku)
     setSkuCode(sku.skuCode)
+    setVariantKeys(sku.variantKeys || '')
     setVariantDetails(sku.variantDetails || '')
     setDescription(sku.description || '')
     setPrice(sku.price.toString())
@@ -95,6 +97,7 @@ function GeneratedSKUContent() {
   const handleEdit = (sku: any) => {
     setSelectedSku(sku)
     setSkuCode(sku.skuCode)
+    setVariantKeys(sku.variantKeys || '')
     setVariantDetails(sku.variantDetails || '')
     setDescription(sku.description || '')
     setPrice(sku.price.toString())
@@ -354,6 +357,10 @@ function GeneratedSKUContent() {
                 <input type="text" className={styles.input} value={skuCode} disabled style={{background: '#f8f9fa'}} />
               </div>
               <div className={styles.field}>
+                <label>VARIANT KEYS</label>
+                <input type="text" className={styles.input} value={variantKeys} disabled style={{background: '#f8f9fa'}} />
+              </div>
+              <div className={styles.field}>
                 <label>VARIANT DETAILS</label>
                 <input type="text" className={styles.input} value={variantDetails} disabled style={{background: '#f8f9fa'}} />
               </div>
@@ -460,6 +467,10 @@ function GeneratedSKUContent() {
               <div className={styles.field}>
                 <label>SKU CODE</label>
                 <input type="text" className={styles.input} value={skuCode} readOnly style={{background: '#f8f9fa'}} />
+              </div>
+              <div className={styles.field}>
+                <label>VARIANT KEYS</label>
+                <input type="text" className={styles.input} value={variantKeys} readOnly style={{background: '#f8f9fa'}} />
               </div>
               <div className={styles.field}>
                 <label>VARIANT DETAILS</label>
