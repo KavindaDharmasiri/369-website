@@ -30,21 +30,33 @@ function ShopContent() {
   }, [searchParams])
 
   const fetchNewArrivals = async () => {
-    const res = await fetch('/api/products/new-arrivals')
-    const result = await res.json()
-    const decrypted = decryptData(result.data)
-    const products = decrypted.products || []
-    setNewArrivals(products)
-    await fetchProductImages(products)
+    try {
+      const res = await fetch('/api/products/new-arrivals')
+      const result = await res.json()
+      console.log('New arrivals response:', result)
+      const decrypted = decryptData(result.data)
+      console.log('Decrypted new arrivals:', decrypted)
+      const products = decrypted.products || []
+      setNewArrivals(products)
+      await fetchProductImages(products)
+    } catch (error) {
+      console.error('Error fetching new arrivals:', error)
+    }
   }
 
   const fetchFeaturedProducts = async () => {
-    const res = await fetch('/api/products/featured')
-    const result = await res.json()
-    const decrypted = decryptData(result.data)
-    const products = decrypted.products || []
-    setFeaturedProducts(products)
-    await fetchProductImages(products)
+    try {
+      const res = await fetch('/api/products/featured')
+      const result = await res.json()
+      console.log('Featured response:', result)
+      const decrypted = decryptData(result.data)
+      console.log('Decrypted featured:', decrypted)
+      const products = decrypted.products || []
+      setFeaturedProducts(products)
+      await fetchProductImages(products)
+    } catch (error) {
+      console.error('Error fetching featured products:', error)
+    }
   }
 
   const fetchProductImages = async (products: any[]) => {
