@@ -1,6 +1,6 @@
 import CryptoJS from 'crypto-js'
 
-const SECRET_KEY = '369-secret-key-32-chars-long!'
+const SECRET_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || '369-secret-key-32-chars-long!'
 
 export function encryptData(data: any): string {
   return CryptoJS.AES.encrypt(JSON.stringify(data), SECRET_KEY).toString()
