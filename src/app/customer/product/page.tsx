@@ -143,15 +143,43 @@ function ProductContent() {
             <div key={index} className={styles.option}>
               <label className={styles.label}>{spec.name}</label>
               <div className={styles.sizes}>
-                {spec.attributes.map((attr: any, i: number) => (
-                  <button 
-                    key={i} 
-                    className={`${styles.sizeBtn} ${selectedSpecs[spec.name] === attr.name ? styles.selected : ''}`}
-                    onClick={() => handleSpecSelection(spec.name, attr.name)}
-                  >
-                    {attr.name}
-                  </button>
-                ))}
+                {spec.attributes.map((attr: any, i: number) => {
+                  const isColor = attr.type === 'color'
+                  const isSelected = selectedSpecs[spec.name] === attr.name
+                  return (
+                    <button 
+                      key={i} 
+                      className={`${styles.sizeBtn} ${isColor ? styles.colorBtn : ''} ${isSelected ? styles.selected : ''}`}
+                      onClick={() => handleSpecSelection(spec.name, attr.name)}
+                      style={isColor ? { 
+                        backgroundColor: attr.value, 
+                        width: '36px', 
+                        height: '36px', 
+                        borderRadius: '50%', 
+                        padding: 0,
+                        border: isSelected ? '2px solid #000' : '2px solid #ddd',
+                        boxShadow: isSelected ? '0 0 0 2px #fff, 0 0 0 4px #000' : '0 2px 4px rgba(0,0,0,0.1)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      } : {}}
+                      title={attr.name}
+                      onMouseEnter={(e) => {
+                        if (isColor && !isSelected) {
+                          e.currentTarget.style.transform = 'scale(1.1)'
+                          e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (isColor && !isSelected) {
+                          e.currentTarget.style.transform = 'scale(1)'
+                          e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)'
+                        }
+                      }}
+                    >
+                      {!isColor && attr.value}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           ))}
