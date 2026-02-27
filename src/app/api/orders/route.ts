@@ -121,26 +121,6 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
-  } finally {
-    // Create audit trail in background without blocking response
-    setImmediate(async () => {
-      try {
-        await prisma.auditTrail.create({
-          data: {
-            userId: decoded.userId,
-            userEmail: decoded.email || email,
-            action: 'ORDER_CREATED',
-            entityType: 'Order',
-            entityId: result?.id?.toString() || 'unknown',
-            metadata: JSON.stringify({ orderNumber, total, itemCount: items.length }),
-            ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-            userAgent: request.headers.get('user-agent') || 'unknown'
-          }
-        })
-      } catch (auditError) {
-        console.error('Background audit trail creation failed:', auditError)
-      }
-    })
   }
 }
 
