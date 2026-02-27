@@ -96,17 +96,8 @@ export default function CustomerHeader({ user, onCartOpen }: CustomerHeaderProps
           <div className={styles.userMenu}>
             <span className={styles.icon} onClick={(e) => {
               e.stopPropagation()
-              setShowDropdown(!showDropdown)
+              router.push('/customer/account')
             }}>👤</span>
-            {showDropdown && (
-              <div className={styles.dropdown}>
-                <button onClick={() => {
-                  localStorage.removeItem('authToken')
-                  document.cookie = 'authToken=; path=/; max-age=0'
-                  router.push('/')
-                }}>Logout</button>
-              </div>
-            )}
           </div>
         ) : (
           <button className={styles.loginBtn} onClick={() => router.push('/signin')}>Login</button>

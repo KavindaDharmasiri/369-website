@@ -28,6 +28,7 @@ export default function CartPage() {
     phone: ''
   })
   const [saveAddress, setSaveAddress] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState('card')
 
   useEffect(() => {
     const authUser = getAuthUser()
@@ -38,9 +39,12 @@ export default function CartPage() {
     }
     setUser(authUser)
     if (!hasMigrated.current) {
-      migrateAndLoadCart()
-      loadShippingFee()
-      loadSavedAddress()
+      const initCart = async () => {
+        await migrateAndLoadCart()
+        await loadShippingFee()
+        await loadSavedAddress()
+      }
+      initCart()
     }
   }, [])
 
@@ -230,12 +234,15 @@ export default function CartPage() {
   const loadSavedAddress = async () => {
     try {
       const token = localStorage.getItem('authToken')
+      console.log('Loading saved address with token:', token ? 'exists' : 'missing')
       const res = await fetch('/api/addresses', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const result = await res.json()
+      console.log('Address API response:', result)
       if (result.success && result.data.length > 0) {
         const latestAddress = result.data[0]
+        console.log('Latest address:', latestAddress)
         setDeliveryForm({
           firstName: latestAddress.firstName,
           lastName: latestAddress.lastName,
@@ -246,6 +253,8 @@ export default function CartPage() {
           zipCode: latestAddress.zipCode,
           phone: latestAddress.phone
         })
+      } else {
+        console.log('No saved addresses found')
       }
     } catch (error) {
       console.error('Failed to load saved address:', error)
@@ -286,6 +295,112 @@ export default function CartPage() {
         icon: 'error',
         title: 'Error',
         text: 'Failed to save address',
+        confirmButtonColor: '#000'
+      })
+    }
+  }
+
+  const handlePlaceOrder = async () => {
+    // Validate cart
+    if (cartItems.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Empty Cart',
+        text: 'Your cart is empty. Add items before placing an order.',
+        confirmButtonColor: '#000'
+      })
+      return
+    }
+
+    // Validate delivery form
+    if (!deliveryForm.firstName || !deliveryForm.lastName || !deliveryForm.address || 
+        !deliveryForm.city || !deliveryForm.state || !deliveryForm.zipCode || !deliveryForm.phone) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Incomplete Information',
+        text: 'Please fill in all delivery information fields.',
+        confirmButtonColor: '#000'
+      })
+      return
+    }
+
+    // Show confirmation
+    const result = await Swal.fire({
+      title: 'Confirm Order',
+      html: `
+        <div style="text-align: left; padding: 10px;">
+          <p><strong>Total Amount:</strong> LKR ${total.toFixed(2)}</p>
+          <p><strong>Payment Method:</strong> ${paymentMethod === 'card' ? 'Card Payment' : 'Cash on Delivery'}</p>
+          <p><strong>Delivery Address:</strong><br/>
+          ${deliveryForm.firstName} ${deliveryForm.lastName}<br/>
+          ${deliveryForm.address}${deliveryForm.apartment ? ', ' + deliveryForm.apartment : ''}<br/>
+          ${deliveryForm.city}, ${deliveryForm.state} ${deliveryForm.zipCode}<br/>
+          ${deliveryForm.phone}</p>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#000',
+      cancelButtonColor: '#999',
+      confirmButtonText: 'Place Order',
+      cancelButtonText: 'Cancel'
+    })
+
+    if (!result.isConfirmed) return
+
+    try {
+      const token = localStorage.getItem('authToken')
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          email: user.email,
+          firstName: deliveryForm.firstName,
+          lastName: deliveryForm.lastName,
+          address: deliveryForm.address,
+          apartment: deliveryForm.apartment,
+          city: deliveryForm.city,
+          state: deliveryForm.state,
+          zipCode: deliveryForm.zipCode,
+          phone: deliveryForm.phone,
+          subtotal: Number(subtotal),
+          shippingFee: Number(calculatedShippingFee),
+          tax: Number(tax),
+          total: Number(total),
+          paymentMethod,
+          items: cartItems
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        await Swal.fire({
+          icon: 'success',
+          title: 'Order Placed!',
+          html: `
+            <p>Your order has been placed successfully.</p>
+            <p><strong>Order Number:</strong> ${data.data.orderNumber}</p>
+            <p>We'll send you a confirmation email shortly.</p>
+          `,
+          confirmButtonColor: '#000'
+        })
+        
+        // Clear cart and redirect
+        setCartItems([])
+        router.push('/customer/shop')
+      } else {
+        throw new Error(data.error)
+      }
+    } catch (error) {
+      console.error('Place order error:', error)
+      Swal.fire({
+        icon: 'error',
+        title: 'Order Failed',
+        text: 'Failed to place order. Please try again.',
         confirmButtonColor: '#000'
       })
     }
@@ -410,7 +525,9 @@ export default function CartPage() {
                   checked={saveAddress}
                   onChange={(e) => {
                     setSaveAddress(e.target.checked)
-                    if (e.target.checked) handleSaveAddress()
+                    if (e.target.checked && isDeliveryFormComplete()) {
+                      handleSaveAddress()
+                    }
                   }}
                   disabled={!isDeliveryFormComplete()}
                 />
@@ -422,35 +539,49 @@ export default function CartPage() {
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>Payment</h2>
             
-            <div className={styles.form}>
-              <div className={styles.formGroup}>
-                <label>Card Number</label>
-                <input type="text" placeholder="1234 5678 9012 3456" />
-              </div>
-
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>Expiration Date</label>
-                  <input type="text" placeholder="MM / YY" />
+            <div className={styles.paymentMethods}>
+              <div 
+                className={`${styles.paymentOption} ${paymentMethod === 'card' ? styles.selected : ''}`}
+                onClick={() => setPaymentMethod('card')}
+              >
+                <input 
+                  type="radio" 
+                  name="payment" 
+                  value="card" 
+                  checked={paymentMethod === 'card'}
+                  onChange={() => setPaymentMethod('card')}
+                />
+                <div className={styles.paymentInfo}>
+                  <span className={styles.paymentIcon}>💳</span>
+                  <div>
+                    <div className={styles.paymentTitle}>Card Payment</div>
+                    <div className={styles.paymentDesc}>Pay securely with credit or debit card</div>
+                  </div>
                 </div>
-                <div className={styles.formGroup}>
-                  <label>Security Code</label>
-                  <input type="text" placeholder="CVV" />
+              </div>
+
+              <div 
+                className={`${styles.paymentOption} ${paymentMethod === 'cash' ? styles.selected : ''}`}
+                onClick={() => setPaymentMethod('cash')}
+              >
+                <input 
+                  type="radio" 
+                  name="payment" 
+                  value="cash" 
+                  checked={paymentMethod === 'cash'}
+                  onChange={() => setPaymentMethod('cash')}
+                />
+                <div className={styles.paymentInfo}>
+                  <span className={styles.paymentIcon}>💵</span>
+                  <div>
+                    <div className={styles.paymentTitle}>Cash on Delivery</div>
+                    <div className={styles.paymentDesc}>Pay when you receive your order</div>
+                  </div>
                 </div>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label>Cardholder Name</label>
-                <input type="text" placeholder="Name on card" />
-              </div>
-
-              <div className={styles.checkbox}>
-                <input type="checkbox" id="sameAddress" />
-                <label htmlFor="sameAddress">Billing address same as delivery address</label>
               </div>
             </div>
 
-            <button className={styles.placeOrderBtn}>Place Order</button>
+            <button className={styles.placeOrderBtn} onClick={handlePlaceOrder}>Place Order</button>
             <p className={styles.terms}>
               By placing your order, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
             </p>

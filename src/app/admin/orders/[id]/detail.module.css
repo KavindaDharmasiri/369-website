@@ -1,0 +1,222 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.main {
+  flex: 1;
+  margin-left: 260px;
+  padding: 24px 40px;
+}
+
+.breadcrumb {
+  font-size: 14px;
+  color: #6c757d;
+  margin-bottom: 24px;
+}
+
+.breadcrumb a {
+  color: #6c757d;
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  color: #212529;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.date {
+  font-size: 14px;
+  color: #6c757d;
+  margin: 0;
+}
+
+.pdfBtn {
+  padding: 10px 20px;
+  background: #212529;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.statusSelect {
+  padding: 10px 16px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.section {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  padding: 24px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 20px;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.infoRow {
+  display: flex;
+  gap: 12px;
+}
+
+.label {
+  font-weight: 500;
+  color: #6c757d;
+  min-width: 100px;
+}
+
+.statusPending,
+.statusProcessing,
+.statusShipped,
+.statusDelivered,
+.statusCanceled {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.statusPending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.statusProcessing {
+  background: #e7f3ff;
+  color: #0066cc;
+}
+
+.statusShipped {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.statusDelivered {
+  background: #d4edda;
+  color: #155724;
+}
+
+.statusCanceled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.itemsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.itemCard {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.itemImage {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: white;
+}
+
+.itemImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.itemDetails {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.itemName {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.itemSpecs {
+  font-size: 12px;
+  color: #6c757d;
+  margin: 0;
+}
+
+.itemMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #495057;
+}
+
+.itemTotal {
+  font-size: 14px;
+  font-weight: 600;
+  color: #212529;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  padding: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6c757d;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.table td {
+  padding: 16px 12px;
+  font-size: 14px;
+  border-bottom: 1px solid #f8f9fa;
+}

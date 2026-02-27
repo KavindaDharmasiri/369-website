@@ -101,6 +101,61 @@
   height: 18px;
 }
 
+.paymentMethods {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.paymentOption {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.paymentOption:hover {
+  border-color: #999;
+}
+
+.paymentOption.selected {
+  border-color: #000;
+  background: #f9f9f9;
+}
+
+.paymentOption input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.paymentInfo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+}
+
+.paymentIcon {
+  font-size: 32px;
+}
+
+.paymentTitle {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.paymentDesc {
+  font-size: 13px;
+  color: #666;
+}
+
 .placeOrderBtn {
   width: 100%;
   padding: 16px;

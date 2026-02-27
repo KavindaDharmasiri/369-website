@@ -66,14 +66,49 @@ model Product {
 }
 
 model Order {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  total     Decimal  @db.Decimal(10, 2)
-  status    String   @default("pending")
-  createdAt DateTime @default(now()) @map("created_at")
-  user      User     @relation(fields: [userId], references: [id])
+  id              Int         @id @default(autoincrement())
+  userId          Int         @map("user_id")
+  orderNumber     String      @unique @map("order_number")
+  email           String
+  firstName       String      @map("first_name")
+  lastName        String      @map("last_name")
+  address         String
+  apartment       String?
+  city            String
+  state           String
+  zipCode         String      @map("zip_code")
+  phone           String
+  subtotal        Decimal     @db.Decimal(10, 2)
+  shippingFee     Decimal     @db.Decimal(10, 2) @map("shipping_fee")
+  tax             Decimal     @db.Decimal(10, 2)
+  total           Decimal     @db.Decimal(10, 2)
+  paymentMethod   String      @map("payment_method")
+  status          String      @default("pending")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  user            User        @relation(fields: [userId], references: [id])
+  orderItems      OrderItem[]
 
+  @@index([userId])
+  @@index([orderNumber])
+  @@index([status])
   @@map("orders")
+}
+
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+  orderId     Int      @map("order_id")
+  productId   Int      @map("product_id")
+  skuId       Int?     @map("sku_id")
+  productName String   @map("product_name")
+  specs       String?  @db.Text
+  price       Decimal  @db.Decimal(10, 2)
+  quantity    Int
+  subtotal    Decimal  @db.Decimal(10, 2)
+  order       Order    @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
 }
 
 model Category {
@@ -209,32 +244,21 @@ model CartItem {
   @@map("cart_items")
 }
 
-model ShippingFee {
-  id        Int      @id @default(autoincrement()) @map("shipping_fee_id")
-  type      String
-  value     Decimal  @db.Decimal(10, 2)
-  isActive  Boolean  @default(true) @map("is_active")
+model Address {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  address   String
+  apartment String?
+  city      String
+  state     String
+  zipCode   String   @map("zip_code")
+  phone     String
+  isDefault Boolean  @default(false) @map("is_default")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("shipping_fees")
-}
-
-model Address {
-  id         Int      @id @default(autoincrement()) @map("address_id")
-  userId     Int      @map("user_id")
-  firstName  String   @map("first_name")
-  lastName   String   @map("last_name")
-  address    String
-  apartment  String?
-  city       String
-  state      String
-  zipCode    String   @map("zip_code")
-  phone      String
-  isDefault  Boolean  @default(false) @map("is_default")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  user       User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@map("addresses")

@@ -3,6 +3,7 @@ import styles from './orders.module.css'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getAuthUser, removeAuthToken } from '@/lib/auth'
+import { decryptData } from '@/lib/clientEncryption'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 
@@ -10,6 +11,8 @@ export default function Orders() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [activeTab, setActiveTab] = useState('All Orders')
+  const [orders, setOrders] = useState<any[]>([])
+  const [stats, setStats] = useState({ totalSpent: 0, openOrders: 0 })
 
   useEffect(() => {
     const authUser = getAuthUser()
@@ -28,25 +31,50 @@ export default function Orders() {
       return
     }
     setUser(authUser)
+    fetchOrders()
   }, [router])
+
+  const fetchOrders = async () => {
+    try {
+      const token = localStorage.getItem('authToken')
+      const res = await fetch('/api/orders', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const result = await res.json()
+      
+      if (!result.success) {
+        console.error('Failed to fetch orders:', result.error)
+        return
+      }
+      
+      const data = result.data.orders ? result.data : { orders: result.data }
+      setOrders(data.orders || [])
+      
+      const totalSpent = (data.orders || []).reduce((sum: number, order: any) => sum + Number(order.total), 0)
+      const openOrders = (data.orders || []).filter((o: any) => ['pending', 'shipped'].includes(o.status.toLowerCase())).length
+      setStats({ totalSpent, openOrders })
+    } catch (error) {
+      console.error('Failed to fetch orders:', error)
+    }
+  }
 
   if (!user) return null
 
-  const orders = [
-    { id: '#369-9082', date: 'Oct 24, 2024', items: ['🧥', '👔', '✨'], total: '$4,250.00', status: 'Processing' },
-    { id: '#369-8821', date: 'Oct 12, 2024', items: ['👗'], total: '$895.00', status: 'Shipped' },
-    { id: '#369-7745', date: 'Sep 28, 2024', items: ['🧥', '👔'], total: '$1,720.00', status: 'Delivered' },
-    { id: '#369-6523', date: 'Sep 15, 2024', items: ['🧥'], total: '$4,250.00', status: 'Delivered' },
-    { id: '#369-5991', date: 'Aug 30, 2024', items: ['👔'], total: '$3,420.00', status: 'Canceled' },
-    { id: '#369-4210', date: 'Aug 12, 2024', items: ['👗', '🧥', '✨'], total: '$1,680.00', status: 'Delivered' },
-  ]
+  const filteredOrders = activeTab === 'All Orders' 
+    ? orders 
+    : activeTab === 'Pending'
+    ? orders.filter(o => o.status.toLowerCase() === 'pending')
+    : activeTab === 'Processing'
+    ? orders.filter(o => o.status.toLowerCase() === 'processing')
+    : orders.filter(o => o.status.toLowerCase() === activeTab.toLowerCase())
 
   const getStatusClass = (status: string) => {
-    switch (status) {
-      case 'Processing': return styles.statusProcessing
-      case 'Shipped': return styles.statusShipped
-      case 'Delivered': return styles.statusDelivered
-      case 'Canceled': return styles.statusCanceled
+    switch (status.toLowerCase()) {
+      case 'pending': return styles.statusPending
+      case 'processing': return styles.statusProcessing
+      case 'shipped': return styles.statusShipped
+      case 'delivered': return styles.statusDelivered
+      case 'canceled': return styles.statusCanceled
       default: return ''
     }
   }
@@ -64,18 +92,18 @@ export default function Orders() {
 
         <div className={styles.topSection}>
           <div className={styles.statBox}>
-            <div className={styles.statLabel}>Total Spent</div>
-            <div className={styles.statValue}>$4,250.00</div>
+            <div className={styles.statLabel}>Total Earned</div>
+            <div className={styles.statValue}>LKR {stats.totalSpent.toFixed(2)}</div>
           </div>
           <div className={styles.statBox}>
             <div className={styles.statLabel}>Open Orders</div>
-            <div className={styles.statValue}>2</div>
+            <div className={styles.statValue}>{stats.openOrders}</div>
           </div>
         </div>
 
         <div className={styles.ordersSection}>
           <div className={styles.tabs}>
-            {['All Orders', 'Processing', 'Shipped', 'Delivered'].map(tab => (
+            {['All Orders', 'Pending', 'Processing', 'Shipped', 'Delivered'].map(tab => (
               <button
                 key={tab}
                 className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ''}`}
@@ -92,6 +120,7 @@ export default function Orders() {
               <tr>
                 <th>Order ID</th>
                 <th>Date</th>
+                <th>Customer</th>
                 <th>Items</th>
                 <th>Total</th>
                 <th>Status</th>
@@ -99,46 +128,40 @@ export default function Orders() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
-                <tr key={order.id}>
-                  <td className={styles.orderId}>{order.id}</td>
-                  <td>{order.date}</td>
-                  <td>
-                    <div className={styles.items}>
-                      {order.items.map((item, i) => (
-                        <span key={i} className={styles.itemIcon}>{item}</span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className={styles.total}>{order.total}</td>
-                  <td>
-                    <span className={`${styles.status} ${getStatusClass(order.status)}`}>
-                      {order.status}
-                    </span>
-                  </td>
-                  <td>
-                    <button className={styles.viewBtn}>View Details</button>
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                    No orders found
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredOrders.map((order) => (
+                  <tr key={order.id}>
+                    <td className={styles.orderId}>#{order.orderNumber}</td>
+                    <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                    <td>{order.firstName} {order.lastName}</td>
+                    <td>{order.orderItems?.length || 0} items</td>
+                    <td className={styles.total}>LKR {Number(order.total).toFixed(2)}</td>
+                    <td>
+                      <span className={`${styles.status} ${getStatusClass(order.status)}`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td>
+                      <button className={styles.viewBtn} onClick={() => router.push(`/admin/orders/${order.id}`)}>View Details</button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
 
           <div className={styles.pagination}>
-            <span className={styles.paginationInfo}>Showing 1-6 of 24 orders</span>
-            <div className={styles.paginationBtns}>
-              <button className={styles.pageBtn}>‹</button>
-              <button className={`${styles.pageBtn} ${styles.pageBtnActive}`}>1</button>
-              <button className={styles.pageBtn}>2</button>
-              <button className={styles.pageBtn}>3</button>
-              <span>...</span>
-              <button className={styles.pageBtn}>8</button>
-              <button className={styles.pageBtn}>›</button>
-            </div>
+            <span className={styles.paginationInfo}>Showing {filteredOrders.length} orders</span>
           </div>
         </div>
 
-        <div className={styles.bottomSection}>
+        {/* <div className={styles.bottomSection}>
           <div className={styles.helpCard}>
             <h3>Need help with an order?</h3>
             <p>Our concierge team is here to assist with returns, exchanges, or sizing questions.</p>
@@ -156,7 +179,7 @@ export default function Orders() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </main>
     </div>
   )
