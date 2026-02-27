@@ -113,7 +113,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     const pdfBytes = await pdfDoc.save()
     
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(Buffer.from(pdfBytes), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="369-invoice-${order.orderNumber}.pdf"`
