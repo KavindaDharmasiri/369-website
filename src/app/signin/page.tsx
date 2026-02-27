@@ -37,8 +37,12 @@ export default function SignIn() {
       setAuthToken(data.token)
       toast.success('Login successful!')
       
-      // Redirect based on user type
-      if (data.user.userType === 'admin') {
+      // Check for redirect after login
+      const redirectTo = sessionStorage.getItem('redirectAfterLogin')
+      if (redirectTo) {
+        sessionStorage.removeItem('redirectAfterLogin')
+        setTimeout(() => router.push(redirectTo), 1000)
+      } else if (data.user.userType === 'admin') {
         setTimeout(() => router.push('/admin'), 1000)
       } else {
         setTimeout(() => router.push('/customer/shop'), 1000)

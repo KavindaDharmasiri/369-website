@@ -72,7 +72,15 @@ export default function SignUp() {
       }
 
       toast.success('Account created successfully!')
-      setTimeout(() => router.push('/customer/shop'), 1000)
+      
+      // Check for redirect after signup
+      const redirectTo = sessionStorage.getItem('redirectAfterLogin')
+      if (redirectTo) {
+        sessionStorage.removeItem('redirectAfterLogin')
+        setTimeout(() => router.push(redirectTo), 1000)
+      } else {
+        setTimeout(() => router.push('/customer/shop'), 1000)
+      }
     } catch (error) {
       console.error('Signup error:', error)
       toast.error('Something went wrong. Please try again.')

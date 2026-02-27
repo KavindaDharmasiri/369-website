@@ -7,6 +7,7 @@ import { getAuthUser } from '@/lib/auth'
 import { decryptData } from '@/lib/clientEncryption'
 import CustomerHeader from '@/components/CustomerHeader'
 import CustomerFooter from '@/components/CustomerFooter'
+import Cart from '@/components/Cart'
 
 function ShopContent() {
   const router = useRouter()
@@ -88,16 +89,6 @@ function ShopContent() {
     { name: 'Camel Overcoat', price: '$895' },
   ]
 
-  const cartItems = [
-    { name: 'Sculpted Wool Blazer', color: 'Black', size: 'M', price: 485, quantity: 1 },
-    { name: 'Essential Cotton Shirt', color: 'White', size: 'L', price: 195, quantity: 2 },
-    { name: 'Cashmere Crewneck', color: 'Gray', size: 'M', price: 320, quantity: 1 },
-  ]
-
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const shipping = 25
-  const total = subtotal + shipping
-
   return (
     <div className={styles.container}>
       <CustomerHeader user={user} onCartOpen={() => setIsCartOpen(true)} />
@@ -164,58 +155,7 @@ function ShopContent() {
 
       <CustomerFooter />
 
-      {isCartOpen && (
-        <>
-          <div className={styles.overlay} onClick={() => setIsCartOpen(false)}></div>
-          <div className={styles.cart}>
-            <div className={styles.cartHeader}>
-              <div>
-                <h2 className={styles.cartTitle}>Shopping Bag</h2>
-                <p className={styles.itemCount}>{cartItems.length} items</p>
-              </div>
-              <button className={styles.closeBtn} onClick={() => setIsCartOpen(false)}>✕</button>
-            </div>
-            <div className={styles.cartItems}>
-              {cartItems.map((item, index) => (
-                <div key={index} className={styles.cartItem}>
-                  <div className={styles.cartItemImage}>
-                    <img src="https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png" alt={item.name} />
-                  </div>
-                  <div className={styles.cartItemDetails}>
-                    <h3 className={styles.cartItemName}>{item.name}</h3>
-                    <p className={styles.cartItemVariant}>{item.color} / Size {item.size}</p>
-                    <p className={styles.cartItemPrice}>${item.price}</p>
-                    <div className={styles.cartItemActions}>
-                      <div className={styles.quantity}>
-                        <button className={styles.qtyBtn}>−</button>
-                        <span>{item.quantity}</span>
-                        <button className={styles.qtyBtn}>+</button>
-                      </div>
-                      <button className={styles.removeBtn}>Remove</button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className={styles.cartSummary}>
-              <div className={styles.summaryRow}>
-                <span>Subtotal</span>
-                <span>${subtotal.toLocaleString()}</span>
-              </div>
-              <div className={styles.summaryRow}>
-                <span>Shipping</span>
-                <span>${shipping}</span>
-              </div>
-              <div className={styles.totalRow}>
-                <span>Total</span>
-                <span className={styles.totalAmount}>${total.toLocaleString()}</span>
-              </div>
-              <button className={styles.checkoutBtn}>Proceed to Checkout</button>
-              <p className={styles.taxNote}>Taxes calculated at checkout</p>
-            </div>
-          </div>
-        </>
-      )}
+      <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { requireAdmin } from '@/lib/apiMiddleware'
-import { encrypt } from '@/lib/encryption'
+import { encryptData } from '@/lib/encryption'
 
 const postHandler = async (req: NextRequest, user: any, { params }: { params: { id: string } }) => {
   try {
@@ -33,7 +33,7 @@ const getHandler = async (req: NextRequest, { params }: { params: { id: string }
       select: { id: true, imageUrl: true, isPrimary: true }
     })
 
-    return NextResponse.json(images, {
+    return NextResponse.json({ data: encryptData(images) }, {
       headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' }
     })
   } catch (error: any) {

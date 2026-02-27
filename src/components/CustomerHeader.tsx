@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { decryptData, encryptData } from '@/lib/clientEncryption'
+import { getAuthUser } from '@/lib/auth'
 
 interface CustomerHeaderProps {
   user: any
@@ -14,9 +15,16 @@ export default function CustomerHeader({ user, onCartOpen }: CustomerHeaderProps
   const router = useRouter()
   const [categories, setCategories] = useState<any[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
+  const [cartCount, setCartCount] = useState(0)
 
   useEffect(() => {
     fetchCategories()
+    loadCartCount()
+    
+    // Listen for cart updates
+    const handleCartUpdate = () => loadCartCount()
+    window.addEventListener('cartUpdated', handleCartUpdate)
+    return () => window.removeEventListener('cartUpdated', handleCartUpdate)
   }, [])
 
   useEffect(() => {
@@ -44,6 +52,26 @@ export default function CustomerHeader({ user, onCartOpen }: CustomerHeaderProps
     }
   }
 
+  const loadCartCount = async () => {
+    const authUser = getAuthUser()
+    if (authUser) {
+      try {
+        const token = localStorage.getItem('authToken')
+        const res = await fetch('/api/cart', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const result = await res.json()
+        const data = decryptData(result.data)
+        setCartCount(data.cartItems?.length || 0)
+      } catch (error) {
+        setCartCount(0)
+      }
+    } else {
+      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+      setCartCount(cart.length)
+    }
+  }
+
   return (
     <header className={styles.header}>
       <div className={styles.logo} onClick={() => router.push('/')}>369</div>
@@ -60,7 +88,10 @@ export default function CustomerHeader({ user, onCartOpen }: CustomerHeaderProps
         ))}
       </nav>
       <div className={styles.icons}>
-        <span className={styles.icon} onClick={onCartOpen}>🛒</span>
+        <div className={styles.cartIcon} onClick={onCartOpen}>
+          <span className={styles.icon}>🛒</span>
+          {cartCount > 0 && <span className={styles.cartBadge}>{cartCount}</span>}
+        </div>
         {user ? (
           <div className={styles.userMenu}>
             <span className={styles.icon} onClick={(e) => {

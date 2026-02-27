@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { requireAdmin } from '@/lib/apiMiddleware'
+import { encryptData } from '@/lib/encryption'
 
 const getHandler = async (req: NextRequest, { params }: { params: { id: string } }) => {
   try {
@@ -17,7 +18,7 @@ const getHandler = async (req: NextRequest, { params }: { params: { id: string }
       orderBy: { id: 'asc' },
     })
 
-    return NextResponse.json(skus)
+    return NextResponse.json({ data: encryptData(skus) })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

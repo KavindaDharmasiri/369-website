@@ -15,6 +15,9 @@ export default function AdminProducts() {
   const [productName, setProductName] = useState('')
   const [productType, setProductType] = useState('All')
   const [addedDate, setAddedDate] = useState('')
+  const [showShippingModal, setShowShippingModal] = useState(false)
+  const [shippingType, setShippingType] = useState('static')
+  const [shippingValue, setShippingValue] = useState('')
 
   useEffect(() => {
     const authUser = getAuthUser()
@@ -60,7 +63,26 @@ export default function AdminProducts() {
                 <span>Products</span>
               </div>
             </div>
-            <button className={styles.addBtn} onClick={() => router.push('/admin/products/add')}>+ Add Product</button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button className={styles.shippingBtn} onClick={() => setShowShippingModal(true)}>Configure Shipping</button>
+              <button className={styles.addBtn} onClick={async () => {
+                const token = localStorage.getItem('authToken')
+                const res = await fetch('/api/shipping', {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+                const data = await res.json()
+                if (!data.data) {
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Shipping Not Configured',
+                    text: 'Please configure shipping fee before adding products',
+                    confirmButtonColor: '#000'
+                  })
+                  return
+                }
+                router.push('/admin/products/add')
+              }}>+ Add Product</button>
+            </div>
           </div>
           
           <h2 className={styles.sectionTitle}>All Products</h2>
@@ -175,6 +197,54 @@ export default function AdminProducts() {
           </div>
         </div>
       </main>
+
+      {showShippingModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <h2>Configure Shipping Fee</h2>
+              <button className={styles.closeBtn} onClick={() => setShowShippingModal(false)}>✕</button>
+            </div>
+            <div className={styles.modalContent}>
+              <div className={styles.field}>
+                <label>Shipping Type</label>
+                <select className={styles.select} value={shippingType} onChange={(e) => setShippingType(e.target.value)}>
+                  <option value="static">Static Price</option>
+                  <option value="percentage">Percentage</option>
+                </select>
+              </div>
+              <div className={styles.field}>
+                <label>{shippingType === 'static' ? 'Shipping Price (LKR)' : 'Percentage (%)'}</label>
+                <input type="number" className={styles.input} value={shippingValue} onChange={(e) => setShippingValue(e.target.value)} placeholder="0" />
+              </div>
+            </div>
+            <div className={styles.modalFooter}>
+              <button className={styles.saveBtn} onClick={async () => {
+                if (!shippingValue) {
+                  Swal.fire({ icon: 'error', title: 'Required', text: 'Please enter shipping value', confirmButtonColor: '#000' })
+                  return
+                }
+                try {
+                  const token = localStorage.getItem('authToken')
+                  const res = await fetch('/api/shipping', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ type: shippingType, value: parseFloat(shippingValue) })
+                  })
+                  if (!res.ok) {
+                    throw new Error('Failed to save')
+                  }
+                  setShowShippingModal(false)
+                  Swal.fire({ icon: 'success', title: 'Saved', text: 'Shipping fee configured successfully', confirmButtonColor: '#000', timer: 2000 })
+                } catch (error) {
+                  Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to save shipping fee', confirmButtonColor: '#000' })
+                }
+              }}>SAVE</button>
+              <button className={styles.closeModalBtn} onClick={() => setShowShippingModal(false)}>CLOSE</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

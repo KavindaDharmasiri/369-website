@@ -1,0 +1,270 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  gap: 60px;
+}
+
+.leftSection {
+  max-width: 600px;
+}
+
+.logo {
+  font-size: 32px;
+  font-family: serif;
+  margin-bottom: 40px;
+}
+
+.section {
+  margin-bottom: 40px;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: 400;
+  margin-bottom: 20px;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.tab {
+  padding: 10px 24px;
+  border: none;
+  background: #f5f5f5;
+  border-radius: 24px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.tab.active {
+  background: #000;
+  color: #fff;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.formRow:has(.formGroup:nth-child(3)) {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formGroup label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.formGroup input,
+.formGroup select {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.checkbox input {
+  width: 18px;
+  height: 18px;
+}
+
+.placeOrderBtn {
+  width: 100%;
+  padding: 16px;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 32px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.terms {
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  margin-top: 15px;
+}
+
+.terms a {
+  text-decoration: underline;
+  color: #000;
+}
+
+.rightSection {
+  position: sticky;
+  top: 100px;
+  height: fit-content;
+}
+
+.orderSummary {
+  background: #f9f9f9;
+  padding: 30px;
+  border-radius: 8px;
+}
+
+.summaryTitle {
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+.summaryItem {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.summaryItem img {
+  width: 60px;
+  height: 75px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.itemInfo {
+  flex: 1;
+}
+
+.itemName {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.itemVariant {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.itemQty {
+  font-size: 12px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.qtyBtn {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.qtyBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.removeBtn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #999;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.itemPrice {
+  font-weight: 500;
+}
+
+.discountCode {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.discountCode input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.discountCode button {
+  padding: 10px 20px;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.totalAmount {
+  font-size: 24px;
+  font-family: serif;
+}
+
+@media (max-width: 1024px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+
+  .rightSection {
+    position: static;
+  }
+}

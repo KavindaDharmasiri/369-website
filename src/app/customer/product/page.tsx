@@ -9,6 +9,7 @@ import { useAuditTrail } from '@/lib/useAuditTrail'
 import Cart from '@/components/Cart'
 import CustomerHeader from '@/components/CustomerHeader'
 import CustomerFooter from '@/components/CustomerFooter'
+import Swal from 'sweetalert2'
 
 function ProductContent() {
   const router = useRouter()
@@ -26,6 +27,7 @@ function ProductContent() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const [isAddingToCart, setIsAddingToCart] = useState(false)
 
   useEffect(() => {
     setUser(getAuthUser())
@@ -80,7 +82,8 @@ function ProductContent() {
     setIsTransitioning(true)
     const variantKeys = Object.values(selectedSpecs).join(', ')
     const res = await fetch(`/api/products/${productId}/skus?variantKeys=${encodeURIComponent(variantKeys)}`)
-    const data = await res.json()
+    const result = await res.json()
+    const data = decryptData(result.data)
     
     setTimeout(() => {
       if (data.length > 0) {
@@ -184,11 +187,103 @@ function ProductContent() {
             </div>
           ))}
 
-          <button className={styles.addBtn} onClick={() => {
-            logActivity('ADD_TO_CART', 'product', productId!, { 
-              price: selectedSku?.price || product.prodPrice,
-              specs: selectedSpecs 
-            })
+          <button className={styles.addBtn} onClick={async () => {
+            if (isAddingToCart) return
+            setIsAddingToCart(true)
+            
+            try {
+              // Validate specifications are selected
+              if (specs.length > 0 && Object.keys(selectedSpecs).length !== specs.length) {
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'Missing Selection',
+                  text: 'Please select all product options',
+                  confirmButtonColor: '#000'
+                })
+                return
+              }
+
+              // Validate SKU availability
+              if (specs.length > 0 && !selectedSku) {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Not Available',
+                  text: 'Selected variant is not available',
+                  confirmButtonColor: '#000'
+                })
+                return
+              }
+
+              // Check stock
+              if (selectedSku && selectedSku.stock === 0) {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Out of Stock',
+                  text: 'This product is currently out of stock',
+                  confirmButtonColor: '#000'
+                })
+                return
+              }
+
+              const cartItem = {
+                productId: parseInt(productId!),
+                skuId: selectedSku?.id || null,
+                quantity: 1,
+                specs: selectedSpecs,
+                price: selectedSku?.price || product.prodPrice,
+                name: product.prodName,
+                image: selectedSku?.images ? JSON.parse(selectedSku.images)[0] : (images.length > 0 ? images[0] : product.prodImg)
+              }
+
+              if (user) {
+                // Logged in - save to backend
+                const token = localStorage.getItem('authToken')
+                await fetch('/api/cart', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify(cartItem)
+                })
+                window.dispatchEvent(new Event('cartUpdated'))
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Added to Cart!',
+                  text: 'Product has been added to your cart',
+                  confirmButtonColor: '#000',
+                  timer: 2000
+                })
+              } else {
+                // Not logged in - save to localStorage
+                const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+                cart.push(cartItem)
+                localStorage.setItem('cart', JSON.stringify(cart))
+                window.dispatchEvent(new Event('cartUpdated'))
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Added to Cart!',
+                  text: 'Product has been added to your cart',
+                  confirmButtonColor: '#000',
+                  timer: 2000
+                })
+              }
+
+              logActivity('ADD_TO_CART', 'product', productId!, { 
+                price: selectedSku?.price || product.prodPrice,
+                specs: selectedSpecs 
+              })
+            } catch (error) {
+              console.error('Failed to add to cart:', error)
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to add to cart',
+                confirmButtonColor: '#000'
+              })
+            } finally {
+              setTimeout(() => setIsAddingToCart(false), 1000)
+            }
           }}>Add to Bag</button>
           <p className={styles.shipping}>Free shipping on orders over $200</p>
 

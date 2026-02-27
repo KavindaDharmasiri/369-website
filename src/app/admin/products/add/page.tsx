@@ -34,6 +34,9 @@ function AddProductContent() {
   const [categoryTagInput, setCategoryTagInput] = useState('')
   const [metaTagInput, setMetaTagInput] = useState('')
   const [ga4TagInput, setGa4TagInput] = useState('')
+  const [showShippingModal, setShowShippingModal] = useState(false)
+  const [shippingType, setShippingType] = useState('static')
+  const [shippingValue, setShippingValue] = useState('')
   const [formData, setFormData] = useState({
     status: 'INACTIVE',
     stockStatus: true,
