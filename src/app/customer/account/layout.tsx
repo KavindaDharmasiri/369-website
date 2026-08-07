@@ -1,14 +1,17 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { getAuthUser } from '@/lib/auth'
+import { useRouter, usePathname } from 'next/navigation'
+import { getAuthUser, removeAuthToken } from '@/lib/clientAuth'
 import CustomerHeader from '@/components/CustomerHeader'
 import CustomerFooter from '@/components/CustomerFooter'
+import Cart from '@/components/Cart'
+import { PageSkeleton } from '@/components/Skeleton'
 import Swal from 'sweetalert2'
 import styles from './account.module.css'
 
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [user, setUser] = useState<any>(null)
   const [activeTab, setActiveTab] = useState('orders')
   const [showCart, setShowCart] = useState(false)
@@ -21,6 +24,13 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
     }
     setUser(authUser)
   }, [router])
+
+  useEffect(() => {
+    if (pathname?.includes('/profile')) setActiveTab('profile')
+    else if (pathname?.includes('/addresses')) setActiveTab('addresses')
+    else if (pathname?.includes('/wishlist')) setActiveTab('wishlist')
+    else setActiveTab('orders')
+  }, [pathname])
 
   const handleSignOut = async () => {
     const result = await Swal.fire({
@@ -35,17 +45,17 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
     })
 
     if (result.isConfirmed) {
-      localStorage.removeItem('authToken')
-      document.cookie = 'authToken=; path=/; max-age=0'
+      removeAuthToken()
       router.push('/')
     }
   }
 
-  if (!user) return <div>Loading...</div>
+  if (!user) return <PageSkeleton variant="table" />
 
   return (
     <div className={styles.pageWrapper}>
       <CustomerHeader user={user} onCartOpen={() => setShowCart(true)} />
+      <Cart isOpen={showCart} onClose={() => setShowCart(false)} />
       <div className={styles.container}>
         <div className={styles.sidebar}>
           <h2>My Account</h2>
@@ -67,6 +77,15 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
               }}
             >
               Orders
+            </button>
+            <button 
+              className={activeTab === 'wishlist' ? styles.active : ''}
+              onClick={() => {
+                setActiveTab('wishlist')
+                router.push('/customer/account/wishlist')
+              }}
+            >
+              Wishlist
             </button>
             <button 
               className={activeTab === 'addresses' ? styles.active : ''}

@@ -2,12 +2,13 @@
 import styles from './subcategory.module.css'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getAuthUser, getAuthToken } from '@/lib/auth'
+import { getAuthUser, getAuthToken } from '@/lib/clientAuth'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 import toast, { Toaster } from 'react-hot-toast'
 import { encryptData, decryptData } from '@/lib/clientEncryption'
 import Swal from 'sweetalert2'
+import { X, Eye, PenLine } from 'lucide-react'
 
 interface Category {
   id: number
@@ -65,6 +66,15 @@ export default function SubCategoryManagement() {
       fetchSubcategories()
     }
   }, [activeOnly, user])
+
+  useEffect(() => {
+    if (!user) return
+    const timer = setTimeout(() => {
+      setCurrentPage(1)
+      fetchSubcategories()
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [subCategoryName, subCategoryDesc])
 
   const fetchCategories = async () => {
     try {
@@ -299,7 +309,6 @@ export default function SubCategoryManagement() {
               className={styles.filterInput}
               value={subCategoryName}
               onChange={(e) => setSubCategoryName(e.target.value)}
-              onKeyUp={fetchSubcategories}
             />
             <input 
               type="text" 
@@ -307,7 +316,6 @@ export default function SubCategoryManagement() {
               className={styles.filterInput}
               value={subCategoryDesc}
               onChange={(e) => setSubCategoryDesc(e.target.value)}
-              onKeyUp={fetchSubcategories}
             />
             <label className={styles.toggleLabel}>
               <input 
@@ -350,9 +358,9 @@ export default function SubCategoryManagement() {
                         </span>
                       </td>
                       <td>
-                        <button className={styles.actionBtn} onClick={() => handleView(subcategory)} title="View">👁</button>
-                        <button className={styles.actionBtn} onClick={() => handleEdit(subcategory)} title="Edit">✎</button>
-                        <button className={styles.actionBtn} onClick={() => handleDeleteClick(subcategory)} title="Delete">✕</button>
+                        <button className={styles.actionBtn} onClick={() => handleView(subcategory)} title="View"><Eye size={16} /></button>
+                        <button className={styles.actionBtn} onClick={() => handleEdit(subcategory)} title="Edit"><PenLine size={16} /></button>
+                        <button className={styles.actionBtn} onClick={() => handleDeleteClick(subcategory)} title="Delete"><X size={16} /></button>
                       </td>
                     </tr>
                   ))

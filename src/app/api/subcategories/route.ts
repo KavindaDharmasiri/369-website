@@ -14,7 +14,7 @@ const getHandler = async (req: NextRequest, user: any) => {
 
     const where: any = {}
     if (categoryId) where.categoryId = parseInt(categoryId)
-    if (categoryName) where.category = { name: categoryName }
+    if (categoryName) where.category = { name: { equals: categoryName, mode: 'insensitive' } }
     if (name) where.name = { contains: name }
     if (description) where.description = { contains: description }
     if (activeOnly === 'true') where.isActive = true
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
 
     const where: any = {}
     if (categoryId) where.categoryId = parseInt(categoryId)
-    if (categoryName) where.category = { name: categoryName }
+    if (categoryName) where.category = { name: { equals: categoryName, mode: 'insensitive' } }
     if (name) where.name = { contains: name }
     if (description) where.description = { contains: description }
     if (activeOnly === 'true') where.isActive = true

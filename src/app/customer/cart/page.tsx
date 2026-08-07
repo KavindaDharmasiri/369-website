@@ -2,10 +2,15 @@
 import styles from './cart.module.css'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { getAuthUser } from '@/lib/auth'
+import { getAuthUser } from '@/lib/clientAuth'
 import { decryptData } from '@/lib/clientEncryption'
+import { enrichServerCartItem } from '@/lib/cartEnrich'
+import { computeTax } from '@/lib/pricing'
+import { getOptimizedImageUrl } from '@/lib/cloudinary'
+import { CreditCard, Banknote } from 'lucide-react'
 import CustomerHeader from '@/components/CustomerHeader'
 import CustomerFooter from '@/components/CustomerFooter'
+import { PageSkeleton } from '@/components/Skeleton'
 import Swal from 'sweetalert2'
 
 export default function CartPage() {
@@ -14,6 +19,7 @@ export default function CartPage() {
   const [cartItems, setCartItems] = useState<any[]>([])
   const [shippingFee, setShippingFee] = useState(0)
   const [shippingType, setShippingType] = useState('Standard')
+  const [taxSettings, setTaxSettings] = useState({ taxMode: 'percentage', taxRate: 8 })
   const [loading, setLoading] = useState(true)
   const hasMigrated = useRef(false)
   
@@ -28,7 +34,12 @@ export default function CartPage() {
     phone: ''
   })
   const [saveAddress, setSaveAddress] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState('card')
+  const [paymentMethod, setPaymentMethod] = useState('cash')
+  const [placing, setPlacing] = useState(false)
+  const [couponInput, setCouponInput] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
+  const [couponMsg, setCouponMsg] = useState('')
+  const [applyingCoupon, setApplyingCoupon] = useState(false)
 
   useEffect(() => {
     const authUser = getAuthUser()
@@ -42,6 +53,7 @@ export default function CartPage() {
       const initCart = async () => {
         await migrateAndLoadCart()
         await loadShippingFee()
+        await loadTaxSettings()
         await loadSavedAddress()
       }
       initCart()
@@ -84,13 +96,13 @@ export default function CartPage() {
         })
         const newResult = await newRes.json()
         const newData = decryptData(newResult.data)
-        await enrichCartItems(newData.cartItems || [])
+        setCartItems((newData.cartItems || []).map(enrichServerCartItem))
       } else {
         // Just clear localStorage if DB already has items
         if (localCart.length > 0) {
           localStorage.removeItem('cart')
         }
-        await enrichCartItems(existingCart)
+        setCartItems((existingCart || []).map(enrichServerCartItem))
       }
     } catch (error) {
       console.error('Failed to load cart:', error)
@@ -99,66 +111,12 @@ export default function CartPage() {
     }
   }
 
-  const enrichCartItems = async (items: any[]) => {
-    const enriched = await Promise.all(items.map(async (item) => {
-      try {
-        // Fetch product details
-        const res = await fetch(`/api/products/${item.productId}`)
-        const result = await res.json()
-        const product = decryptData(result.data)
-        
-        // Parse specs if it's a string
-        const specs = typeof item.specs === 'string' ? JSON.parse(item.specs) : item.specs
-        
-        let image = product.prodImg
-        let price = product.prodPrice
-        let stock = 999
-        
-        // If SKU exists, fetch SKU details for image and price
-        if (item.skuId) {
-          try {
-            const skuRes = await fetch(`/api/products/${item.productId}/skus`)
-            const skuResult = await skuRes.json()
-            const skus = decryptData(skuResult.data)
-            const sku = skus.find((s: any) => s.id === item.skuId)
-            
-            if (sku) {
-              price = sku.price
-              stock = sku.stock
-              if (sku.images) {
-                const skuImages = JSON.parse(sku.images)
-                if (skuImages.length > 0) {
-                  image = skuImages[0]
-                }
-              }
-            }
-          } catch (error) {
-            console.error('Failed to fetch SKU details:', error)
-          }
-        }
-        
-        return {
-          ...item,
-          name: product.prodName,
-          image: image,
-          price: price,
-          stock: stock,
-          specs: specs
-        }
-      } catch (error) {
-        console.error('Failed to enrich cart item:', error)
-        return item
-      }
-    }))
-    setCartItems(enriched)
-  }
-
   const updateQuantity = async (index: number, newQuantity: number) => {
     const item = cartItems[index]
     
     if (newQuantity < 1) return
     
-    if (newQuantity > item.stock) {
+    if (item.stock != null && newQuantity > item.stock) {
       Swal.fire({
         icon: 'warning',
         title: 'Stock Limit',
@@ -231,18 +189,28 @@ export default function CartPage() {
     }
   }
 
+  const loadTaxSettings = async () => {
+    try {
+      const res = await fetch('/api/settings')
+      const result = await res.json()
+      if (result.data) {
+        const settings = decryptData(result.data)
+        setTaxSettings({ taxMode: settings.taxMode || 'percentage', taxRate: settings.taxRate || 0 })
+      }
+    } catch (error) {
+      console.error('Failed to load tax settings:', error)
+    }
+  }
+
   const loadSavedAddress = async () => {
     try {
       const token = localStorage.getItem('authToken')
-      console.log('Loading saved address with token:', token ? 'exists' : 'missing')
       const res = await fetch('/api/addresses', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const result = await res.json()
-      console.log('Address API response:', result)
       if (result.success && result.data.length > 0) {
         const latestAddress = result.data[0]
-        console.log('Latest address:', latestAddress)
         setDeliveryForm({
           firstName: latestAddress.firstName,
           lastName: latestAddress.lastName,
@@ -253,8 +221,6 @@ export default function CartPage() {
           zipCode: latestAddress.zipCode,
           phone: latestAddress.phone
         })
-      } else {
-        console.log('No saved addresses found')
       }
     } catch (error) {
       console.error('Failed to load saved address:', error)
@@ -300,6 +266,54 @@ export default function CartPage() {
     }
   }
 
+  const applyCoupon = async () => {
+    const code = couponInput.trim()
+    if (!code) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Enter a Coupon Code',
+        text: 'Please enter a coupon code to apply',
+        confirmButtonColor: '#000'
+      })
+      return
+    }
+
+    setApplyingCoupon(true)
+    setCouponMsg('')
+    try {
+      const token = localStorage.getItem('authToken')
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ code, subtotal })
+      })
+      const result = await res.json()
+      const data = decryptData(result.data)
+
+      if (data.valid) {
+        setAppliedCoupon(data)
+        setCouponInput('')
+        setCouponMsg('')
+      } else {
+        setAppliedCoupon(null)
+        setCouponMsg(data.message || 'Invalid coupon code')
+      }
+    } catch (error) {
+      console.error('Apply coupon error:', error)
+      setCouponMsg('Failed to apply coupon')
+    } finally {
+      setApplyingCoupon(false)
+    }
+  }
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null)
+    setCouponMsg('')
+  }
+
   const handlePlaceOrder = async () => {
     // Validate cart
     if (cartItems.length === 0) {
@@ -330,6 +344,8 @@ export default function CartPage() {
       html: `
         <div style="text-align: left; padding: 10px;">
           <p><strong>Total Amount:</strong> LKR ${total.toFixed(2)}</p>
+          ${itemSavings > 0 ? `<p><strong>Item Discounts:</strong> -LKR ${itemSavings.toFixed(2)}</p>` : ''}
+          ${discount > 0 ? `<p><strong>Coupon Discount:</strong> -LKR ${discount.toFixed(2)} (${appliedCoupon.code})</p>` : ''}
           <p><strong>Payment Method:</strong> ${paymentMethod === 'card' ? 'Card Payment' : 'Cash on Delivery'}</p>
           <p><strong>Delivery Address:</strong><br/>
           ${deliveryForm.firstName} ${deliveryForm.lastName}<br/>
@@ -347,6 +363,8 @@ export default function CartPage() {
     })
 
     if (!result.isConfirmed) return
+
+    setPlacing(true)
 
     try {
       const token = localStorage.getItem('authToken')
@@ -371,7 +389,8 @@ export default function CartPage() {
           tax: Number(tax),
           total: Number(total),
           paymentMethod,
-          items: cartItems
+          items: cartItems,
+          couponCode: appliedCoupon ? appliedCoupon.code : undefined
         })
       })
 
@@ -384,14 +403,15 @@ export default function CartPage() {
           html: `
             <p>Your order has been placed successfully.</p>
             <p><strong>Order Number:</strong> ${data.data.orderNumber}</p>
-            <p>We'll send you a confirmation email shortly.</p>
           `,
-          confirmButtonColor: '#000'
+          confirmButtonColor: '#000',
+          confirmButtonText: 'View My Order'
         })
         
-        // Clear cart and redirect
+        // Clear cart and redirect to order confirmation
         setCartItems([])
-        router.push('/customer/shop')
+        window.dispatchEvent(new Event('cartUpdated'))
+        router.push(`/customer/account/orders/${data.data.orderId}`)
       } else {
         throw new Error(data.error)
       }
@@ -403,19 +423,31 @@ export default function CartPage() {
         text: 'Failed to place order. Please try again.',
         confirmButtonColor: '#000'
       })
+    } finally {
+      setPlacing(false)
     }
   }
 
   if (loading) {
-    return <div>Loading...</div>
+    return (
+      <div>
+        <CustomerHeader user={user} onCartOpen={() => {}} />
+        <div style={{ padding: '40px' }}>
+          <PageSkeleton />
+        </div>
+        <CustomerFooter />
+      </div>
+    )
   }
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  const itemSavings = cartItems.reduce((sum, item) => sum + (item.isOnSale ? ((Number(item.originalPrice) - Number(item.price)) * item.quantity) : 0), 0)
   const calculatedShippingFee = shippingType.toLowerCase() === 'percentage' 
     ? (subtotal * shippingFee) / 100 
     : shippingFee
-  const tax = subtotal * 0.08
-  const total = subtotal + calculatedShippingFee + tax
+  const tax = computeTax(taxSettings.taxMode, taxSettings.taxRate, subtotal)
+  const discount = appliedCoupon?.discount || 0
+  const total = subtotal - discount + calculatedShippingFee + tax
 
   return (
     <div className={styles.container}>
@@ -427,10 +459,6 @@ export default function CartPage() {
 
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>Delivery</h2>
-            <div className={styles.tabs}>
-              <button className={`${styles.tab} ${styles.active}`}>Local</button>
-              <button className={styles.tab}>Overseas</button>
-            </div>
 
             <div className={styles.form}>
               <div className={styles.formGroup}>
@@ -552,10 +580,10 @@ export default function CartPage() {
                   onChange={() => setPaymentMethod('card')}
                 />
                 <div className={styles.paymentInfo}>
-                  <span className={styles.paymentIcon}>💳</span>
+                  <span className={styles.paymentIcon}><CreditCard size={28} /></span>
                   <div>
                     <div className={styles.paymentTitle}>Card Payment</div>
-                    <div className={styles.paymentDesc}>Pay securely with credit or debit card</div>
+                    <div className={styles.paymentDesc}>Pay with card when your order is delivered</div>
                   </div>
                 </div>
               </div>
@@ -572,7 +600,7 @@ export default function CartPage() {
                   onChange={() => setPaymentMethod('cash')}
                 />
                 <div className={styles.paymentInfo}>
-                  <span className={styles.paymentIcon}>💵</span>
+                  <span className={styles.paymentIcon}><Banknote size={28} /></span>
                   <div>
                     <div className={styles.paymentTitle}>Cash on Delivery</div>
                     <div className={styles.paymentDesc}>Pay when you receive your order</div>
@@ -581,9 +609,11 @@ export default function CartPage() {
               </div>
             </div>
 
-            <button className={styles.placeOrderBtn} onClick={handlePlaceOrder}>Place Order</button>
+            <button className={styles.placeOrderBtn} onClick={handlePlaceOrder} disabled={placing}>
+              {placing ? 'Placing Order...' : 'Place Order'}
+            </button>
             <p className={styles.terms}>
-              By placing your order, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+              By placing your order, you agree to our Terms of Service and Privacy Policy
             </p>
           </section>
         </div>
@@ -597,7 +627,7 @@ export default function CartPage() {
             ) : (
               cartItems.map((item, index) => (
                 <div key={index} className={styles.summaryItem}>
-                  <img src={item.image || "https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png"} alt={item.name} />
+                  <img src={getOptimizedImageUrl(item.image) || "https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png"} alt={item.name} />
                   <div className={styles.itemInfo}>
                     <div className={styles.itemName}>{item.name}</div>
                     <div className={styles.itemVariant}>{item.specs ? Object.values(item.specs).join(' / ') : ''}</div>
@@ -611,7 +641,7 @@ export default function CartPage() {
                       <button 
                         className={styles.qtyBtn} 
                         onClick={() => updateQuantity(index, item.quantity + 1)}
-                        disabled={item.quantity >= item.stock}
+                        disabled={item.stock != null && item.quantity >= item.stock}
                       >+</button>
                       <button 
                         className={styles.removeBtn} 
@@ -619,20 +649,51 @@ export default function CartPage() {
                       >Remove</button>
                     </div>
                   </div>
-                  <div className={styles.itemPrice}>LKR {Number(item.price).toLocaleString()}</div>
+                  <div className={styles.itemPriceWrap}>
+                    <div className={`${styles.itemPrice} ${item.isOnSale ? styles.itemSalePrice : ''}`}>LKR {Number(item.price).toLocaleString()}</div>
+                    {item.isOnSale && <div className={styles.itemOriginalPrice}>LKR {Number(item.originalPrice).toLocaleString()}</div>}
+                  </div>
                 </div>
               ))
             )}
-
-            <div className={styles.discountCode}>
-              <input type="text" placeholder="Discount code" />
-              <button>Apply</button>
-            </div>
 
             <div className={styles.summaryRow}>
               <span>Subtotal</span>
               <span>LKR {subtotal.toLocaleString()}</span>
             </div>
+
+            {appliedCoupon ? (
+              <div className={styles.discountApplied}>
+                <div>
+                  <span className={styles.discountLabel}>Discount ({appliedCoupon.code})</span>
+                  <button className={styles.discountRemove} onClick={removeCoupon}>Remove</button>
+                </div>
+                <span>-LKR {appliedCoupon.discount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+            ) : (
+              <div className={styles.discountCode}>
+                <input
+                  type="text"
+                  placeholder="Enter coupon code"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && applyCoupon()}
+                  disabled={applyingCoupon}
+                />
+                <button onClick={applyCoupon} disabled={applyingCoupon}>
+                  {applyingCoupon ? '...' : 'Apply'}
+                </button>
+              </div>
+            )}
+            {couponMsg && <p className={styles.couponError}>{couponMsg}</p>}
+
+            {itemSavings > 0 && (
+              <div className={styles.itemDiscountRow}>
+                <span>Item Discounts</span>
+                <span>-LKR {itemSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+            )}
+
             <div className={styles.summaryRow}>
               <span>Shipping</span>
               <span>{calculatedShippingFee === 0 ? 'Free' : `LKR ${calculatedShippingFee.toLocaleString()}`}</span>

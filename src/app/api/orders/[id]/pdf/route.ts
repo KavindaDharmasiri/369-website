@@ -14,10 +14,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const orderId = parseInt(params.id)
 
     const order = await prisma.order.findFirst({
-      where: { 
-        id: orderId,
-        userId: decoded.userId 
-      },
+      where: decoded.userType === 'admin'
+        ? { id: orderId }
+        : { id: orderId, userId: decoded.userId },
       include: { 
         orderItems: true 
       }
@@ -48,7 +47,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     page.drawText(new Date(order.createdAt).toLocaleDateString(), { x: 50, y: 705, size: 10, font })
     
     page.drawText('Status:', { x: 200, y: 720, size: 9, font: boldFont })
-    const statusColor = order.status === 'delivered' ? rgb(0.15, 0.68, 0.38) : order.status === 'pending' ? rgb(0.2, 0.6, 0.86) : rgb(0.95, 0.61, 0.07)
+    const statusKey = order.status.toUpperCase()
+    const statusColor = statusKey === 'DELIVERED' ? rgb(0.15, 0.68, 0.38) : statusKey === 'PENDING' ? rgb(0.2, 0.6, 0.86) : statusKey === 'CANCELLED' || statusKey === 'REFUNDED' ? rgb(0.8, 0.2, 0.2) : rgb(0.95, 0.61, 0.07)
     page.drawText(order.status.toUpperCase(), { x: 200, y: 705, size: 10, font: boldFont, color: statusColor })
     
     page.drawText('Payment:', { x: 350, y: 720, size: 9, font: boldFont })

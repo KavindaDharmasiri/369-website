@@ -18,7 +18,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         ? { id: orderId }
         : { id: orderId, userId: decoded.userId },
       include: { 
-        orderItems: true 
+        orderItems: {
+          include: {
+            product: { select: { prodImg: true } },
+            sku: { select: { images: true } }
+          }
+        }
       }
     })
 
@@ -26,32 +31,20 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    // Fetch product and SKU details for each order item
-    const enrichedItems = await Promise.all(
-      order.orderItems.map(async (item) => {
-        const product = await prisma.product.findUnique({
-          where: { id: item.productId },
-          select: { prodImg: true }
-        })
-        
-        let skuImage = null
-        if (item.skuId) {
-          const sku = await prisma.productSku.findUnique({
-            where: { id: item.skuId },
-            select: { images: true }
-          })
-          if (sku?.images) {
-            const images = JSON.parse(sku.images)
-            skuImage = images[0]
-          }
+    // Derive item images from SKU (if any) or product
+    const enrichedItems = order.orderItems.map((item) => {
+      let image = item.product?.prodImg || null
+      if (item.sku?.images) {
+        try {
+          const images = JSON.parse(item.sku.images)
+          image = images[0] || image
+        } catch {
+          // keep product image
         }
-        
-        return {
-          ...item,
-          image: skuImage || product?.prodImg || null
-        }
-      })
-    )
+      }
+      const { product, sku, ...rest } = item as any
+      return { ...rest, image, skuCode: (sku as any)?.skuCode || null }
+    })
 
     return NextResponse.json({ success: true, data: { ...order, orderItems: enrichedItems } })
   } catch (error) {
@@ -75,9 +68,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const { status } = await request.json()
     const orderId = parseInt(params.id)
 
+    const VALID_STATUSES = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED']
+    const normalizedStatus = String(status || '').toUpperCase()
+    if (!VALID_STATUSES.includes(normalizedStatus)) {
+      return NextResponse.json({ error: 'Invalid order status' }, { status: 400 })
+    }
+
     const order = await prisma.order.update({
       where: { id: orderId },
-      data: { status }
+      data: { status: normalizedStatus }
     })
 
     return NextResponse.json({ success: true, data: order })

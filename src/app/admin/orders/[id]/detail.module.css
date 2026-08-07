@@ -54,6 +54,16 @@
   cursor: pointer;
 }
 
+.pdfBtn:hover {
+  background: #000;
+}
+
+.headerActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
+
 .statusSelect {
   padding: 10px 16px;
   background: white;
@@ -136,6 +146,16 @@
 .statusCanceled {
   background: #f8d7da;
   color: #721c24;
+}
+
+.statusPaid {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.statusRefunded {
+  background: #e2e3e5;
+  color: #41464b;
 }
 
 .itemsGrid {

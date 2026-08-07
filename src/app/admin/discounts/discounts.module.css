@@ -1,0 +1,413 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.main {
+  flex: 1;
+  overflow-y: auto;
+  margin-left: 260px;
+  padding: 32px 40px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.header h1 {
+  font-size: 28px;
+  font-family: 'Playfair Display', serif;
+  font-weight: 400;
+  margin: 0 0 4px;
+  color: #212529;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.addBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: #212529;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.addBtn:hover {
+  background: #000;
+}
+
+.tableWrapper {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.table th {
+  background: #fafafa;
+  color: #6c757d;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.table tbody tr:hover {
+  background: #fafafa;
+}
+
+.codeCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.codeCell strong {
+  font-size: 14px;
+  color: #212529;
+}
+
+.descCell {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.targetCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #495057;
+}
+
+.targetCell svg {
+  color: #adb5bd;
+  flex-shrink: 0;
+}
+
+.typePill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.typePct {
+  background: #e7f1ff;
+  color: #0d5bbd;
+}
+
+.typeFixed {
+  background: #f3e8ff;
+  color: #7b2dbf;
+}
+
+.status {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status.active {
+  background: #e8f5e8;
+  color: #2d5a2d;
+}
+
+.status.inactive {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.status.expired {
+  background: #e2e3e5;
+  color: #41464b;
+}
+
+.status.scheduled {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.toggleBtn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggleOn {
+  background: #e8f5e8;
+  color: #2d5a2d;
+}
+
+.toggleOff {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.actionBtn {
+  padding: 6px;
+  background: none;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.actionBtn:hover {
+  border-color: #212529;
+  color: #212529;
+}
+
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.empty p {
+  font-size: 18px;
+  margin: 0 0 8px;
+  color: #212529;
+}
+
+.empty span {
+  font-size: 14px;
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  width: 560px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 28px;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.modalHeader h2 {
+  font-size: 22px;
+  font-family: 'Playfair Display', serif;
+  font-weight: 500;
+  margin: 0;
+  color: #212529;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 4px;
+}
+
+.closeBtn:hover {
+  color: #212529;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formRow {
+  display: flex;
+  gap: 16px;
+}
+
+.formRow > div {
+  flex: 1;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formGroup label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.formGroup input,
+.formGroup select {
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  width: 100%;
+  box-sizing: border-box;
+  background: white;
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #212529;
+}
+
+.productSelect {
+  position: relative;
+}
+
+.productInputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.productSearchIcon {
+  position: absolute;
+  left: 12px;
+  color: #adb5bd;
+  pointer-events: none;
+}
+
+.productInputWrap input {
+  padding-left: 36px;
+}
+
+.productList {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.productOption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.15s;
+}
+
+.productOption:hover,
+.productOptionActive {
+  background: #f8f9fa;
+}
+
+.productPrice {
+  font-size: 12px;
+  color: #6c757d;
+  white-space: nowrap;
+}
+
+.productListEmpty {
+  padding: 14px;
+  font-size: 13px;
+  color: #6c757d;
+  text-align: center;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.cancelBtn {
+  padding: 10px 24px;
+  background: none;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #495057;
+  transition: background 0.2s;
+}
+
+.cancelBtn:hover {
+  background: #f8f9fa;
+}
+
+.saveBtn {
+  padding: 10px 24px;
+  background: #212529;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.saveBtn:hover {
+  background: #000;
+}
+
+.saveBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

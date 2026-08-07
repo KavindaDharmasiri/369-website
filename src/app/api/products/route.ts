@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { requireAdmin } from '@/lib/apiMiddleware'
 import { encrypt } from '@/lib/encryption'
+import { getAppSettings } from '@/lib/settings'
 
 const handler = async (req: NextRequest, user: any) => {
   try {
@@ -70,15 +71,30 @@ async function generateCommonIndex(name: string, type: string) {
   })
 }
 
-export async function GET() {
+async function listHandler(req: NextRequest, user: any) {
   try {
+    const settings = await getAppSettings()
+    const threshold = settings.lowStockThreshold ?? 10
     const products = await prisma.product.findMany({
       where: { isDeleted: false },
-      include: { category: true, subCategory: true },
+      include: {
+        category: true,
+        subCategory: true,
+        productSkus: { select: { stock: true } }
+      },
       orderBy: { createdAt: 'desc' },
+      take: 200
     })
-    return NextResponse.json({ data: encrypt(JSON.stringify({ products })) })
+    const enriched = products.map((p: any) => {
+      const { productSkus, ...rest } = p
+      const totalStock = productSkus.reduce((sum: number, s: any) => sum + s.stock, 0)
+      return { ...rest, totalStock, skuCount: productSkus.length, lowStock: totalStock <= threshold }
+    })
+    enriched.sort((a: any, b: any) => Number(b.lowStock) - Number(a.lowStock))
+    return NextResponse.json({ data: encrypt(JSON.stringify({ products: enriched })) })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+
+export const GET = requireAdmin(listHandler)

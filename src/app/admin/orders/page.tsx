@@ -2,7 +2,7 @@
 import styles from './orders.module.css'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getAuthUser, removeAuthToken } from '@/lib/auth'
+import { getAuthUser, removeAuthToken } from '@/lib/clientAuth'
 import { decryptData } from '@/lib/clientEncryption'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
@@ -72,9 +72,12 @@ export default function Orders() {
     switch (status.toLowerCase()) {
       case 'pending': return styles.statusPending
       case 'processing': return styles.statusProcessing
+      case 'paid': return styles.statusPaid
       case 'shipped': return styles.statusShipped
       case 'delivered': return styles.statusDelivered
+      case 'cancelled':
       case 'canceled': return styles.statusCanceled
+      case 'refunded': return styles.statusRefunded
       default: return ''
     }
   }
@@ -112,7 +115,6 @@ export default function Orders() {
                 {tab}
               </button>
             ))}
-            <button className={styles.filterBtn}>▼ Filter</button>
           </div>
 
           <table className={styles.table}>
@@ -160,26 +162,6 @@ export default function Orders() {
             <span className={styles.paginationInfo}>Showing {filteredOrders.length} orders</span>
           </div>
         </div>
-
-        {/* <div className={styles.bottomSection}>
-          <div className={styles.helpCard}>
-            <h3>Need help with an order?</h3>
-            <p>Our concierge team is here to assist with returns, exchanges, or sizing questions.</p>
-            <button className={styles.contactBtn}>Contact Concierge →</button>
-          </div>
-          <div className={styles.productCard}>
-            <img src="/placeholder.jpg" alt="Product" className={styles.productImg} />
-            <div className={styles.productInfo}>
-              <div className={styles.productTag}>Complete the Look</div>
-              <h4>Cashmere Ribbed Scarf</h4>
-              <p>The perfect accompaniment to your Sculpted Wool Jacket. Crafted from 100% Mongolian cashmere.</p>
-              <div className={styles.productFooter}>
-                <span className={styles.price}>$180.00</span>
-                <button className={styles.viewProductBtn}>View Product</button>
-              </div>
-            </div>
-          </div>
-        </div> */}
       </main>
     </div>
   )

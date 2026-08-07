@@ -1,0 +1,78 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.code {
+  font-family: 'Playfair Display', serif;
+  font-size: 96px;
+  font-weight: 400;
+  color: #1a1a1a;
+  margin: 0;
+  line-height: 1;
+}
+
+.title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 400;
+  color: #1a1a1a;
+  margin: 20px 0 10px;
+}
+
+.message {
+  font-size: 15px;
+  color: #666;
+  margin: 0 0 30px;
+  max-width: 420px;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.primaryBtn {
+  padding: 12px 32px;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Inter', sans-serif;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.primaryBtn:hover {
+  background: #333;
+}
+
+.secondaryBtn {
+  padding: 12px 32px;
+  background: transparent;
+  color: #1a1a1a;
+  border: 1px solid #1a1a1a;
+  border-radius: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Inter', sans-serif;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.secondaryBtn:hover {
+  background: #f5f5f5;
+}

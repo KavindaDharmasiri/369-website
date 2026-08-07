@@ -59,11 +59,14 @@ model ProductImage {
 ```
 
 ### Environment Variables
-Ensure these are set in your `.env`:
+Ensure these are set in your `.env` (never commit real values — see `.env.example`):
 ```
 DATABASE_URL="your_database_url"
-ENCRYPTION_KEY="369-secret-key-32-chars-long!"
-JWT_SECRET="369-jwt-secret-key-for-tokens"
+ENCRYPTION_KEY="a-long-random-secret"
+JWT_SECRET="a-long-random-secret"
+CLOUDINARY_CLOUD_NAME="your_cloud_name"
+CLOUDINARY_API_KEY="your_api_key"
+CLOUDINARY_API_SECRET="your_api_secret"
 ```
 
 ### Next.js Configuration

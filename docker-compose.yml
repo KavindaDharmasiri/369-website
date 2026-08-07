@@ -5,11 +5,6 @@ services:
     image: kavindadarmasiri/369-website:latest
     ports:
       - "3000:3000"
-    environment:
-      - DATABASE_URL=mysql://avnadmin:AVNS_GLHz1hb36oM_ixcUxRX@mysql-1c6c42ff-kavindadarmasiri15-197a.g.aivencloud.com:25939/defaultdb?ssl-mode=REQUIRED
-      - JWT_SECRET=369-jwt-secret-key-for-tokens
-      - ENCRYPTION_KEY=369-secret-key-32-chars-long!
-      - CLOUDINARY_CLOUD_NAME=do2otr6cu
-      - CLOUDINARY_API_KEY=369776181489473
-      - CLOUDINARY_API_SECRET=UgYT__K-k3ysZ8wL6IEmgNvWB8s
+    env_file:
+      - .env
     restart: unless-stopped

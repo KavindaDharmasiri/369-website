@@ -1,9 +1,13 @@
 'use client'
 import styles from './Cart.module.css'
 import { useState, useEffect } from 'react'
-import { getAuthUser } from '@/lib/auth'
+import { getAuthUser } from '@/lib/clientAuth'
 import { decryptData } from '@/lib/clientEncryption'
+import { enrichServerCartItem, enrichGuestCartItem } from '@/lib/cartEnrich'
+import { getOptimizedImageUrl } from '@/lib/cloudinary'
+import { computeTax } from '@/lib/pricing'
 import { useRouter } from 'next/navigation'
+import { X, Minus, Plus } from 'lucide-react'
 import Swal from 'sweetalert2'
 
 interface CartProps {
@@ -17,12 +21,14 @@ export default function Cart({ isOpen, onClose }: CartProps) {
   const [user, setUser] = useState<any>(null)
   const [shippingFee, setShippingFee] = useState(0)
   const [shippingType, setShippingType] = useState('Standard')
+  const [taxSettings, setTaxSettings] = useState({ taxMode: 'percentage', taxRate: 8 })
 
   useEffect(() => {
     setUser(getAuthUser())
     if (isOpen) {
       loadCart()
       loadShippingFee()
+      loadTaxSettings()
     }
   }, [isOpen])
 
@@ -37,70 +43,15 @@ export default function Cart({ isOpen, onClose }: CartProps) {
         })
         const result = await res.json()
         const data = decryptData(result.data)
-        console.log('Raw cart items from DB:', data.cartItems)
-        await enrichCartItems(data.cartItems || [])
+        setCartItems((data.cartItems || []).map(enrichServerCartItem))
       } catch (error) {
         console.error('Failed to load cart:', error)
       }
     } else {
       // Load from localStorage
       const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-      setCartItems(cart)
+      setCartItems(await Promise.all(cart.map(enrichGuestCartItem)))
     }
-  }
-
-  const enrichCartItems = async (items: any[]) => {
-    console.log('Enriching items:', items)
-    const enriched = await Promise.all(items.map(async (item) => {
-      try {
-        const res = await fetch(`/api/products/${item.productId}`)
-        const result = await res.json()
-        const product = decryptData(result.data)
-        console.log('Product data:', product)
-        
-        const specs = typeof item.specs === 'string' ? JSON.parse(item.specs) : item.specs
-        
-        let image = product.prodImg
-        let price = product.prodPrice
-        
-        if (item.skuId) {
-          try {
-            const skuRes = await fetch(`/api/products/${item.productId}/skus`)
-            const skuResult = await skuRes.json()
-            const skus = decryptData(skuResult.data)
-            const sku = skus.find((s: any) => s.id === item.skuId)
-            console.log('Found SKU:', sku)
-            
-            if (sku) {
-              price = sku.price
-              if (sku.images) {
-                const skuImages = JSON.parse(sku.images)
-                if (skuImages.length > 0) {
-                  image = skuImages[0]
-                }
-              }
-            }
-          } catch (error) {
-            console.error('Failed to fetch SKU details:', error)
-          }
-        }
-        
-        const enrichedItem = {
-          ...item,
-          name: product.prodName,
-          image: image,
-          price: price,
-          specs: specs
-        }
-        console.log('Enriched item:', enrichedItem)
-        return enrichedItem
-      } catch (error) {
-        console.error('Failed to enrich cart item:', error)
-        return item
-      }
-    }))
-    console.log('All enriched items:', enriched)
-    setCartItems(enriched)
   }
 
   const loadShippingFee = async () => {
@@ -115,6 +66,64 @@ export default function Cart({ isOpen, onClose }: CartProps) {
     } catch (error) {
       console.error('Failed to load shipping fee:', error)
     }
+  }
+
+  const loadTaxSettings = async () => {
+    try {
+      const res = await fetch('/api/settings')
+      const result = await res.json()
+      if (result.data) {
+        const settings = decryptData(result.data)
+        setTaxSettings({ taxMode: settings.taxMode || 'percentage', taxRate: Number(settings.taxRate) || 0 })
+      }
+    } catch (error) {
+      console.error('Failed to load tax settings:', error)
+    }
+  }
+
+  const updateQuantity = async (index: number, newQuantity: number) => {
+    const item = cartItems[index]
+    if (newQuantity < 1) return
+
+    if (item.stock != null && newQuantity > item.stock) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Stock Limit',
+        text: `Only ${item.stock} items available in stock`,
+        confirmButtonColor: '#000'
+      })
+      return
+    }
+
+    if (user) {
+      try {
+        const token = localStorage.getItem('authToken')
+        const res = await fetch(`/api/cart/${item.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ quantity: newQuantity })
+        })
+        if (!res.ok) return
+      } catch (error) {
+        console.error('Failed to update quantity:', error)
+        return
+      }
+    } else {
+      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+      const guestItem = cart[index]
+      if (guestItem) {
+        guestItem.quantity = newQuantity
+        localStorage.setItem('cart', JSON.stringify(cart))
+      }
+    }
+
+    const updated = [...cartItems]
+    updated[index].quantity = newQuantity
+    setCartItems(updated)
+    window.dispatchEvent(new Event('cartUpdated'))
   }
 
   const removeItem = async (index: number) => {
@@ -157,8 +166,14 @@ export default function Cart({ isOpen, onClose }: CartProps) {
   const calculatedShippingFee = shippingType.toLowerCase() === 'percentage' 
     ? (subtotal * shippingFee) / 100 
     : shippingFee
+
+  const tax = computeTax(taxSettings.taxMode, taxSettings.taxRate, subtotal)
   
-  const total = subtotal + calculatedShippingFee
+  const total = subtotal + calculatedShippingFee + tax
+
+  const totalUnits = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+
+  const shippingLabel = shippingType.toLowerCase() === 'percentage' ? `${shippingFee}%` : 'Fixed'
 
   return (
     <>
@@ -167,9 +182,9 @@ export default function Cart({ isOpen, onClose }: CartProps) {
         <div className={styles.header}>
           <div>
             <h2 className={styles.title}>Shopping Bag</h2>
-            <p className={styles.itemCount}>{cartItems.length} items</p>
+            <p className={styles.itemCount}>{totalUnits} {totalUnits === 1 ? 'item' : 'items'}</p>
           </div>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button className={styles.closeBtn} onClick={onClose}><X size={18} /></button>
         </div>
 
         <div className={styles.items}>
@@ -181,15 +196,26 @@ export default function Cart({ isOpen, onClose }: CartProps) {
             cartItems.map((item, index) => (
               <div key={index} className={styles.item}>
                 <div className={styles.itemImage}>
-                  <img src={item.image || "https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png"} alt={item.name} />
+                  <img src={getOptimizedImageUrl(item.image) || "https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png"} alt={item.name} />
                 </div>
                 <div className={styles.itemDetails}>
                   <h3 className={styles.itemName}>{item.name}</h3>
                   <p className={styles.itemVariant}>{item.specs ? Object.values(item.specs).join(' / ') : ''}</p>
-                  <p className={styles.itemPrice}>LKR {item.price}</p>
+                  <p className={styles.itemPriceWrap}>
+                    <span className={styles.itemPrice}>LKR {Number(item.price).toLocaleString()}</span>
+                    {item.isOnSale === true && Number(item.price) < Number(item.originalPrice) && (
+                      <span className={styles.itemOriginalPrice}>LKR {Number(item.originalPrice).toLocaleString()}</span>
+                    )}
+                  </p>
                   <div className={styles.itemActions}>
                     <div className={styles.quantity}>
+                      <button className={styles.qtyBtn} onClick={() => updateQuantity(index, item.quantity - 1)} aria-label="Decrease quantity">
+                        <Minus size={14} />
+                      </button>
                       <span>{item.quantity}</span>
+                      <button className={styles.qtyBtn} onClick={() => updateQuantity(index, item.quantity + 1)} aria-label="Increase quantity">
+                        <Plus size={14} />
+                      </button>
                     </div>
                     <button className={styles.removeBtn} onClick={() => removeItem(index)}>Remove</button>
                   </div>
@@ -205,12 +231,16 @@ export default function Cart({ isOpen, onClose }: CartProps) {
             <span>LKR {subtotal.toLocaleString()}</span>
           </div>
           <div className={styles.summaryRow}>
-            <span>Shipping ({shippingType === 'percentage' ? `${shippingFee}%` : shippingType})</span>
+            <span>Shipping ({shippingLabel})</span>
             <span>LKR {calculatedShippingFee.toLocaleString()}</span>
+          </div>
+          <div className={styles.summaryRow}>
+            <span>Tax</span>
+            <span>LKR {tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div className={styles.totalRow}>
             <span>Total</span>
-            <span className={styles.totalAmount}>LKR {total.toLocaleString()}</span>
+            <span className={styles.totalAmount}>LKR {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <button className={styles.checkoutBtn} onClick={async () => {
             const authUser = getAuthUser()
@@ -222,7 +252,6 @@ export default function Cart({ isOpen, onClose }: CartProps) {
               router.push('/customer/cart')
             }
           }}>Proceed to Checkout</button>
-          <p className={styles.taxNote}>Taxes calculated at checkout</p>
         </div>
       </div>
     </>

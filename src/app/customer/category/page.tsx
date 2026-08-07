@@ -3,11 +3,13 @@ import styles from './category.module.css'
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getAuthUser } from '@/lib/auth'
+import { getAuthUser } from '@/lib/clientAuth'
 import { decryptData } from '@/lib/clientEncryption'
+import { getOptimizedImageUrl } from '@/lib/cloudinary'
 import CustomerHeader from '@/components/CustomerHeader'
 import CustomerFooter from '@/components/CustomerFooter'
 import Cart from '@/components/Cart'
+import { CardsSkeleton } from '@/components/Skeleton'
 
 function CategoryContent() {
   const router = useRouter()
@@ -18,6 +20,7 @@ function CategoryContent() {
   const [subCategories, setSubCategories] = useState<any[]>([])
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState('newest')
+  const [loading, setLoading] = useState(true)
   const category = searchParams.get('type') || 'women'
 
   useEffect(() => {
@@ -27,6 +30,7 @@ function CategoryContent() {
   }, [category, sortBy, selectedSubCategory])
 
   const fetchProducts = async () => {
+    setLoading(true)
     try {
       const res = await fetch(`/api/products/category/${encodeURIComponent(category)}?sort=${sortBy}`)
       const result = await res.json()
@@ -40,6 +44,8 @@ function CategoryContent() {
       setProducts(filteredProducts)
     } catch (error) {
       console.error('Failed to fetch products:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -91,20 +97,31 @@ function CategoryContent() {
         </div>
 
         <div className={styles.products}>
-          {products.length === 0 ? (
+          {loading ? (
+            <div style={{ gridColumn: '1 / -1' }}>
+              <CardsSkeleton count={8} />
+            </div>
+          ) : products.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px', color: '#666', gridColumn: '1 / -1' }}>
               <p>No products available in this category</p>
             </div>
           ) : (
-            products.map((product) => (
-              <div key={product.id} className={styles.product} onClick={() => router.push(`/customer/product?id=${product.id}`)}>
-                <div className={styles.productImage}>
-                  <img src={product.prodImg || "https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png"} alt={product.prodName} />
+            products.map((product) => {
+              const isOnSale = product.isOnSale === true && Number(product.salePrice) < Number(product.prodPrice)
+              return (
+                <div key={product.id} className={styles.product} onClick={() => router.push(`/customer/product?id=${product.id}`)}>
+                  <div className={`${styles.productImage} ${styles.productImageWrap}`}>
+                    {isOnSale && <span className={styles.saleBadge}>{product.discountPercent}% OFF</span>}
+                    <img src={getOptimizedImageUrl(product.prodImg) || "https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png"} alt={product.prodName} loading="lazy" decoding="async" />
+                  </div>
+                  <div className={styles.productName}>{product.prodName}</div>
+                  <div className={styles.productPriceRow}>
+                    <div className={`${styles.productPrice} ${isOnSale ? styles.salePrice : ''}`}>LKR {Number(product.salePrice ?? product.prodPrice).toLocaleString()}</div>
+                    {isOnSale && <div className={styles.originalPrice}>LKR {Number(product.originalPrice).toLocaleString()}</div>}
+                  </div>
                 </div>
-                <div className={styles.productName}>{product.prodName}</div>
-                <div className={styles.productPrice}>LKR {product.prodPrice}</div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </div>
@@ -118,7 +135,7 @@ function CategoryContent() {
 
 export default function Category() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div style={{ padding: '60px 20px', textAlign: 'center' }}><CardsSkeleton count={8} /></div>}>
       <CategoryContent />
     </Suspense>
   )

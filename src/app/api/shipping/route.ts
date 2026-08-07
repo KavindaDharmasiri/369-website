@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
 import { encryptData } from '@/lib/encryption'
-
-const prisma = new PrismaClient()
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,8 +10,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    verifyToken(token)
+    const decoded = verifyToken(token)
+    if (!decoded || decoded.userType !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
     const { type, value } = await request.json()
+
+    if (!type || value === undefined || value === null) {
+      return NextResponse.json({ error: 'Type and value are required' }, { status: 400 })
+    }
 
     // Deactivate all existing fees
     await prisma.shippingFee.updateMany({
@@ -38,7 +44,7 @@ export async function GET(request: NextRequest) {
       where: { isActive: true }
     })
 
-    return NextResponse.json({ data: encryptData(shippingFee) })
+    return NextResponse.json({ data: shippingFee ? encryptData(shippingFee) : null })
   } catch (error) {
     console.error('Get shipping fee error:', error)
     return NextResponse.json({ error: 'Failed to get shipping fee' }, { status: 500 })

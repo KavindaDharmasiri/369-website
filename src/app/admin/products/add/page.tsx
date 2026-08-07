@@ -2,11 +2,13 @@
 import styles from './add.module.css'
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getAuthUser } from '@/lib/auth'
+import { getAuthUser } from '@/lib/clientAuth'
 import { decryptData } from '@/lib/clientEncryption'
 import { useLoading } from '@/lib/LoadingContext'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
+import { X, PenLine } from 'lucide-react'
+import { PageSkeleton } from '@/components/Skeleton'
 
 function AddProductContent() {
   const router = useRouter()
@@ -23,7 +25,6 @@ function AddProductContent() {
   const [specs, setSpecs] = useState<any[]>([])
   const [skus, setSkus] = useState<any[]>([])
   const [showImageModal, setShowImageModal] = useState(false)
-  const [mediaTab, setMediaTab] = useState('device')
   const [productImages, setProductImages] = useState<string[]>([])
   const [selectedImage, setSelectedImage] = useState('')
   const [uploading, setUploading] = useState(false)
@@ -250,7 +251,7 @@ function AddProductContent() {
 
     const submitData = {
       ...formData,
-      prodMarket: 'DRAFT',
+      prodMarket: formData.prodMarket || 'DRAFT',
       tagsCategory: categoryTags.join(','),
       tagsMeta: metaTags.join(','),
       tagsGa4: ga4Tags.join(',')
@@ -370,7 +371,7 @@ function AddProductContent() {
             </div>
 
             <div className={styles.card}>
-              <h2 className={styles.sectionTitle}>✎ Product Information</h2>
+              <h2 className={styles.sectionTitle}><PenLine size={18} /> Product Information</h2>
               <div className={styles.row}>
                 <div className={styles.field}>
                   <label>Product Name/Title *</label>
@@ -388,10 +389,10 @@ function AddProductContent() {
             </div>
 
             <div className={styles.card}>
-              <h2 className={styles.sectionTitle}>₿ Pricing</h2>
+              <h2 className={styles.sectionTitle}>Product Pricing</h2>
               <div className={styles.row}>
                 <div className={styles.field}>
-                  <label>Product Price (RS) *</label>
+                  <label>Product Price (LKR) *</label>
                   <input type="number" placeholder="0" className={styles.input} value={formData.prodPrice} onChange={(e) => setFormData({...formData, prodPrice: e.target.value})} required disabled={isViewMode} />
                 </div>
               </div>
@@ -400,70 +401,33 @@ function AddProductContent() {
             <div className={styles.card}>
               <div className={styles.mediaHeader}>
                 <h2 className={styles.sectionTitle}>☷ Product Images</h2>
-                <div className={styles.mediaTabs}>
-                  <button 
-                    type="button" 
-                    className={`${styles.mediaTabBtn} ${mediaTab === 'device' ? styles.active : ''}`}
-                    onClick={() => setMediaTab('device')}
-                  >
-                    Device Upload
-                  </button>
-                  <button 
-                    type="button" 
-                    className={`${styles.mediaTabBtn} ${mediaTab === 'ai' ? styles.active : ''}`}
-                    onClick={() => setMediaTab('ai')}
-                  >
-                    ✦ AI Studio
-                  </button>
-                </div>
               </div>
               
-              {mediaTab === 'device' ? (
-                <div className={styles.mediaGrid}>
-                  {productImages.map((url, index) => (
-                    <div key={index} className={styles.mediaItem}>
-                      {index === 0 && <span className={styles.mainBadge}>Main</span>}
-                      <img src={url} alt={`Product ${index + 1}`} onClick={() => { setSelectedImage(url); setShowImageModal(true); }} />
-                      <button type="button" className={styles.removeImgBtn} onClick={() => handleRemoveImage(index)}>✕</button>
-                    </div>
-                  ))}
-                  <div className={styles.addMedia}>
-                    <input type="file" multiple id="prodImg" className={styles.hiddenInput} onChange={handleImageUpload} disabled={isViewMode || uploading} />
-                    <label htmlFor="prodImg" className={styles.addMediaLabel}>
-                      {uploading ? (
-                        <>
-                          <span>⏳</span>
-                          <span>Uploading...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>+</span>
-                          <span>Add Media</span>
-                        </>
-                      )}
-                    </label>
+              <div className={styles.mediaGrid}>
+                {productImages.map((url, index) => (
+                  <div key={index} className={styles.mediaItem}>
+                    {index === 0 && <span className={styles.mainBadge}>Main</span>}
+                    <img src={url} alt={`Product ${index + 1}`} onClick={() => { setSelectedImage(url); setShowImageModal(true); }} />
+                    <button type="button" className={styles.removeImgBtn} onClick={() => handleRemoveImage(index)}><X size={16} /></button>
                   </div>
+                ))}
+                <div className={styles.addMedia}>
+                  <input type="file" multiple id="prodImg" className={styles.hiddenInput} onChange={handleImageUpload} disabled={isViewMode || uploading} />
+                  <label htmlFor="prodImg" className={styles.addMediaLabel}>
+                    {uploading ? (
+                      <>
+                        <span>⏳</span>
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>+</span>
+                        <span>Add Media</span>
+                      </>
+                    )}
+                  </label>
                 </div>
-              ) : (
-                <div className={styles.aiStudio}>
-                  <div className={styles.aiHeader}>
-                    <span>✦ AI Studio Generator</span>
-                  </div>
-                  <div className={styles.aiContent}>
-                    <div className={styles.refImage}>
-                      <span>Ref Image</span>
-                    </div>
-                    <div className={styles.aiOption}>
-                      <span>Generate with Model?</span>
-                      <label className={styles.switch}>
-                        <input type="checkbox" />
-                        <span className={styles.slider}></span>
-                      </label>
-                    </div>
-                    <button type="button" className={styles.generateBtn}>Generate Variations →</button>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
 
             <div className={styles.card}>
@@ -476,7 +440,7 @@ function AddProductContent() {
                     {categoryTags.map((tag, index) => (
                       <span key={index} className={styles.tag}>
                         {tag}
-                        <button type="button" onClick={() => setCategoryTags(categoryTags.filter((_, i) => i !== index))} disabled={isViewMode}>✕</button>
+                        <button type="button" onClick={() => setCategoryTags(categoryTags.filter((_, i) => i !== index))} disabled={isViewMode}><X size={16} /></button>
                       </span>
                     ))}
                     <input 
@@ -502,7 +466,7 @@ function AddProductContent() {
                     {metaTags.map((tag, index) => (
                       <span key={index} className={styles.tag}>
                         {tag}
-                        <button type="button" onClick={() => setMetaTags(metaTags.filter((_, i) => i !== index))} disabled={isViewMode}>✕</button>
+                        <button type="button" onClick={() => setMetaTags(metaTags.filter((_, i) => i !== index))} disabled={isViewMode}><X size={16} /></button>
                       </span>
                     ))}
                     <input 
@@ -528,7 +492,7 @@ function AddProductContent() {
                     {ga4Tags.map((tag, index) => (
                       <span key={index} className={styles.tag}>
                         {tag}
-                        <button type="button" onClick={() => setGa4Tags(ga4Tags.filter((_, i) => i !== index))} disabled={isViewMode}>✕</button>
+                        <button type="button" onClick={() => setGa4Tags(ga4Tags.filter((_, i) => i !== index))} disabled={isViewMode}><X size={16} /></button>
                       </span>
                     ))}
                     <input 
@@ -593,7 +557,7 @@ function AddProductContent() {
       {showImageModal && selectedImage && (
         <div className={styles.modalOverlay} onClick={() => setShowImageModal(false)}>
           <div className={styles.imageModal}>
-            <button className={styles.closeBtn} onClick={() => setShowImageModal(false)}>✕</button>
+            <button className={styles.closeBtn} onClick={() => setShowImageModal(false)}><X size={16} /></button>
             <img src={selectedImage} alt="Product" />
           </div>
         </div>
@@ -604,7 +568,7 @@ function AddProductContent() {
 
 export default function AddProduct() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<PageSkeleton variant="table" />}>
       <AddProductContent />
     </Suspense>
   )

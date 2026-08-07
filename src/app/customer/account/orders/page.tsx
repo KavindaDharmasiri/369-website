@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { decryptData } from '@/lib/clientEncryption'
 import styles from '../account.module.css'
+import { TableSkeleton } from '@/components/Skeleton'
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([])
@@ -35,7 +35,12 @@ export default function OrdersPage() {
     switch (status.toLowerCase()) {
       case 'delivered': return 'delivered'
       case 'shipped': return 'shipped'
-      case 'processing': return 'processing'
+      case 'pending': return 'pending'
+      case 'paid': return 'paid'
+      case 'cancelled':
+      case 'canceled': return 'cancelled'
+      case 'refunded': return 'refunded'
+      case 'processing':
       default: return 'processing'
     }
   }
@@ -55,8 +60,6 @@ export default function OrdersPage() {
     if (activeTab === 'returns') return order.status.toLowerCase() === 'returned'
     return true
   })
-
-  if (loading) return <div>Loading...</div>
 
   return (
     <div className={styles.orderHistory}>
@@ -102,7 +105,13 @@ export default function OrdersPage() {
           </tr>
         </thead>
         <tbody>
-          {filteredOrders.length === 0 ? (
+          {loading ? (
+            <tr>
+              <td colSpan={6} style={{ padding: '24px 16px' }}>
+                <TableSkeleton rows={4} cols={6} />
+              </td>
+            </tr>
+          ) : filteredOrders.length === 0 ? (
             <tr>
               <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
                 No orders found

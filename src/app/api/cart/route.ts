@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
 import { encryptData } from '@/lib/encryption'
-
-const prisma = new PrismaClient()
+import { getActiveDiscounts, bestDiscountForProduct, buildDiscountInfo } from '@/lib/discounts'
 
 export async function POST(request: NextRequest) {
   try {
@@ -61,10 +60,20 @@ export async function GET(request: NextRequest) {
 
     const decoded = verifyToken(token)
     const cartItems = await prisma.cartItem.findMany({
-      where: { userId: decoded.userId }
+      where: { userId: decoded.userId },
+      include: { product: true, sku: true }
     })
 
-    return NextResponse.json({ data: encryptData({ cartItems }) })
+    const discounts = await getActiveDiscounts(prisma)
+    const enriched = cartItems.map((item: any) => {
+      const product = item.product
+      const basePrice = item.sku ? Number(item.sku.price) : Number(product.prodPrice)
+      const best = bestDiscountForProduct(discounts, product)
+      const info = buildDiscountInfo(basePrice, best)
+      return { ...item, ...info }
+    })
+
+    return NextResponse.json({ data: encryptData({ cartItems: enriched }) })
   } catch (error) {
     console.error('Get cart error:', error)
     return NextResponse.json({ error: 'Failed to get cart' }, { status: 500 })

@@ -1,0 +1,140 @@
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.barList {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.barItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.barLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.barTrack {
+  height: 10px;
+  background: #f1f3f5;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  background: linear-gradient(90deg, #111827, #4f46e5);
+  border-radius: 6px;
+  transition: width 0.6s ease;
+}
+
+.donutWrap {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.donut {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.donutSlice {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.donutCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 0 0 transparent;
+}
+
+.donutCenter::before {
+  content: '';
+  position: absolute;
+  inset: 34px;
+  border-radius: 50%;
+  background: white;
+}
+
+.donutCenter strong,
+.donutCenter span {
+  position: relative;
+  z-index: 1;
+}
+
+.donutCenter strong {
+  font-size: 26px;
+  color: #111827;
+}
+
+.donutCenter span {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legendLabel {
+  color: #374151;
+  flex: 1;
+}
+
+.legendValue {
+  font-weight: 600;
+  color: #111827;
+}
+
+@media (max-width: 900px) {
+  .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { requireAdmin } from '@/lib/apiMiddleware'
 import { encrypt } from '@/lib/encryption'
+import { attachDiscountInfo } from '@/lib/discounts'
 
 const getHandler = async (req: NextRequest, { params }: { params: { id: string } }) => {
   try {
@@ -14,7 +15,9 @@ const getHandler = async (req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ data: encrypt(JSON.stringify(product)) })
+    const enriched = await attachDiscountInfo(prisma, [product])
+
+    return NextResponse.json({ data: encrypt(JSON.stringify(enriched[0])) })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import toast, { Toaster } from 'react-hot-toast'
 import { encryptData, decryptData } from '@/lib/clientEncryption'
-import { setAuthToken } from '@/lib/auth'
+import { setAuthToken } from '@/lib/clientAuth'
 
 export default function SignIn() {
   const router = useRouter()
@@ -80,7 +80,6 @@ export default function SignIn() {
         />
         
         <div className={styles.links}>
-          <a href="#" className={styles.link}>Forgot password?</a>
           <a href="/signup" className={styles.link}>Create account</a>
         </div>
         

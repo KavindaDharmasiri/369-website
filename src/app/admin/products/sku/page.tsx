@@ -2,10 +2,12 @@
 import styles from './sku.module.css'
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getAuthUser } from '@/lib/auth'
+import { getAuthUser } from '@/lib/clientAuth'
 import { decryptData } from '@/lib/clientEncryption'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
+import { X, PenLine } from 'lucide-react'
+import { PageSkeleton } from '@/components/Skeleton'
 
 function GeneratedSKUContent() {
   const router = useRouter()
@@ -29,7 +31,6 @@ function GeneratedSKUContent() {
   const [skuImages, setSkuImages] = useState<string[]>([])
   const [showImageModal, setShowImageModal] = useState(false)
   const [selectedImage, setSelectedImage] = useState('')
-  const [mediaTab, setMediaTab] = useState('device')
   const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
@@ -65,7 +66,7 @@ function GeneratedSKUContent() {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const data = await res.json()
-    setSkus(data || [])
+    setSkus(decryptData(data.data) || [])
   }
 
   const handleGenerateSkus = async () => {
@@ -307,7 +308,7 @@ function GeneratedSKUContent() {
                       <td>LKR {sku.price}</td>
                       <td>
                         <button className={styles.actionBtn} onClick={() => handleView(sku)}>◎</button>
-                        <button className={styles.actionBtn} onClick={() => handleEdit(sku)}>✎</button>
+                        <button className={styles.actionBtn} onClick={() => handleEdit(sku)}><PenLine size={16} /></button>
                       </td>
                     </tr>
                   ))
@@ -349,7 +350,7 @@ function GeneratedSKUContent() {
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
               <h2>Edit SKU</h2>
-              <button className={styles.closeBtn} onClick={() => setEditModal(false)}>✕</button>
+              <button className={styles.closeBtn} onClick={() => setEditModal(false)}><X size={16} /></button>
             </div>
             <div className={styles.modalContent}>
               <div className={styles.field}>
@@ -381,70 +382,32 @@ function GeneratedSKUContent() {
                 <div className={styles.mediaManager}>
                   <div className={styles.mediaHeader}>
                     <span className={styles.mediaTitle}>💼 Media Manager</span>
-                    <div className={styles.mediaTabs}>
-                      <button 
-                        type="button" 
-                        className={`${styles.mediaTabBtn} ${mediaTab === 'device' ? styles.active : ''}`}
-                        onClick={() => setMediaTab('device')}
-                      >
-                        Device Upload
-                      </button>
-                      <button 
-                        type="button" 
-                        className={`${styles.mediaTabBtn} ${mediaTab === 'ai' ? styles.active : ''}`}
-                        onClick={() => setMediaTab('ai')}
-                      >
-                        ✨ AI Studio
-                      </button>
+                  </div>
+                  <div className={styles.mediaGrid}>
+                    {skuImages.map((url, index) => (
+                      <div key={index} className={styles.mediaItem}>
+                        {index === 0 && <span className={styles.mainBadge}>Main</span>}
+                        <img src={url} alt={`SKU ${index + 1}`} onClick={() => { setSelectedImage(url); setShowImageModal(true); }} />
+                        <button type="button" className={styles.removeImgBtn} onClick={() => handleRemoveImage(index)}><X size={16} /></button>
+                      </div>
+                    ))}
+                    <div className={styles.addMedia}>
+                      <input type="file" multiple id="skuImg" className={styles.hiddenInput} onChange={handleImageUpload} disabled={uploading} />
+                      <label htmlFor="skuImg" className={styles.addMediaLabel}>
+                        {uploading ? (
+                          <>
+                            <span>⏳</span>
+                            <span>Uploading...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>+</span>
+                            <span>Add Media</span>
+                          </>
+                        )}
+                      </label>
                     </div>
                   </div>
-                  
-                  {mediaTab === 'device' ? (
-                    <div className={styles.mediaGrid}>
-                      {skuImages.map((url, index) => (
-                        <div key={index} className={styles.mediaItem}>
-                          {index === 0 && <span className={styles.mainBadge}>Main</span>}
-                          <img src={url} alt={`SKU ${index + 1}`} onClick={() => { setSelectedImage(url); setShowImageModal(true); }} />
-                          <button type="button" className={styles.removeImgBtn} onClick={() => handleRemoveImage(index)}>✕</button>
-                        </div>
-                      ))}
-                      <div className={styles.addMedia}>
-                        <input type="file" multiple id="skuImg" className={styles.hiddenInput} onChange={handleImageUpload} disabled={uploading} />
-                        <label htmlFor="skuImg" className={styles.addMediaLabel}>
-                          {uploading ? (
-                            <>
-                              <span>⏳</span>
-                              <span>Uploading...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>+</span>
-                              <span>Add Media</span>
-                            </>
-                          )}
-                        </label>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className={styles.aiStudio}>
-                      <div className={styles.aiHeader}>
-                        <span>✨ AI Studio Generator</span>
-                      </div>
-                      <div className={styles.aiContent}>
-                        <div className={styles.refImage}>
-                          <span>Ref Image</span>
-                        </div>
-                        <div className={styles.aiOption}>
-                          <span>Generate with Model?</span>
-                          <label className={styles.switch}>
-                            <input type="checkbox" />
-                            <span className={styles.slider}></span>
-                          </label>
-                        </div>
-                        <button type="button" className={styles.generateBtn}>Generate Variations →</button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -461,7 +424,7 @@ function GeneratedSKUContent() {
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
               <h2>View SKU</h2>
-              <button className={styles.closeBtn} onClick={() => setViewModal(false)}>✕</button>
+              <button className={styles.closeBtn} onClick={() => setViewModal(false)}><X size={16} /></button>
             </div>
             <div className={styles.modalContent}>
               <div className={styles.field}>
@@ -510,7 +473,7 @@ function GeneratedSKUContent() {
       {showImageModal && (
         <div className={styles.modalOverlay} onClick={() => setShowImageModal(false)}>
           <div className={styles.imageModal}>
-            <button className={styles.closeBtn} onClick={() => setShowImageModal(false)}>✕</button>
+            <button className={styles.closeBtn} onClick={() => setShowImageModal(false)}><X size={16} /></button>
             <img src={selectedImage} alt="SKU" />
           </div>
         </div>
@@ -521,7 +484,7 @@ function GeneratedSKUContent() {
 
 export default function GeneratedSKU() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<PageSkeleton variant="table" />}>
       <GeneratedSKUContent />
     </Suspense>
   )

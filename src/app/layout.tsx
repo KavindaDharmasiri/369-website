@@ -3,8 +3,8 @@ import './globals.css'
 import ClientWrapper from '@/components/ClientWrapper'
 
 export const metadata: Metadata = {
-  title: '369 Website',
-  description: 'Full-stack Next.js application with SSR',
+  title: '369',
+  description: '369 — everyday quiet luxury. Curated apparel crafted with intention for the modern wardrobe.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -157,6 +157,26 @@
   color: #e65100;
 }
 
+.status.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status.paid {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.status.cancelled {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.status.refunded {
+  background-color: #e2e3e5;
+  color: #41464b;
+}
+
 .viewDetails {
   color: #3498db;
   text-decoration: none;
@@ -319,5 +339,125 @@
 }
 
 .paymentStatus.notPaid {
+  color: #e74c3c;
+}
+
+.wishlistGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.wishlistItem {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #eee;
+  transition: box-shadow 0.2s;
+}
+
+.wishlistItem:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.wishlistImage {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  background: #f5f5f5;
+  position: relative;
+}
+
+.wishlistImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wishlistSaleBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #c8102e;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 5px 10px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+.wishlistPrice {
+  font-size: 14px;
+  color: #5a6c7d;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wishlistSalePrice {
+  color: #c8102e;
+  font-weight: 600;
+}
+
+.wishlistOriginalPrice {
+  color: #999;
+  font-size: 13px;
+  text-decoration: line-through;
+}
+
+.wishlistInfo {
+  padding: 14px 16px;
+}
+
+.wishlistName {
+  font-size: 15px;
+  font-weight: 500;
+  color: #2c3e50;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+
+.wishlistName:hover {
+  color: #3498db;
+}
+
+.wishlistActions {
+  display: flex;
+  gap: 10px;
+  padding: 0 16px 16px;
+}
+
+.wishlistBtn {
+  flex: 1;
+  padding: 10px 16px;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.wishlistBtn:hover {
+  background: #333;
+}
+
+.wishlistRemove {
+  padding: 10px 16px;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wishlistRemove:hover {
+  border-color: #e74c3c;
   color: #e74c3c;
 }

@@ -2,11 +2,13 @@
 import styles from './specifications.module.css'
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getAuthUser } from '@/lib/auth'
+import { getAuthUser } from '@/lib/clientAuth'
 import { decryptData } from '@/lib/clientEncryption'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 import Swal from 'sweetalert2'
+import { X } from 'lucide-react'
+import { PageSkeleton } from '@/components/Skeleton'
 
 function ProductSpecificationsContent() {
   const router = useRouter()
@@ -88,9 +90,6 @@ function ProductSpecificationsContent() {
             value: a.value || '#0d0c0c'
           }))
       : filteredAttributes
-
-    console.log('All attributes:', attributes)
-    console.log('Filtered attributes:', allAttributes)
 
     const res = await fetch(url, {
       method,
@@ -282,7 +281,7 @@ function ProductSpecificationsContent() {
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
               <h2>Product Specification</h2>
-              <button className={styles.closeBtn} onClick={() => setShowModal(false)}>✕</button>
+              <button className={styles.closeBtn} onClick={() => setShowModal(false)}><X size={16} /></button>
             </div>
             
             <div className={styles.modalContent}>
@@ -377,7 +376,7 @@ function ProductSpecificationsContent() {
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
               <h2>View Specification</h2>
-              <button className={styles.closeBtn} onClick={() => setViewModal(false)}>✕</button>
+              <button className={styles.closeBtn} onClick={() => setViewModal(false)}><X size={16} /></button>
             </div>
             <div className={styles.modalContent}>
               <div className={styles.specSection}>
@@ -422,7 +421,7 @@ function ProductSpecificationsContent() {
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
               <h2>Edit Specification</h2>
-              <button className={styles.closeBtn} onClick={() => setEditModal(false)}>✕</button>
+              <button className={styles.closeBtn} onClick={() => setEditModal(false)}><X size={16} /></button>
             </div>
             <div className={styles.modalContent}>
               <div className={styles.specSection}>
@@ -484,7 +483,7 @@ function ProductSpecificationsContent() {
 
 export default function ProductSpecifications() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<PageSkeleton variant="table" />}>
       <ProductSpecificationsContent />
     </Suspense>
   )

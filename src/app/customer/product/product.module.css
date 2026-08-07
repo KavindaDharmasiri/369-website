@@ -123,6 +123,53 @@
   font-weight: 400;
 }
 
+.priceRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.salePrice {
+  color: #c8102e;
+  font-weight: 600;
+}
+
+.originalPrice {
+  color: #999;
+  font-size: 16px;
+  text-decoration: line-through;
+}
+
+.discountBadge {
+  background: #c8102e;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  display: inline-block;
+  line-height: 1.4;
+}
+
+.relatedImage .discountBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+}
+
+.discountHint {
+  width: 100%;
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: #c8102e;
+  font-weight: 500;
+}
+
 .description {
   color: #666;
   line-height: 1.6;
@@ -220,6 +267,38 @@
   font-size: 16px;
   cursor: pointer;
   margin-bottom: 10px;
+}
+
+.wishlistRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.wishlistBtn {
+  width: 54px;
+  padding: 12px;
+  background: white;
+  color: #1a1a1a;
+  border: 1px solid #ddd;
+  border-radius: 32px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.wishlistBtn:hover {
+  border-color: #1a1a1a;
+}
+
+.wishlistBtn.active {
+  border-color: #e74c3c;
+  color: #e74c3c;
+  background: #fdf0ef;
 }
 
 .shipping {
@@ -343,6 +422,7 @@
   height: 300px;
   background: #f5f5f5;
   margin-bottom: 15px;
+  position: relative;
 }
 
 .relatedImage img {
@@ -359,6 +439,20 @@
 .relatedPrice {
   color: #666;
   font-size: 14px;
+}
+
+.relatedPriceRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+  flex-wrap: wrap;
+}
+
+.relatedSalePrice {
+  color: #c8102e;
+  font-weight: 600;
 }
 
 .footer {
@@ -391,4 +485,170 @@
   color: #666;
   text-decoration: none;
   font-size: 14px;
+}
+
+.reviews {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 60px 60px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.reviewsTitle {
+  font-size: 32px;
+  font-weight: 400;
+  font-family: 'Playfair Display', serif;
+  margin-bottom: 30px;
+  letter-spacing: -0.01em;
+}
+
+.reviewsSummary {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+.reviewsScore {
+  font-size: 48px;
+  font-family: 'Playfair Display', serif;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.reviewsMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: #666;
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.starFilled {
+  color: #f5b301;
+}
+
+.starEmpty {
+  color: #ddd;
+}
+
+.reviewsEmpty {
+  color: #666;
+  font-size: 14px;
+  padding: 20px 0;
+}
+
+.reviewsList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.reviewItem {
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.reviewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.reviewAuthor {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.reviewDate {
+  font-size: 12px;
+  color: #999;
+}
+
+.reviewComment {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+  margin: 10px 0 0;
+}
+
+.reviewForm {
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.reviewFormTitle {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0 0 16px;
+}
+
+.reviewFormStars {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.starBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ddd;
+  padding: 0;
+  transition: transform 0.15s;
+}
+
+.starBtn:hover {
+  transform: scale(1.15);
+}
+
+.starSelected {
+  color: #f5b301;
+}
+
+.reviewInput {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  resize: vertical;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+}
+
+.reviewInput:focus {
+  outline: none;
+  border-color: #1a1a1a;
+}
+
+.reviewSubmit {
+  padding: 12px 32px;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.reviewSubmit:hover {
+  background: #333;
+}
+
+.reviewSubmit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

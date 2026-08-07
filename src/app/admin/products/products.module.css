@@ -276,6 +276,26 @@
   color: #2e7d32;
 }
 
+.lowStock {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #fce8e8;
+  color: #b91c1c;
+  border: 1px solid #f5c2c2;
+}
+
+.stockOk {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: #f5f5f5;
+  color: #666;
+}
+
 .actionBtn {
   background: none;
   border: none;

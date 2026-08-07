@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ data: encrypted }, { status: 401 })
     }
 
-    const token = generateToken({ userId: user.id, email: user.email, userType: user.userType })
+    const token = generateToken({ userId: user.id, email: user.email, userType: user.userType, createdAt: user.createdAt })
 
     const encrypted = encrypt(JSON.stringify({
       message: 'Login successful',
@@ -39,7 +39,8 @@ export async function POST(request: Request) {
       user: {
         id: user.id,
         email: user.email,
-        userType: user.userType
+        userType: user.userType,
+        createdAt: user.createdAt
       }
     }))
 

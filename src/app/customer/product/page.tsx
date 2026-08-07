@@ -1,15 +1,17 @@
 'use client'
 import styles from './product.module.css'
 import { useState, useEffect, Suspense } from 'react'
-import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getAuthUser } from '@/lib/auth'
+import { getAuthUser } from '@/lib/clientAuth'
 import { decryptData } from '@/lib/clientEncryption'
+import { getOptimizedImageUrl } from '@/lib/cloudinary'
 import { useAuditTrail } from '@/lib/useAuditTrail'
 import Cart from '@/components/Cart'
 import CustomerHeader from '@/components/CustomerHeader'
 import CustomerFooter from '@/components/CustomerFooter'
+import { PageSkeleton } from '@/components/Skeleton'
 import Swal from 'sweetalert2'
+import { Heart, Star } from 'lucide-react'
 
 function ProductContent() {
   const router = useRouter()
@@ -22,17 +24,25 @@ function ProductContent() {
   const [specs, setSpecs] = useState<any[]>([])
   const [selectedSku, setSelectedSku] = useState<any>(null)
   const [selectedSpecs, setSelectedSpecs] = useState<{[key: string]: string}>({})
-  const [selectedSize, setSelectedSize] = useState('M')
-  const [selectedColor, setSelectedColor] = useState('beige')
+  const [relatedProducts, setRelatedProducts] = useState<any[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
+  const [isWishlisted, setIsWishlisted] = useState(false)
+  const [reviews, setReviews] = useState<any[]>([])
+  const [averageRating, setAverageRating] = useState(0)
+  const [reviewCount, setReviewCount] = useState(0)
+  const [myRating, setMyRating] = useState(0)
+  const [myComment, setMyComment] = useState('')
+  const [submittingReview, setSubmittingReview] = useState(false)
 
   useEffect(() => {
     setUser(getAuthUser())
     if (productId) {
       loadProductData()
+      checkWishlist()
+      fetchReviews()
     }
   }, [productId])
 
@@ -60,6 +70,23 @@ function ProductContent() {
       category: decrypted.prodCategoryName,
       price: decrypted.prodPrice 
     })
+    if (decrypted.prodCategoryName) {
+      fetchRelatedProducts(decrypted.prodCategoryName)
+    }
+  }
+
+  const fetchRelatedProducts = async (categoryName: string) => {
+    try {
+      const res = await fetch(`/api/products/category/${encodeURIComponent(categoryName)}?sort=newest&limit=4`)
+      const result = await res.json()
+      const decrypted = decryptData(result.data)
+      const products = (decrypted.products || [])
+        .filter((p: any) => p.id !== parseInt(productId!))
+        .slice(0, 4)
+      setRelatedProducts(products)
+    } catch (error) {
+      setRelatedProducts([])
+    }
   }
 
   const fetchImages = async () => {
@@ -104,19 +131,177 @@ function ProductContent() {
     }, 300)
   }
 
+  const fetchReviews = async () => {
+    if (!productId) return
+    try {
+      const res = await fetch(`/api/products/${productId}/reviews`)
+      const result = await res.json()
+      const data = decryptData(result.data)
+      setReviews(data.reviews || [])
+      setAverageRating(data.averageRating || 0)
+      setReviewCount(data.reviewCount || 0)
+    } catch (error) {
+      console.error('Failed to fetch reviews:', error)
+    }
+  }
+
+  const submitReview = async () => {
+    if (myRating === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Select a Rating',
+        text: 'Please select a star rating before submitting',
+        confirmButtonColor: '#000'
+      })
+      return
+    }
+
+    const authUser = getAuthUser()
+    if (!authUser) {
+      sessionStorage.setItem('redirectAfterLogin', `/customer/product?id=${productId}`)
+      router.push('/signin')
+      return
+    }
+
+    setSubmittingReview(true)
+    try {
+      const token = localStorage.getItem('authToken')
+      const res = await fetch(`/api/products/${productId}/reviews`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ rating: myRating, comment: myComment.trim() || undefined })
+      })
+
+      if (res.ok) {
+        setMyRating(0)
+        setMyComment('')
+        await fetchReviews()
+        Swal.fire({
+          icon: 'success',
+          title: 'Review Submitted!',
+          text: 'Thank you for your feedback',
+          confirmButtonColor: '#000',
+          timer: 2000
+        })
+      } else {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to submit review')
+      }
+    } catch (error: any) {
+      console.error('Submit review error:', error)
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.message || 'Failed to submit review',
+        confirmButtonColor: '#000'
+      })
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
+
+  const formatReviewDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
+
+  const renderStars = (rating: number, size = 16) => {
+    return (
+      <div className={styles.stars}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            size={size}
+            className={star <= Math.round(rating) ? styles.starFilled : styles.starEmpty}
+            fill={star <= Math.round(rating) ? 'currentColor' : 'none'}
+          />
+        ))}
+      </div>
+    )
+  }
+
   const handleSpecSelection = (specName: string, attrName: string) => {
     setSelectedSpecs(prev => ({...prev, [specName]: attrName}))
     logActivity('SELECT_SPEC', 'product', productId!, { specName, attrName })
   }
 
+  const checkWishlist = async () => {
+    const authUser = getAuthUser()
+    if (!authUser || !productId) {
+      setIsWishlisted(false)
+      return
+    }
+    try {
+      const token = localStorage.getItem('authToken')
+      const res = await fetch('/api/wishlist', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const result = await res.json()
+      const data = decryptData(result.data)
+      const found = (data.wishlist || []).some((item: any) => item.productId === parseInt(productId!))
+      setIsWishlisted(found)
+    } catch (error) {
+      setIsWishlisted(false)
+    }
+  }
+
+  const toggleWishlist = async () => {
+    const authUser = getAuthUser()
+    if (!authUser) {
+      sessionStorage.setItem('redirectAfterLogin', `/customer/product?id=${productId}`)
+      router.push('/signin')
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('authToken')
+      if (isWishlisted) {
+        await fetch(`/api/wishlist?productId=${productId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        setIsWishlisted(false)
+        Swal.fire({
+          icon: 'success',
+          title: 'Removed from Wishlist',
+          confirmButtonColor: '#000',
+          timer: 1500
+        })
+      } else {
+        await fetch('/api/wishlist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ productId: parseInt(productId!) })
+        })
+        setIsWishlisted(true)
+        Swal.fire({
+          icon: 'success',
+          title: 'Added to Wishlist',
+          confirmButtonColor: '#000',
+          timer: 1500
+        })
+      }
+      window.dispatchEvent(new Event('wishlistUpdated'))
+    } catch (error) {
+      console.error('Failed to update wishlist:', error)
+    }
+  }
+
   if (!product) return null
 
-  const relatedProducts = [
-    { name: 'Cashmere Crewneck', price: '$495' },
-    { name: 'Tailored Wide-Leg Trousers', price: '$595' },
-    { name: 'Silk Draped Blouse', price: '$425' },
-    { name: 'Italian Leather Loafers', price: '$650' },
-  ]
+  const displayPrice = selectedSku ? (selectedSku.salePrice ?? selectedSku.price) : (product.salePrice ?? product.prodPrice)
+  const displayOriginal = selectedSku ? (selectedSku.originalPrice ?? selectedSku.price) : (product.originalPrice ?? product.prodPrice)
+  const isOnSale = Number(displayPrice) < Number(displayOriginal)
+  const discountPercent = isOnSale ? Math.round(((Number(displayOriginal) - Number(displayPrice)) / Number(displayOriginal)) * 100) : 0
 
   return (
     <div className={styles.container}>
@@ -126,18 +311,25 @@ function ProductContent() {
         <div className={`${styles.images} ${isTransitioning ? styles.fadeOut : styles.fadeIn}`}>
           {images.length > 0 ? images.map((img, index) => (
             <div key={index} className={styles.imageBox}>
-              <img src={img} alt={`Product ${index + 1}`} />
+              <img src={getOptimizedImageUrl(img)} alt={`Product ${index + 1}`} />
             </div>
           )) : (
             <div className={styles.imageBox}>
-              <img src={product.prodImg || "https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png"} alt="Product" />
+              <img src={getOptimizedImageUrl(product.prodImg) || "https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png"} alt="Product" />
             </div>
           )}
         </div>
 
         <div className={styles.details}>
           <h1 className={styles.title}>{product.prodName}</h1>
-          <div className={`${styles.price} ${isTransitioning ? styles.fadeOut : styles.fadeIn}`}>LKR {selectedSku?.price || product.prodPrice}</div>
+          <div className={`${styles.priceRow} ${isTransitioning ? styles.fadeOut : styles.fadeIn}`}>
+            <div className={`${styles.price} ${isOnSale ? styles.salePrice : ''}`}>LKR {Number(displayPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            {isOnSale && <div className={styles.originalPrice}>LKR {Number(displayOriginal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>}
+            {isOnSale && <span className={styles.discountBadge}>{discountPercent}% OFF</span>}
+          </div>
+          {isOnSale && !selectedSku && (
+            <p className={styles.discountHint}>{product.discountName ? `${product.discountName} applied` : 'Discount applied'}</p>
+          )}
           <p className={styles.description}>{product.prodDescription}</p>
           {selectedSku && selectedSku.stock > 0 && <p className={`${styles.stockInfo} ${isTransitioning ? styles.fadeOut : styles.fadeIn}`}>In Stock: {selectedSku.stock} available</p>}
           {selectedSku && selectedSku.stock === 0 && <p className={`${styles.stockInfo} ${styles.outOfStock} ${isTransitioning ? styles.fadeOut : styles.fadeIn}`}>Out of Stock</p>}
@@ -187,144 +379,194 @@ function ProductContent() {
             </div>
           ))}
 
-          <button className={styles.addBtn} onClick={async () => {
-            if (isAddingToCart) return
-            setIsAddingToCart(true)
-            
-            try {
-              // Validate specifications are selected
-              if (specs.length > 0 && Object.keys(selectedSpecs).length !== specs.length) {
-                Swal.fire({
-                  icon: 'warning',
-                  title: 'Missing Selection',
-                  text: 'Please select all product options',
-                  confirmButtonColor: '#000'
-                })
-                return
-              }
+          <div className={styles.wishlistRow}>
+            <button
+              className={`${styles.wishlistBtn} ${isWishlisted ? styles.active : ''}`}
+              onClick={toggleWishlist}
+              aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+            >
+              <Heart size={20} fill={isWishlisted ? 'currentColor' : 'none'} />
+            </button>
+            <button className={styles.addBtn} onClick={async () => {
+              if (isAddingToCart) return
+              setIsAddingToCart(true)
 
-              // Validate SKU availability
-              if (specs.length > 0 && !selectedSku) {
+              try {
+                if (specs.length > 0 && Object.keys(selectedSpecs).length !== specs.length) {
+                  Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Selection',
+                    text: 'Please select all product options',
+                    confirmButtonColor: '#000'
+                  })
+                  return
+                }
+
+                if (specs.length > 0 && !selectedSku) {
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Not Available',
+                    text: 'Selected variant is not available',
+                    confirmButtonColor: '#000'
+                  })
+                  return
+                }
+
+                if (selectedSku && selectedSku.stock === 0) {
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Out of Stock',
+                    text: 'This product is currently out of stock',
+                    confirmButtonColor: '#000'
+                  })
+                  return
+                }
+
+                const cartItem = {
+                  productId: parseInt(productId!),
+                  skuId: selectedSku?.id || null,
+                  quantity: 1,
+                  specs: selectedSpecs,
+                  price: Number(displayPrice),
+                  originalPrice: Number(displayOriginal),
+                  name: product.prodName,
+                  image: selectedSku?.images ? JSON.parse(selectedSku.images)[0] : (images.length > 0 ? images[0] : product.prodImg)
+                }
+
+                if (user) {
+                  const token = localStorage.getItem('authToken')
+                  await fetch('/api/cart', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(cartItem)
+                  })
+                  window.dispatchEvent(new Event('cartUpdated'))
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'Added to Cart!',
+                    text: 'Product has been added to your cart',
+                    confirmButtonColor: '#000',
+                    timer: 2000
+                  })
+                } else {
+                  const cart = JSON.parse(localStorage.getItem('cart') || '[]')
+                  cart.push(cartItem)
+                  localStorage.setItem('cart', JSON.stringify(cart))
+                  window.dispatchEvent(new Event('cartUpdated'))
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'Added to Cart!',
+                    text: 'Product has been added to your cart',
+                    confirmButtonColor: '#000',
+                    timer: 2000
+                  })
+                }
+
+                logActivity('ADD_TO_CART', 'product', productId!, {
+                  price: selectedSku?.price || product.prodPrice,
+                  specs: selectedSpecs
+                })
+              } catch (error) {
+                console.error('Failed to add to cart:', error)
                 Swal.fire({
                   icon: 'error',
-                  title: 'Not Available',
-                  text: 'Selected variant is not available',
+                  title: 'Error',
+                  text: 'Failed to add to cart',
                   confirmButtonColor: '#000'
                 })
-                return
+              } finally {
+                setTimeout(() => setIsAddingToCart(false), 1000)
               }
-
-              // Check stock
-              if (selectedSku && selectedSku.stock === 0) {
-                Swal.fire({
-                  icon: 'error',
-                  title: 'Out of Stock',
-                  text: 'This product is currently out of stock',
-                  confirmButtonColor: '#000'
-                })
-                return
-              }
-
-              const cartItem = {
-                productId: parseInt(productId!),
-                skuId: selectedSku?.id || null,
-                quantity: 1,
-                specs: selectedSpecs,
-                price: selectedSku?.price || product.prodPrice,
-                name: product.prodName,
-                image: selectedSku?.images ? JSON.parse(selectedSku.images)[0] : (images.length > 0 ? images[0] : product.prodImg)
-              }
-
-              if (user) {
-                // Logged in - save to backend
-                const token = localStorage.getItem('authToken')
-                await fetch('/api/cart', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                  },
-                  body: JSON.stringify(cartItem)
-                })
-                window.dispatchEvent(new Event('cartUpdated'))
-                Swal.fire({
-                  icon: 'success',
-                  title: 'Added to Cart!',
-                  text: 'Product has been added to your cart',
-                  confirmButtonColor: '#000',
-                  timer: 2000
-                })
-              } else {
-                // Not logged in - save to localStorage
-                const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-                cart.push(cartItem)
-                localStorage.setItem('cart', JSON.stringify(cart))
-                window.dispatchEvent(new Event('cartUpdated'))
-                Swal.fire({
-                  icon: 'success',
-                  title: 'Added to Cart!',
-                  text: 'Product has been added to your cart',
-                  confirmButtonColor: '#000',
-                  timer: 2000
-                })
-              }
-
-              logActivity('ADD_TO_CART', 'product', productId!, { 
-                price: selectedSku?.price || product.prodPrice,
-                specs: selectedSpecs 
-              })
-            } catch (error) {
-              console.error('Failed to add to cart:', error)
-              Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Failed to add to cart',
-                confirmButtonColor: '#000'
-              })
-            } finally {
-              setTimeout(() => setIsAddingToCart(false), 1000)
-            }
-          }}>Add to Bag</button>
-          <p className={styles.shipping}>Free shipping on orders over $200</p>
-
-          <div className={styles.tryOn}>
-            <div className={styles.tryOnHeader}>
-              <span className={styles.tryOnTitle}>AI Try-On</span>
-              <span className={styles.beta}>Beta</span>
-            </div>
-            <p className={styles.tryOnText}>Upload your photo to see how this piece looks on you</p>
-            <div className={styles.uploadBox}>
-              <div className={styles.uploadIcon}>📷</div>
-              <p>Drag and drop your photo</p>
-              <p className={styles.uploadSubtext}>or click to browse</p>
-            </div>
-            <button className={styles.generateBtn}>Generate Try-On</button>
-            <div className={styles.tabs}>
-              <button className={styles.tab}>Product</button>
-              <button className={styles.tab}>On You</button>
-            </div>
+            }}>Add to Bag</button>
           </div>
-
-          <div className={styles.accordion}>
-            <div className={styles.accordionItem}>Details & Care +</div>
-            <div className={styles.accordionItem}>Shipping & Returns +</div>
-            <div className={styles.accordionItem}>Size Guide +</div>
-          </div>
+          <p className={styles.shipping}>Shipping fee calculated at checkout</p>
         </div>
       </div>
 
-      <section className={styles.related}>
-        <h2 className={styles.relatedTitle}>You Also Might Like</h2>
-        <div className={styles.relatedProducts}>
-          {relatedProducts.map((product, index) => (
-            <div key={index} className={styles.relatedProduct}>
-              <div className={styles.relatedImage}>
-                <img src="https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png" alt={product.name} />
+      {relatedProducts.length > 0 && (
+        <section className={styles.related}>
+          <h2 className={styles.relatedTitle}>You Also Might Like</h2>
+          <div className={styles.relatedProducts}>
+            {relatedProducts.map((related) => {
+              const relSale = related.isOnSale === true && Number(related.salePrice) < Number(related.prodPrice)
+              return (
+                <div key={related.id} className={styles.relatedProduct} onClick={() => router.push(`/customer/product?id=${related.id}`)}>
+                  <div className={styles.relatedImage}>
+                    {relSale && <span className={styles.discountBadge}>{related.discountPercent}% OFF</span>}
+                    <img src={getOptimizedImageUrl(related.prodImg) || "https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png"} alt={related.prodName} />
+                  </div>
+                  <div className={styles.relatedName}>{related.prodName}</div>
+                  <div className={styles.relatedPriceRow}>
+                    <span className={relSale ? styles.relatedSalePrice : ''}>LKR {Number(related.salePrice ?? related.prodPrice).toLocaleString()}</span>
+                    {relSale && <span className={styles.originalPrice}>LKR {Number(related.originalPrice).toLocaleString()}</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      <section className={styles.reviews}>
+        <h2 className={styles.reviewsTitle}>Customer Reviews</h2>
+
+        <div className={styles.reviewsSummary}>
+          <div className={styles.reviewsScore}>{averageRating}</div>
+          <div className={styles.reviewsMeta}>
+            {renderStars(averageRating, 20)}
+            <span>{reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}</span>
+          </div>
+        </div>
+
+        {reviews.length === 0 ? (
+          <p className={styles.reviewsEmpty}>No reviews yet. Be the first to review this product.</p>
+        ) : (
+          <div className={styles.reviewsList}>
+            {reviews.map((review) => (
+              <div key={review.id} className={styles.reviewItem}>
+                <div className={styles.reviewHeader}>
+                  <span className={styles.reviewAuthor}>{review.authorName}</span>
+                  <span className={styles.reviewDate}>{formatReviewDate(review.createdAt)}</span>
+                </div>
+                {renderStars(review.rating)}
+                {review.comment && <p className={styles.reviewComment}>{review.comment}</p>}
               </div>
-              <div className={styles.relatedName}>{product.name}</div>
-              <div className={styles.relatedPrice}>{product.price}</div>
-            </div>
-          ))}
+            ))}
+          </div>
+        )}
+
+        <div className={styles.reviewForm}>
+          <h3 className={styles.reviewFormTitle}>Write a Review</h3>
+          <div className={styles.reviewFormStars}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                className={`${styles.starBtn} ${star <= myRating ? styles.starSelected : ''}`}
+                onClick={() => setMyRating(star)}
+                aria-label={`${star} star${star > 1 ? 's' : ''}`}
+              >
+                <Star size={24} fill={star <= myRating ? 'currentColor' : 'none'} />
+              </button>
+            ))}
+          </div>
+          <textarea
+            className={styles.reviewInput}
+            placeholder="Share your thoughts about this product (optional)"
+            value={myComment}
+            onChange={(e) => setMyComment(e.target.value)}
+            rows={4}
+          />
+          <button
+            className={styles.reviewSubmit}
+            onClick={submitReview}
+            disabled={submittingReview}
+          >
+            {submittingReview ? 'Submitting...' : 'Submit Review'}
+          </button>
         </div>
       </section>
 
@@ -337,7 +579,7 @@ function ProductContent() {
 
 export default function Product() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<PageSkeleton variant="cards" />}>
       <ProductContent />
     </Suspense>
   )

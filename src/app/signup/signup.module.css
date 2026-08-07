@@ -61,6 +61,18 @@
   flex-direction: column;
 }
 
+.nameRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .nameRow {
+    grid-template-columns: 1fr;
+  }
+}
+
 .label {
   font-size: 13px;
   font-weight: 400;

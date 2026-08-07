@@ -2,12 +2,13 @@
 import styles from './category.module.css'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getAuthUser, getAuthToken } from '@/lib/auth'
+import { getAuthUser, getAuthToken } from '@/lib/clientAuth'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 import toast, { Toaster } from 'react-hot-toast'
 import { encryptData, decryptData } from '@/lib/clientEncryption'
 import Swal from 'sweetalert2'
+import { X, Eye, PenLine } from 'lucide-react'
 
 interface Category {
   id: number
@@ -45,7 +46,6 @@ export default function CategoryManagement() {
       return
     }
     setUser(authUser)
-    fetchCategories()
   }, [router])
 
   useEffect(() => {
@@ -54,6 +54,15 @@ export default function CategoryManagement() {
       fetchCategories()
     }
   }, [activeOnly, user])
+
+  useEffect(() => {
+    if (!user) return
+    const timer = setTimeout(() => {
+      setCurrentPage(1)
+      fetchCategories()
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [categoryName, categoryDesc])
 
   const fetchCategories = async () => {
     try {
@@ -142,13 +151,11 @@ export default function CategoryManagement() {
   }
 
   const handleView = (category: Category) => {
-    console.log('View clicked:', category)
     setSelectedCategory(category)
     setViewModal(true)
   }
 
   const handleEdit = (category: Category) => {
-    console.log('Edit clicked:', category)
     setSelectedCategory(category)
     setNewCategoryName(category.name)
     setNewCategoryDesc(category.description || '')
@@ -195,39 +202,13 @@ export default function CategoryManagement() {
   }
 
   const handleDeleteClick = async (category: Category) => {
-    const result = await Swal.fire({
-      title: 'Delete Category',
-      text: `Are you sure you want to delete ${category.name}?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Delete'
+    await Swal.fire({
+      title: 'Cannot Delete',
+      text: 'Categories are protected and cannot be deleted.',
+      icon: 'error',
+      confirmButtonColor: '#3085d6',
+      confirmButtonText: 'OK'
     })
-    
-    if (result.isConfirmed) {
-      setLoading(true)
-      try {
-        const token = getAuthToken()
-        const res = await fetch(`/api/categories/${category.id}`, { 
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        const data = await res.json()
-        const decrypted = decryptData(data.data)
-
-        if (res.ok) {
-          toast.success('Category deleted successfully!')
-          fetchCategories()
-        } else {
-          toast.error(decrypted.error || 'Failed to delete category')
-        }
-      } catch (error) {
-        toast.error('An error occurred')
-      } finally {
-        setLoading(false)
-      }
-    }
   }
 
   if (!user) return null
@@ -265,7 +246,6 @@ export default function CategoryManagement() {
               className={styles.filterInput}
               value={categoryName}
               onChange={(e) => setCategoryName(e.target.value)}
-              onKeyUp={fetchCategories}
             />
             <input 
               type="text" 
@@ -273,7 +253,6 @@ export default function CategoryManagement() {
               className={styles.filterInput}
               value={categoryDesc}
               onChange={(e) => setCategoryDesc(e.target.value)}
-              onKeyUp={fetchCategories}
             />
             <label className={styles.toggleLabel}>
               <input 
@@ -314,9 +293,9 @@ export default function CategoryManagement() {
                         </span>
                       </td>
                       <td>
-                        <button className={styles.actionBtn} onClick={() => handleView(category)} title="View">👁</button>
-                        <button className={styles.actionBtn} onClick={() => handleEdit(category)} title="Edit">✎</button>
-                        <button className={styles.actionBtn} onClick={() => handleDeleteClick(category)} title="Delete">✕</button>
+                        <button className={styles.actionBtn} onClick={() => handleView(category)} title="View"><Eye size={16} /></button>
+                        <button className={styles.actionBtn} onClick={() => handleEdit(category)} title="Edit"><PenLine size={16} /></button>
+                        <button className={styles.actionBtn} onClick={() => handleDeleteClick(category)} title="Delete"><X size={16} /></button>
                       </td>
                     </tr>
                   ))

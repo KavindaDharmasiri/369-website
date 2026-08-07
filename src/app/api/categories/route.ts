@@ -83,7 +83,13 @@ export async function GET(req: NextRequest) {
 
     const categories = await prisma.category.findMany({ where, orderBy: { createdAt: 'desc' } })
     const encrypted = encrypt(JSON.stringify({ categories }))
-    return NextResponse.json({ data: encrypted })
+
+    const isPublicFetch = !name && !description && !activeOnly && !req.headers.get('authorization')
+    const headers = isPublicFetch
+      ? { 'Cache-Control': 'public, s-maxage=300, max-age=300, stale-while-revalidate=600' }
+      : undefined
+
+    return NextResponse.json({ data: encrypted }, headers ? { headers } : undefined)
   } catch (error) {
     const encrypted = encrypt(JSON.stringify({ error: 'Failed to fetch categories' }))
     return NextResponse.json({ data: encrypted }, { status: 500 })

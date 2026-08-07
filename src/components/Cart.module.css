@@ -92,9 +92,22 @@
   margin: 0 0 10px;
 }
 
+.itemPriceWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 15px;
+}
+
 .itemPrice {
   font-size: 16px;
-  margin: 0 0 15px;
+  margin: 0;
+}
+
+.itemOriginalPrice {
+  font-size: 13px;
+  color: #999;
+  text-decoration: line-through;
 }
 
 .itemActions {

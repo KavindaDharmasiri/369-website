@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import styles from '../../account.module.css'
+import { getOptimizedImageUrl } from '@/lib/cloudinary'
+import { Skeleton } from '@/components/Skeleton'
 
 export default function OrderDetailsPage() {
   const params = useParams()
@@ -48,7 +50,19 @@ export default function OrderDetailsPage() {
     })
   }
 
-  if (loading) return <div>Loading...</div>
+  if (loading) {
+    return (
+      <div className={styles.orderDetails}>
+        <Skeleton width="220px" height="28px" />
+        <div style={{ height: 16 }} />
+        <Skeleton width="160px" height="18px" />
+        <div style={{ height: 28 }} />
+        <Skeleton height="140px" />
+        <div style={{ height: 24 }} />
+        <Skeleton height="200px" />
+      </div>
+    )
+  }
   if (!order) return <div>Order not found</div>
 
   return (
@@ -101,7 +115,7 @@ export default function OrderDetailsPage() {
                 background: 'white'
               }}>
                 <img 
-                  src={item.image || "https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png"} 
+                  src={getOptimizedImageUrl(item.image) || "https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png"} 
                   alt={item.productName}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
@@ -115,7 +129,12 @@ export default function OrderDetailsPage() {
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#495057' }}>
                   <span>Qty: {item.quantity}</span>
-                  <span>LKR {Number(item.price).toFixed(2)}</span>
+                  <span>
+                    {Number(item.originalPrice) > Number(item.price) && (
+                      <span style={{ textDecoration: 'line-through', color: '#999', marginRight: '8px' }}>LKR {Number(item.originalPrice).toFixed(2)}</span>
+                    )}
+                    LKR {Number(item.price).toFixed(2)}
+                  </span>
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 600, color: '#212529' }}>
                   Total: LKR {Number(item.subtotal).toFixed(2)}
@@ -144,6 +163,12 @@ export default function OrderDetailsPage() {
         </button>
         <div className={styles.orderSummary}>
           <p><strong>Subtotal:</strong> LKR {order.subtotal}</p>
+          {Number(order.productDiscount) > 0 && (
+            <p><strong>Item Discounts:</strong> -LKR {Number(order.productDiscount).toFixed(2)}</p>
+          )}
+          {Number(order.discount) > 0 && (
+            <p><strong>Coupon Discount{order.couponCode ? ` (${order.couponCode})` : ''}:</strong> -LKR {Number(order.discount).toFixed(2)}</p>
+          )}
           <p><strong>Shipping:</strong> LKR {order.shippingFee}</p>
           <p><strong>Tax:</strong> LKR {order.tax}</p>
           <hr />

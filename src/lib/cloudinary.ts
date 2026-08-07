@@ -10,3 +10,11 @@ export const getCloudinaryUrl = (publicId: string, transformations?: string) => 
     ? `${baseUrl}/${transformations}/${publicId}`
     : `${baseUrl}/${publicId}`
 }
+
+export const getOptimizedImageUrl = (url: string, transforms = 'w_600,q_auto,f_auto') => {
+  if (!url) return url
+  const marker = '/image/upload/'
+  const idx = url.indexOf(marker)
+  if (idx === -1) return url
+  return `${url.slice(0, idx + marker.length)}${transforms}/${url.slice(idx + marker.length)}`
+}

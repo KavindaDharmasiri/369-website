@@ -2,11 +2,12 @@
 import styles from './products.module.css'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getAuthUser } from '@/lib/auth'
+import { getAuthUser } from '@/lib/clientAuth'
 import { decryptData } from '@/lib/clientEncryption'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 import Swal from 'sweetalert2'
+import { X, PenLine } from 'lucide-react'
 
 export default function AdminProducts() {
   const router = useRouter()
@@ -47,6 +48,32 @@ export default function AdminProducts() {
   }
 
   if (!user) return null
+
+  const filteredProducts = products.filter((product) => {
+    if (productName && !(product.prodName || '').toLowerCase().includes(productName.toLowerCase())) {
+      return false
+    }
+    if (productType !== 'All') {
+      const type = product.prodCategoryName || ''
+      if (!type.toLowerCase().includes(productType.toLowerCase())) {
+        return false
+      }
+    }
+    if (addedDate) {
+      const [m, d, y] = addedDate.split('/')
+      if (m && d && y) {
+        const productDate = new Date(product.createdAt)
+        if (
+          productDate.getMonth() + 1 !== parseInt(m) ||
+          productDate.getDate() !== parseInt(d) ||
+          productDate.getFullYear() !== parseInt(y)
+        ) {
+          return false
+        }
+      }
+    }
+    return true
+  })
 
   return (
     <div className={styles.container}>
@@ -134,18 +161,19 @@ export default function AdminProducts() {
                   <th>Sub Category</th>
                   <th>Product Market</th>
                   <th>Product Status</th>
+                  <th>Stock</th>
                   <th>Product Price</th>
                   <th>Created At</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {products.length === 0 ? (
+                {filteredProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={9} style={{ textAlign: 'center', padding: '40px' }}>No products found</td>
+                    <td colSpan={10} style={{ textAlign: 'center', padding: '40px' }}>No products found</td>
                   </tr>
                 ) : (
-                  products.map((product) => (
+                  filteredProducts.map((product) => (
                     <tr key={product.id}>
                       <td><span className={styles.badge}>{product.prodType}</span></td>
                       <td>{product.prodName}</td>
@@ -153,11 +181,19 @@ export default function AdminProducts() {
                       <td>{product.prodSubCategoryName}</td>
                       <td><span className={product.prodMarket === 'MARKETPLACE' ? styles.marketBadge : styles.draftBadge}>{product.prodMarket === 'MARKETPLACE' ? 'Marketplace' : 'Draft Market'}</span></td>
                       <td><span className={product.status === 'ACTIVE' ? styles.statusActive : styles.statusInactive}>{product.status}</span></td>
+                      <td>
+                        <span
+                          className={product.lowStock ? styles.lowStock : styles.stockOk}
+                          title={product.lowStock ? `Low stock (threshold reached)` : ''}
+                        >
+                          {product.totalStock ?? 0}
+                        </span>
+                      </td>
                       <td>LKR {product.prodPrice}</td>
                       <td>{new Date(product.createdAt).toLocaleString()}</td>
                       <td>
                         <button className={styles.actionBtn} onClick={() => router.push(`/admin/products/add?id=${product.id}&mode=view`)} title="View">◎</button>
-                        <button className={styles.actionBtn} onClick={() => router.push(`/admin/products/add?id=${product.id}&mode=edit`)} title="Edit">✎</button>
+                        <button className={styles.actionBtn} onClick={() => router.push(`/admin/products/add?id=${product.id}&mode=edit`)} title="Edit"><PenLine size={16} /></button>
                         <button className={styles.actionBtn} onClick={async () => {
                           const result = await Swal.fire({
                             title: 'Delete Product',
@@ -187,7 +223,7 @@ export default function AdminProducts() {
                               Swal.fire('Error!', 'Failed to delete product.', 'error')
                             }
                           }
-                        }} title="Delete">✕</button>
+                        }} title="Delete"><X size={16} /></button>
                       </td>
                     </tr>
                   ))
@@ -203,7 +239,7 @@ export default function AdminProducts() {
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
               <h2>Configure Shipping Fee</h2>
-              <button className={styles.closeBtn} onClick={() => setShowShippingModal(false)}>✕</button>
+              <button className={styles.closeBtn} onClick={() => setShowShippingModal(false)}><X size={16} /></button>
             </div>
             <div className={styles.modalContent}>
               <div className={styles.field}>

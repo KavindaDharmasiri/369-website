@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     if (existingAddress) {
       // Update existing address
       savedAddress = await prisma.address.update({
-        where: { id: existingAddress.id },
+        where: { address_id: existingAddress.address_id },
         data: {
           firstName,
           lastName,

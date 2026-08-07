@@ -4,13 +4,18 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import toast, { Toaster } from 'react-hot-toast'
 import { encryptData, decryptData } from '@/lib/clientEncryption'
+import { setAuthToken } from '@/lib/clientAuth'
 
 export default function SignUp() {
   const router = useRouter()
   const [email, setEmail] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [agreed, setAgreed] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState({ email: '', password: '', confirmPassword: '' })
 
   const validateEmail = (email: string) => {
@@ -54,8 +59,10 @@ export default function SignUp() {
       return
     }
 
+    setSubmitting(true)
+
     try {
-      const encryptedPayload = encryptData({ email, password })
+      const encryptedPayload = encryptData({ email, firstName, lastName, phone, password })
       
       const response = await fetch('/api/register', {
         method: 'POST',
@@ -68,7 +75,12 @@ export default function SignUp() {
 
       if (!response.ok) {
         toast.error(data.error || 'Registration failed')
+        setSubmitting(false)
         return
+      }
+
+      if (data.token) {
+        setAuthToken(data.token)
       }
 
       toast.success('Account created successfully!')
@@ -84,6 +96,7 @@ export default function SignUp() {
     } catch (error) {
       console.error('Signup error:', error)
       toast.error('Something went wrong. Please try again.')
+      setSubmitting(false)
     }
   }
 
@@ -98,6 +111,41 @@ export default function SignUp() {
         <p className={styles.subtitle}>Join our community for exclusive access to<br />new arrivals and personalized galleries.</p>
 
         <form className={styles.form} onSubmit={handleSubmit}>
+          <div className={styles.nameRow}>
+            <div className={styles.field}>
+              <label className={styles.label}>First Name</label>
+              <input
+                type="text"
+                placeholder="First name"
+                className={styles.input}
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+              />
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>Last Name</label>
+              <input
+                type="text"
+                placeholder="Last name"
+                className={styles.input}
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label}>Phone (optional)</label>
+            <input
+              type="tel"
+              placeholder="+94 7X XXX XXXX"
+              className={styles.input}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </div>
+
           <div className={styles.field}>
             <label className={styles.label}>Email Address</label>
             <input 
@@ -156,22 +204,13 @@ export default function SignUp() {
               required 
             />
             <label htmlFor="terms">
-              I agree to the <a href="#" className={styles.link}>Terms of Service</a> and <a href="#" className={styles.link}>Privacy Policy</a>
+              I agree to the Terms of Service and Privacy Policy
             </label>
           </div>
 
-          <button type="submit" className={styles.btn} disabled={!agreed}>Create Account</button>
-
-          {/* <p className={styles.divider}>Or continue with</p>
-
-          <div className={styles.socialBtns}>
-            <button type="button" className={styles.socialBtn}>
-              <span>G</span> Google
-            </button>
-            <button type="button" className={styles.socialBtn}>
-              <span></span> Apple
-            </button>
-          </div> */}
+          <button type="submit" className={styles.btn} disabled={!agreed || submitting}>
+            {submitting ? 'Creating Account...' : 'Create Account'}
+          </button>
 
           <p className={styles.login}>
             Already have an account? <a href="/signin" className={styles.link}>Log In</a>

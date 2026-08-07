@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { encrypt } from '@/lib/encryption'
+import { attachDiscountInfo } from '@/lib/discounts'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
@@ -11,10 +14,17 @@ export async function GET() {
         featuredOnHomepage: true,
         isDeleted: false
       },
-      orderBy: { createdAt: 'desc' }
+      include: { productImages: { orderBy: { isPrimary: 'desc' }, take: 5 } },
+      orderBy: { createdAt: 'desc' },
+      take: 50
     })
 
-    return NextResponse.json({ data: encrypt(JSON.stringify({ products })) })
+    const enriched = await attachDiscountInfo(prisma, products)
+
+    return NextResponse.json(
+      { data: encrypt(JSON.stringify({ products: enriched })) },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+    )
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
