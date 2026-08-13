@@ -24,8 +24,55 @@ model User {
   orders      Order[]
   wishlistItems WishlistItem[]
   reviews     Review[]
+  tryOnSpace  TryOnSpace?
 
   @@map("users")
+}
+
+model TryOnSpace {
+  id                Int            @id @default(autoincrement()) @map("try_on_space_id")
+  userId            Int            @unique @map("user_id")
+  spaceName         String?        @map("space_name")
+  status            String         @default("none") // none | creating | ready | failed
+  error             String?        @map("error")
+  usedToday         Int            @default(0) @map("used_today")
+  usageDate         String?        @map("usage_date")
+  packageStatus     String         @default("none") @map("package_status") // none | active | expired
+  packageExpiresAt  DateTime?      @map("package_expires_at")
+  packageDailyLimit Int            @default(0) @map("package_daily_limit")
+  packageUpdatedAt  DateTime?      @map("package_updated_at")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  user              User           @relation(fields: [userId], references: [id])
+  payments          TryOnPayment[]
+
+  @@map("try_on_spaces")
+}
+
+model TryOnPayment {
+  id            Int         @id @default(autoincrement()) @map("payment_id")
+  userId        Int         @map("user_id")
+  amount        Decimal     @db.Decimal(10, 2) @map("amount")
+  commission    Decimal     @db.Decimal(10, 2) @map("commission")
+  providerCut   Decimal     @db.Decimal(10, 2) @map("provider_cut")
+  status        String      @default("demo_paid")
+  transactionId String?     @map("transaction_id")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  tryOnSpace    TryOnSpace  @relation(fields: [userId], references: [userId])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("try_on_payments")
+}
+
+model TryOnFreePool {
+  id        Int      @id @default(autoincrement()) @map("pool_id")
+  date      String   @unique @map("pool_date")
+  usedToday Int      @default(0) @map("used_today")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("try_on_free_pools")
 }
 
 model AppSetting {

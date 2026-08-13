@@ -7,11 +7,13 @@ import { decryptData } from '@/lib/clientEncryption'
 import { getOptimizedImageUrl } from '@/lib/cloudinary'
 import { useAuditTrail } from '@/lib/useAuditTrail'
 import Cart from '@/components/Cart'
+import TryOnModal from '@/components/TryOnModal'
+import { detectGarmentType } from '@/lib/garmentType'
 import CustomerHeader from '@/components/CustomerHeader'
 import CustomerFooter from '@/components/CustomerFooter'
 import { PageSkeleton } from '@/components/Skeleton'
 import Swal from 'sweetalert2'
-import { Heart, Star } from 'lucide-react'
+import { Heart, Star, Sparkles } from 'lucide-react'
 
 function ProductContent() {
   const router = useRouter()
@@ -26,6 +28,7 @@ function ProductContent() {
   const [selectedSpecs, setSelectedSpecs] = useState<{[key: string]: string}>({})
   const [relatedProducts, setRelatedProducts] = useState<any[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [tryOnOpen, setTryOnOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
@@ -303,6 +306,18 @@ function ProductContent() {
   const isOnSale = Number(displayPrice) < Number(displayOriginal)
   const discountPercent = isOnSale ? Math.round(((Number(displayOriginal) - Number(displayPrice)) / Number(displayOriginal)) * 100) : 0
 
+  const tryOnGarmentUrl = (() => {
+    if (selectedSku?.images) {
+      try {
+        const skuImages = JSON.parse(selectedSku.images)
+        if (Array.isArray(skuImages) && skuImages.length > 0) return skuImages[0]
+      } catch {}
+    }
+    return images.length > 0 ? images[0] : (product?.prodImg || '')
+  })()
+
+  const tryOnSkuName = selectedSku ? Object.values(selectedSpecs).join(' / ') : undefined
+
   return (
     <div className={styles.container}>
       <CustomerHeader user={user} onCartOpen={() => setIsCartOpen(true)} />
@@ -482,6 +497,14 @@ function ProductContent() {
               }
             }}>Add to Bag</button>
           </div>
+          {user && selectedSku && tryOnGarmentUrl && (
+            <button
+              className={styles.tryonBtn}
+              onClick={() => setTryOnOpen(true)}
+            >
+              <Sparkles size={18} /> Try It Out
+            </button>
+          )}
           <p className={styles.shipping}>Shipping fee calculated at checkout</p>
         </div>
       </div>
@@ -573,6 +596,19 @@ function ProductContent() {
       <CustomerFooter />
 
       <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+
+      <TryOnModal
+        open={tryOnOpen}
+        onClose={() => setTryOnOpen(false)}
+        garmentUrl={tryOnGarmentUrl}
+        productName={product?.prodName || ''}
+        skuName={tryOnSkuName}
+        garmentType={detectGarmentType(
+          product?.prodSubCategoryName,
+          product?.prodCategoryName,
+          product?.prodName
+        )}
+      />
     </div>
   )
 }
