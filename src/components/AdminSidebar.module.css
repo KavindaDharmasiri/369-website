@@ -1,10 +1,10 @@
 .sidebar {
   width: 260px;
-  background: white;
-  border-right: 1px solid #e9ecef;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  padding: 32px 0;
+  padding: 28px 0;
   position: fixed;
   top: 0;
   left: 0;
@@ -14,40 +14,41 @@
 
 .logo {
   font-size: 28px;
-  font-family: 'Playfair Display', serif;
-  padding: 0 28px 32px;
-  font-weight: 500;
+  font-family: var(--font-serif);
+  padding: 0 28px 28px;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   padding: 0 16px;
   flex: 1;
 }
 
 .navLink {
-  padding: 10px 20px;
-  color: #6c757d;
+  padding: 10px 16px;
+  color: var(--text-secondary);
   text-decoration: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   gap: 12px;
   font-size: 14px;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: all var(--duration-fast) var(--ease-out);
   font-weight: 400;
 }
 
 .navLink:hover {
-  background: #f1f3f5;
-  color: #212529;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .navLink.active {
-  background: #f1f3f5;
-  color: #111827;
+  background: var(--accent-light);
+  color: var(--accent);
   font-weight: 500;
 }
 
@@ -57,7 +58,7 @@
 }
 
 .navSection {
-  margin: 4px 0;
+  margin: 2px 0;
 }
 
 .navSectionTitle {
@@ -69,21 +70,22 @@
   border: none;
   cursor: pointer;
   font-size: 11px;
-  color: #adb5bd;
-  padding: 10px 20px 6px;
+  color: var(--text-muted);
+  padding: 10px 16px 6px;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.08em;
   font-weight: 600;
   font-family: inherit;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .navSectionTitle:hover {
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .chevron {
-  transition: transform 0.25s ease;
-  color: #adb5bd;
+  transition: transform var(--duration-normal) var(--ease-out);
+  color: var(--text-muted);
 }
 
 .chevronOpen {
@@ -93,7 +95,7 @@
 .navCollapse {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease;
+  transition: max-height var(--duration-slow) var(--ease-out);
 }
 
 .navCollapseOpen {
@@ -105,7 +107,7 @@
 }
 
 .subLink {
-  padding-left: 32px;
+  padding-left: 44px;
 }
 
 .userProfile {
@@ -113,7 +115,7 @@
   align-items: center;
   gap: 12px;
   padding: 18px 28px;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid var(--border);
   margin-top: auto;
 }
 
@@ -121,8 +123,8 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #111827, #374151);
-  color: white;
+  background: var(--accent);
+  color: var(--accent-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -142,11 +144,12 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--text);
 }
 
 .userEmail {
   font-size: 11px;
-  color: #6c757d;
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -160,29 +163,30 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #6c757d;
+  color: var(--text-secondary);
   padding: 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .menuBtn:hover {
-  background: #f1f3f5;
-  color: #dc2626;
+  background: var(--bg);
+  color: var(--error);
 }
 
 .logoutDropdown {
   position: absolute;
   bottom: 100%;
   right: 0;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
   margin-bottom: 8px;
   min-width: 120px;
+  overflow: hidden;
 }
 
 .logoutDropdown button {
@@ -193,12 +197,12 @@
   text-align: left;
   cursor: pointer;
   font-size: 14px;
-  color: #dc2626;
-  transition: background 0.2s;
+  color: var(--error);
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .logoutDropdown button:hover {
-  background: #fef2f2;
+  background: var(--error-light);
 }
 
 .bellContainer {
@@ -210,17 +214,17 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #6c757d;
+  color: var(--text-secondary);
   padding: 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
-  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .bellBtn:hover {
-  background: #f1f3f5;
-  color: #111827;
+  background: var(--bg);
+  color: var(--text);
   transform: scale(1.06);
 }
 
@@ -228,7 +232,7 @@
   position: absolute;
   top: -2px;
   right: -2px;
-  background: #dc2626;
+  background: var(--error);
   color: white;
   font-size: 9px;
   font-weight: 700;
@@ -239,7 +243,7 @@
   align-items: center;
   justify-content: center;
   padding: 0 4px;
-  animation: badgePop 0.3s ease;
+  animation: badgePop 300ms var(--ease-spring);
 }
 
 @keyframes badgePop {
@@ -251,10 +255,10 @@
 .bellBackdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(2px);
+  background: rgba(26, 26, 26, 0.4);
+  backdrop-filter: blur(4px);
   z-index: 200;
-  animation: fadeIn 0.25s ease;
+  animation: fadeIn 250ms var(--ease-out);
 }
 
 @keyframes fadeIn {
@@ -269,12 +273,12 @@
   bottom: 0;
   width: 380px;
   max-width: 92vw;
-  background: white;
+  background: var(--surface);
   z-index: 210;
   display: flex;
   flex-direction: column;
-  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.15);
-  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-xl);
+  animation: slideInRight 400ms var(--ease-spring);
 }
 
 @keyframes slideInRight {
@@ -286,23 +290,23 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px;
-  border-bottom: 1px solid #f1f3f5;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
 }
 
 .bellTitle {
   font-size: 16px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text);
 }
 
 .bellUnreadChip {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: var(--error-light);
+  color: var(--error);
   font-size: 11px;
   font-weight: 600;
   padding: 3px 10px;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
 }
 
 .bellClose {
@@ -310,14 +314,14 @@
   border: none;
   font-size: 24px;
   line-height: 1;
-  color: #6c757d;
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 4px;
-  transition: color 0.15s ease;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .bellClose:hover {
-  color: #111827;
+  color: var(--text);
 }
 
 .bellHeaderRow {
@@ -329,7 +333,7 @@
 .markReadBtn {
   background: none;
   border: none;
-  color: #4f46e5;
+  color: var(--accent);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -348,7 +352,7 @@
 .bellEmpty {
   padding: 64px 24px;
   text-align: center;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 .bellEmptyIcon {
@@ -358,15 +362,15 @@
   width: 64px;
   height: 64px;
   margin: 0 auto 12px;
-  color: #d1d5db;
-  background: #f3f4f6;
+  color: var(--text-muted);
+  background: var(--bg);
   border-radius: 50%;
 }
 
 .bellEmpty p {
   font-size: 15px;
   font-weight: 500;
-  color: #4b5563;
+  color: var(--text-secondary);
   margin: 0 0 4px;
 }
 
@@ -376,12 +380,12 @@
 
 .bellItem {
   padding: 14px 20px;
-  border-bottom: 1px solid #f1f3f5;
-  transition: background 0.15s ease;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .bellItem:hover {
-  background: #fafbfc;
+  background: var(--bg);
 }
 
 .bellItemTop {
@@ -397,40 +401,40 @@
   gap: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text);
 }
 
 .bellItemDot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #4f46e5;
+  background: var(--accent);
   flex-shrink: 0;
 }
 
 .bellItemDotRead {
-  background: #d1d5db;
+  background: var(--border-strong);
 }
 
 .bellItemMsg {
   font-size: 12px;
-  color: #4b5563;
+  color: var(--text-secondary);
   margin-top: 4px;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .bellItemTime {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
 .bellUnread {
-  background: #f5f7ff;
+  background: var(--accent-light);
 }
 
 .bellUnread:hover {
-  background: #eef1ff;
+  background: #F5E8D8;
 }
 
 .mobileToggle {
@@ -451,14 +455,14 @@
   display: none;
   background: none;
   border: none;
-  color: #6c757d;
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .mobileClose:hover {
-  color: #111827;
+  color: var(--text);
 }
 
 @media (max-width: 900px) {
@@ -470,17 +474,17 @@
     top: 14px;
     left: 14px;
     z-index: 190;
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
     padding: 8px;
-    color: #111827;
+    color: var(--text);
     cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-sm);
   }
 
   .mobileToggle:hover {
-    background: #f1f3f5;
+    background: var(--bg);
   }
 
   .mobileClose {
@@ -495,9 +499,9 @@
 
   .sidebar {
     transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 400ms var(--ease-spring);
     z-index: 300;
-    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-xl);
     padding-top: 8px;
   }
 
@@ -509,9 +513,9 @@
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(26, 26, 26, 0.45);
     z-index: 290;
-    animation: fadeIn 0.2s ease;
+    animation: fadeIn 200ms var(--ease-out);
   }
 
   .userProfile {

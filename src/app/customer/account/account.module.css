@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, var(--bg) 0%, var(--border) 100%);
 }
 
 .container {
@@ -17,8 +17,8 @@
 
 .sidebar {
   width: 260px;
-  background: white;
-  border-right: 1px solid #e9ecef;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   padding: 32px 0;
@@ -26,19 +26,19 @@
   top: 10%;
   bottom: 30%;
   left: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
   overflow-y: auto;
   z-index: 10;
 }
 
 .sidebar h2 {
   font-size: 28px;
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-serif);
   padding: 0 28px 48px;
   font-weight: 500;
   margin: 0;
-  color: #333;
+  color: var(--text);
 }
 
 .nav {
@@ -51,29 +51,29 @@
 
 .nav button {
   padding: 12px 20px;
-  color: #6c757d;
+  color: var(--text-secondary);
   background: none;
   border: none;
   text-align: left;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   gap: 14px;
   font-size: 15px;
-  transition: all 0.2s;
+  transition: all var(--duration-fast) var(--ease-out);
   font-weight: 400;
 }
 
 .nav button:hover {
-  background: #f8f9fa;
-  color: #212529;
+  background: var(--accent-light);
+  color: var(--text);
 }
 
 .nav button.active {
-  background: #f8f9fa;
-  color: #212529;
-  font-weight: 400;
+  background: var(--accent-light);
+  color: var(--text);
+  font-weight: 500;
 }
 
 .content {
@@ -89,11 +89,11 @@
 .orderHistory h1 {
   font-size: 32px;
   margin-bottom: 10px;
-  color: #2c3e50;
+  color: var(--text);
 }
 
 .orderHistory p {
-  color: #5a6c7d;
+  color: var(--text-secondary);
   margin-bottom: 30px;
 }
 
@@ -101,7 +101,7 @@
   display: flex;
   gap: 30px;
   margin-bottom: 30px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border);
 }
 
 .tab {
@@ -110,11 +110,14 @@
   background: none;
   cursor: pointer;
   border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  transition: color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
 }
 
 .tab.active {
-  border-bottom-color: #3498db;
-  color: #2980b9;
+  border-bottom-color: var(--accent);
+  color: var(--accent);
 }
 
 .orderTable {
@@ -126,35 +129,35 @@
 .orderTable td {
   padding: 15px;
   text-align: left;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border);
 }
 
 .orderTable th {
   font-weight: 500;
-  color: #34495e;
-  background: #f8f9fa;
+  color: var(--text);
+  background: var(--surface);
 }
 
 .status {
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 12px;
   text-transform: uppercase;
 }
 
 .status.delivered {
-  background-color: #e8f5e8;
-  color: #2d5a2d;
+  background-color: var(--success-light);
+  color: var(--success);
 }
 
 .status.shipped {
-  background-color: #e3f2fd;
-  color: #1565c0;
+  background-color: var(--accent-light);
+  color: var(--accent);
 }
 
 .status.processing {
-  background-color: #fff3e0;
-  color: #e65100;
+  background-color: var(--warning);
+  color: var(--accent-text);
 }
 
 .status.pending {
@@ -163,29 +166,31 @@
 }
 
 .status.paid {
-  background-color: #e3f2fd;
-  color: #1565c0;
+  background-color: var(--accent-light);
+  color: var(--accent);
 }
 
 .status.cancelled {
-  background-color: #f8d7da;
-  color: #721c24;
+  background-color: var(--error-light);
+  color: var(--error);
 }
 
 .status.refunded {
-  background-color: #e2e3e5;
-  color: #41464b;
+  background-color: var(--surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
 }
 
 .viewDetails {
-  color: #3498db;
+  color: var(--accent);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .viewDetails:hover {
-  color: #2980b9;
+  color: var(--accent-hover);
   text-decoration: underline;
 }
 
@@ -196,28 +201,28 @@
 .orderDetails h1 {
   font-size: 32px;
   margin-bottom: 10px;
-  color: #2c3e50;
+  color: var(--text);
 }
 
 .orderDetails h3 {
-  color: #34495e;
+  color: var(--text);
   margin-bottom: 16px;
   font-size: 18px;
-  border-bottom: 2px solid #3498db;
+  border-bottom: 2px solid var(--accent);
   padding-bottom: 8px;
   display: inline-block;
 }
 
 .orderDetails p {
-  color: #5a6c7d;
+  color: var(--text-secondary);
   margin-bottom: 8px;
 }
 
 .orderSummary {
-  background: #f8f9fa;
+  background: var(--surface);
   padding: 20px;
-  border-radius: 8px;
-  border-left: 4px solid #3498db;
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--accent);
 }
 
 .statusStamp {
@@ -228,7 +233,7 @@
   width: 200px;
   height: 200px;
   border: 6px solid;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -249,7 +254,7 @@
   right: 15px;
   bottom: 15px;
   border: 3px solid;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border-color: inherit;
   z-index: -1;
 }
@@ -267,27 +272,27 @@
 }
 
 .statusStamp.delivered {
-  border-color: #27ae60;
-  color: #27ae60;
-  background: rgba(39, 174, 96, 0.1);
+  border-color: var(--success);
+  color: var(--success);
+  background: rgba(46, 139, 87, 0.1);
 }
 
 .statusStamp.shipped {
-  border-color: #3498db;
-  color: #3498db;
-  background: rgba(52, 152, 219, 0.1);
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(190, 118, 53, 0.1);
 }
 
 .statusStamp.processing {
-  border-color: #f39c12;
-  color: #f39c12;
-  background: rgba(243, 156, 18, 0.1);
+  border-color: var(--warning);
+  color: var(--warning);
+  background: rgba(212, 148, 10, 0.1);
 }
 
 .statusStamp.pending {
-  border-color: #e74c3c;
-  color: #e74c3c;
-  background: rgba(231, 76, 60, 0.1);
+  border-color: var(--error);
+  color: var(--error);
+  background: rgba(194, 75, 63, 0.1);
 }
 
 .stampText {
@@ -335,11 +340,11 @@
 }
 
 .paymentStatus.paid {
-  color: #27ae60;
+  color: var(--success);
 }
 
 .paymentStatus.notPaid {
-  color: #e74c3c;
+  color: var(--error);
 }
 
 .wishlistGrid {
@@ -349,21 +354,21 @@
 }
 
 .wishlistItem {
-  background: white;
-  border-radius: 12px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  border: 1px solid #eee;
-  transition: box-shadow 0.2s;
+  border: 1px solid var(--border);
+  transition: box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .wishlistItem:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-md);
 }
 
 .wishlistImage {
   width: 100%;
   aspect-ratio: 4 / 5;
-  background: #f5f5f5;
+  background: var(--surface);
   position: relative;
 }
 
@@ -377,20 +382,20 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  background: #c8102e;
-  color: #fff;
+  background: var(--error);
+  color: var(--accent-text);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
   padding: 5px 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   text-transform: uppercase;
   z-index: 2;
 }
 
 .wishlistPrice {
   font-size: 14px;
-  color: #5a6c7d;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -398,12 +403,12 @@
 }
 
 .wishlistSalePrice {
-  color: #c8102e;
+  color: var(--error);
   font-weight: 600;
 }
 
 .wishlistOriginalPrice {
-  color: #999;
+  color: var(--text-muted);
   font-size: 13px;
   text-decoration: line-through;
 }
@@ -415,13 +420,14 @@
 .wishlistName {
   font-size: 15px;
   font-weight: 500;
-  color: #2c3e50;
+  color: var(--text);
   cursor: pointer;
   margin-bottom: 4px;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .wishlistName:hover {
-  color: #3498db;
+  color: var(--accent);
 }
 
 .wishlistActions {
@@ -433,31 +439,31 @@
 .wishlistBtn {
   flex: 1;
   padding: 10px 16px;
-  background: #1a1a1a;
-  color: white;
+  background: var(--accent);
+  color: var(--accent-text);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .wishlistBtn:hover {
-  background: #333;
+  background: var(--accent-hover);
 }
 
 .wishlistRemove {
   padding: 10px 16px;
   background: none;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .wishlistRemove:hover {
-  border-color: #e74c3c;
-  color: #e74c3c;
+  border-color: var(--error);
+  color: var(--error);
 }

@@ -1,9 +1,9 @@
 .headerCard {
-  background: #fff;
-  border-radius: 12px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
   padding: 28px;
   max-width: 520px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-md);
   display: flex;
   align-items: center;
   gap: 18px;
@@ -13,9 +13,9 @@
 .avatar {
   width: 64px;
   height: 64px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #111827, #374151);
-  color: white;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--text), var(--text-secondary));
+  color: var(--accent-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -31,12 +31,12 @@
 .headerName {
   font-size: 20px;
   font-weight: 600;
-  color: #212529;
+  color: var(--text);
 }
 
 .headerEmail {
   font-size: 14px;
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .statsGrid {
@@ -48,37 +48,37 @@
 }
 
 .statCard {
-  background: #fff;
-  border: 1px solid #e9ecef;
-  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   padding: 16px 18px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-xs);
 }
 
 .statValue {
   font-size: 20px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text);
 }
 
 .statLabel {
   font-size: 12px;
-  color: #6c757d;
+  color: var(--text-secondary);
   margin-top: 4px;
 }
 
 .card {
-  background: #fff;
-  border-radius: 12px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
   padding: 32px;
   max-width: 520px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-md);
 }
 
 .cardTitle {
   font-size: 18px;
   margin: 0 0 20px;
-  color: #34495e;
+  color: var(--text);
 }
 
 .formRow {
@@ -95,45 +95,46 @@
   display: block;
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text);
   margin-bottom: 6px;
 }
 
 .formGroup input {
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   font-size: 14px;
   outline: none;
   font-family: inherit;
-  background: #fff;
+  background: var(--surface);
+  transition: border-color var(--duration-fast) var(--ease-out);
 }
 
 .formGroup input:focus {
-  border-color: #111827;
+  border-color: var(--accent);
 }
 
 .formGroup input:disabled {
-  background: #f8f9fa;
-  color: #6c757d;
+  background: var(--surface);
+  color: var(--text-muted);
 }
 
 .saveBtn {
-  background: #111827;
-  color: white;
+  background: var(--accent);
+  color: var(--accent-text);
   border: none;
   padding: 12px 28px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   margin-top: 8px;
-  transition: opacity 0.15s ease;
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .saveBtn:hover {
-  opacity: 0.9;
+  background: var(--accent-hover);
 }
 
 .saveBtn:disabled {

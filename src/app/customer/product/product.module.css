@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: #FFFFFF;
+  background: var(--bg);
 }
 
 .header {
@@ -8,12 +8,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 60px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border);
 }
 
 .logo {
   font-size: 24px;
-  font-family: serif;
+  font-family: var(--font-serif);
 }
 
 .nav {
@@ -22,9 +22,10 @@
 }
 
 .navLink {
-  color: #666;
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 14px;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .icons {
@@ -41,17 +42,17 @@
 
 .loginBtn {
   padding: 8px 20px;
-  background: #1a1a1a;
-  color: white;
+  background: var(--accent);
+  color: var(--accent-text);
   border: none;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .loginBtn:hover {
-  background: #333;
+  background: var(--accent-hover);
 }
 
 .content {
@@ -71,7 +72,7 @@
   position: sticky;
   top: 0;
   padding-right: 20px;
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity var(--duration-normal) var(--ease-out);
 }
 
 .fadeOut {
@@ -87,14 +88,14 @@
 }
 
 .images::-webkit-scrollbar-thumb {
-  background: #ddd;
-  border-radius: 3px;
+  background: var(--border);
+  border-radius: var(--radius-xs);
 }
 
 .imageBox {
   width: 100%;
   height: 600px;
-  background: #f5f5f5;
+  background: var(--surface);
   flex-shrink: 0;
 }
 
@@ -111,7 +112,7 @@
 .title {
   font-size: 32px;
   font-weight: 400;
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-serif);
   margin-bottom: 10px;
   letter-spacing: -0.01em;
 }
@@ -119,7 +120,7 @@
 .price {
   font-size: 24px;
   margin-bottom: 20px;
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity var(--duration-normal) var(--ease-out);
   font-weight: 400;
 }
 
@@ -132,24 +133,24 @@
 }
 
 .salePrice {
-  color: #c8102e;
+  color: var(--error);
   font-weight: 600;
 }
 
 .originalPrice {
-  color: #999;
+  color: var(--text-muted);
   font-size: 16px;
   text-decoration: line-through;
 }
 
 .discountBadge {
-  background: #c8102e;
-  color: #fff;
+  background: var(--error);
+  color: var(--accent-text);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.05em;
   padding: 4px 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   text-transform: uppercase;
   display: inline-block;
   line-height: 1.4;
@@ -166,12 +167,12 @@
   width: 100%;
   margin: 0 0 20px;
   font-size: 13px;
-  color: #c8102e;
+  color: var(--error);
   font-weight: 500;
 }
 
 .description {
-  color: #666;
+  color: var(--text-secondary);
   line-height: 1.6;
   margin-bottom: 30px;
 }
@@ -195,13 +196,14 @@
 .color {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
   border: 2px solid transparent;
+  transition: border-color var(--duration-fast) var(--ease-out);
 }
 
 .color:hover {
-  border-color: #000;
+  border-color: var(--text);
 }
 
 .beige {
@@ -227,46 +229,51 @@
 
 .sizeBtn {
   padding: 10px 20px;
-  border: 1px solid #ddd;
-  background: white;
+  border: 1px solid var(--border);
+  background: var(--surface);
   cursor: pointer;
   font-size: 14px;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .sizeBtn:hover {
-  border-color: #666;
+  border-color: var(--text-secondary);
   transform: translateY(-1px);
 }
 
 .sizeBtn.selected {
-  border-color: #000;
-  background: #000;
-  color: white;
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--accent-text);
   transform: scale(1.05);
 }
 
 .stockInfo {
   font-size: 14px;
   margin-bottom: 10px;
-  transition: opacity 0.3s ease-in-out;
-  color: green;
+  transition: opacity var(--duration-normal) var(--ease-out);
+  color: var(--success);
 }
 
 .stockInfo.outOfStock {
-  color: red;
+  color: var(--error);
 }
 
 .addBtn {
   width: 100%;
   padding: 16px;
-  background: #1a1a1a;
-  color: white;
+  background: var(--accent);
+  color: var(--accent-text);
   border: none;
-  border-radius: 32px;
+  border-radius: var(--radius-pill);
   font-size: 16px;
   cursor: pointer;
   margin-bottom: 10px;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.addBtn:hover {
+  background: var(--accent-hover);
 }
 
 .wishlistRow {
@@ -278,43 +285,43 @@
 .wishlistBtn {
   width: 54px;
   padding: 12px;
-  background: white;
-  color: #1a1a1a;
-  border: 1px solid #ddd;
-  border-radius: 32px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
   font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all var(--duration-fast) var(--ease-out);
   flex-shrink: 0;
 }
 
 .wishlistBtn:hover {
-  border-color: #1a1a1a;
+  border-color: var(--text);
 }
 
 .wishlistBtn.active {
-  border-color: #e74c3c;
-  color: #e74c3c;
-  background: #fdf0ef;
+  border-color: var(--error);
+  color: var(--error);
+  background: var(--error-light);
 }
 
 .shipping {
   text-align: center;
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 30px;
 }
 
 .tryonBtn {
   width: 100%;
   padding: 14px;
-  background: #fff;
-  color: #1a1a1a;
-  border: 1px solid #1a1a1a;
-  border-radius: 32px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--text);
+  border-radius: var(--radius-pill);
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -323,18 +330,18 @@
   justify-content: center;
   gap: 8px;
   margin-bottom: 10px;
-  transition: all 0.2s;
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .tryonBtn:hover {
-  background: #1a1a1a;
-  color: #fff;
+  background: var(--text);
+  color: var(--accent-text);
 }
 
 .tryOn {
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border);
   padding: 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 30px;
 }
 
@@ -350,23 +357,24 @@
 }
 
 .beta {
-  background: #f0f0f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 12px;
 }
 
 .tryOnText {
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 15px;
 }
 
 .uploadBox {
-  border: 2px dashed #ddd;
+  border: 2px dashed var(--border);
   padding: 40px;
   text-align: center;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 15px;
 }
 
@@ -377,19 +385,24 @@
 
 .uploadSubtext {
   font-size: 12px;
-  color: #999;
+  color: var(--text-muted);
 }
 
 .generateBtn {
   width: 100%;
   padding: 12px;
-  background: #1a1a1a;
-  color: white;
+  background: var(--accent);
+  color: var(--accent-text);
   border: none;
-  border-radius: 32px;
+  border-radius: var(--radius-pill);
   font-size: 14px;
   cursor: pointer;
   margin-bottom: 15px;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.generateBtn:hover {
+  background: var(--accent-hover);
 }
 
 .tabs {
@@ -400,22 +413,28 @@
 .tab {
   flex: 1;
   padding: 8px;
-  background: #f5f5f5;
+  background: var(--surface);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 14px;
   cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+
+.tab:hover {
+  background: var(--border);
 }
 
 .accordion {
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border);
 }
 
 .accordionItem {
   padding: 20px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border);
   cursor: pointer;
   font-size: 14px;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .related {
@@ -425,7 +444,7 @@
 .relatedTitle {
   font-size: 32px;
   font-weight: 400;
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-serif);
   margin-bottom: 40px;
   letter-spacing: -0.01em;
 }
@@ -443,7 +462,7 @@
 .relatedImage {
   width: 100%;
   height: 300px;
-  background: #f5f5f5;
+  background: var(--surface);
   margin-bottom: 15px;
   position: relative;
 }
@@ -460,7 +479,7 @@
 }
 
 .relatedPrice {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -469,12 +488,12 @@
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   flex-wrap: wrap;
 }
 
 .relatedSalePrice {
-  color: #c8102e;
+  color: var(--error);
   font-weight: 600;
 }
 
@@ -483,7 +502,7 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 60px;
   padding: 60px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border);
 }
 
 .footerSection h3 {
@@ -493,7 +512,7 @@
 }
 
 .footerSection p {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -505,22 +524,23 @@
 }
 
 .footerLink {
-  color: #666;
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 14px;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .reviews {
   max-width: 900px;
   margin: 0 auto;
   padding: 60px 60px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border);
 }
 
 .reviewsTitle {
   font-size: 32px;
   font-weight: 400;
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-serif);
   margin-bottom: 30px;
   letter-spacing: -0.01em;
 }
@@ -534,7 +554,7 @@
 
 .reviewsScore {
   font-size: 48px;
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-serif);
   font-weight: 400;
   line-height: 1;
 }
@@ -544,7 +564,7 @@
   flex-direction: column;
   gap: 6px;
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .stars {
@@ -554,15 +574,15 @@
 }
 
 .starFilled {
-  color: #f5b301;
+  color: var(--warning);
 }
 
 .starEmpty {
-  color: #ddd;
+  color: var(--border);
 }
 
 .reviewsEmpty {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
   padding: 20px 0;
 }
@@ -575,8 +595,8 @@
 }
 
 .reviewItem {
-  border: 1px solid #f0f0f0;
-  border-radius: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   padding: 20px;
 }
 
@@ -594,19 +614,19 @@
 
 .reviewDate {
   font-size: 12px;
-  color: #999;
+  color: var(--text-muted);
 }
 
 .reviewComment {
   font-size: 14px;
-  color: #333;
+  color: var(--text);
   line-height: 1.6;
   margin: 10px 0 0;
 }
 
 .reviewForm {
-  border: 1px solid #f0f0f0;
-  border-radius: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   padding: 24px;
 }
 
@@ -626,9 +646,9 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #ddd;
+  color: var(--border);
   padding: 0;
-  transition: transform 0.15s;
+  transition: transform var(--duration-fast) var(--ease-spring);
 }
 
 .starBtn:hover {
@@ -636,39 +656,40 @@
 }
 
 .starSelected {
-  color: #f5b301;
+  color: var(--warning);
 }
 
 .reviewInput {
   width: 100%;
   padding: 12px 14px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   font-size: 14px;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
   resize: vertical;
   margin-bottom: 16px;
   box-sizing: border-box;
+  transition: border-color var(--duration-fast) var(--ease-out);
 }
 
 .reviewInput:focus {
   outline: none;
-  border-color: #1a1a1a;
+  border-color: var(--accent);
 }
 
 .reviewSubmit {
   padding: 12px 32px;
-  background: #1a1a1a;
-  color: white;
+  background: var(--accent);
+  color: var(--accent-text);
   border: none;
-  border-radius: 24px;
+  border-radius: var(--radius-pill);
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .reviewSubmit:hover {
-  background: #333;
+  background: var(--accent-hover);
 }
 
 .reviewSubmit:disabled {

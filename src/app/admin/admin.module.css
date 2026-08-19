@@ -1,7 +1,7 @@
 .container {
   display: flex;
   min-height: 100vh;
-  background: #f8f9fa;
+  background: var(--bg);
 }
 
 .main {
@@ -14,24 +14,25 @@
 }
 
 .header {
-  background: white;
+  background: var(--surface);
   padding: 24px 40px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--border);
 }
 
 .pageTitle {
   font-size: 28px;
   font-weight: 400;
   margin: 0;
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-serif);
+  color: var(--text);
 }
 
 .pageSubtitle {
   font-size: 14px;
-  color: #6c757d;
+  color: var(--text-secondary);
   margin: 4px 0 0;
 }
 
@@ -42,21 +43,35 @@
 
 .periodBtn {
   padding: 8px 16px;
-  background: white;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   font-size: 14px;
   cursor: pointer;
+  color: var(--text);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.periodBtn:hover {
+  border-color: var(--border-strong);
+  background: var(--bg);
 }
 
 .exportBtn {
   padding: 8px 20px;
-  background: #212529;
-  color: white;
+  background: var(--accent);
+  color: var(--accent-text);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
+}
+
+.exportBtn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
 }
 
 .content {
@@ -71,10 +86,17 @@
 }
 
 .statCard {
-  background: white;
+  background: var(--surface);
   padding: 24px;
-  border-radius: 12px;
-  border: 1px solid #e9ecef;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  transition: box-shadow var(--duration-normal) var(--ease-out),
+              transform var(--duration-normal) var(--ease-out);
+}
+
+.statCard:hover {
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
 }
 
 .statHeader {
@@ -86,14 +108,14 @@
 
 .statLabel {
   font-size: 13px;
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .statIcon {
   width: 32px;
   height: 32px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -104,15 +126,16 @@
   font-size: 32px;
   font-weight: 600;
   margin: 0 0 8px;
+  color: var(--text);
 }
 
 .statChange {
   font-size: 13px;
-  color: #28a745;
+  color: var(--success);
 }
 
 .statChange.negative {
-  color: #dc3545;
+  color: var(--error);
 }
 
 .chartsGrid {
@@ -123,26 +146,27 @@
 }
 
 .chartCard {
-  background: white;
+  background: var(--surface);
   padding: 24px;
-  border-radius: 12px;
-  border: 1px solid #e9ecef;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
 }
 
 .chartTitle {
   font-size: 16px;
   font-weight: 500;
   margin: 0 0 20px;
+  color: var(--text);
 }
 
 .chartPlaceholder {
   height: 250px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .donutPlaceholder {
@@ -156,14 +180,14 @@
 
 .donutLabel {
   font-size: 14px;
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .tableCard {
-  background: white;
+  background: var(--surface);
   padding: 24px;
-  border-radius: 12px;
-  border: 1px solid #e9ecef;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
 }
 
 .tableHeader {
@@ -177,12 +201,18 @@
   font-size: 18px;
   font-weight: 500;
   margin: 0;
+  color: var(--text);
 }
 
 .viewAll {
-  color: #212529;
+  color: var(--accent);
   text-decoration: none;
   font-size: 14px;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.viewAll:hover {
+  color: var(--accent-hover);
 }
 
 .table {
@@ -195,14 +225,15 @@
   padding: 12px;
   font-size: 12px;
   font-weight: 500;
-  color: #6c757d;
-  border-bottom: 1px solid #e9ecef;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
 }
 
 .table td {
   padding: 16px 12px;
   font-size: 14px;
-  border-bottom: 1px solid #f8f9fa;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
 }
 
 .productCell {
@@ -214,14 +245,14 @@
 .productImage {
   width: 40px;
   height: 40px;
-  background: #f8f9fa;
-  border-radius: 6px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
 }
 
 .categoryCell {
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .lowStock {
-  color: #dc3545;
+  color: var(--error);
 }

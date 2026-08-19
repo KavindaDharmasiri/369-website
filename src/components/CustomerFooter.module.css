@@ -1,9 +1,8 @@
 .footer {
-  background: #111111;
-  color: #f5f5f5;
-  margin-top: 60px;
-  padding: 60px 60px 24px;
-  border-top: 1px solid #f0f0f0;
+  background: var(--text);
+  color: #E8E8E4;
+  margin-top: 80px;
+  padding: 64px 48px 28px;
 }
 
 .footerGrid {
@@ -14,72 +13,73 @@
 }
 
 .footerSection h3 {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   margin-bottom: 20px;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #fff;
+  letter-spacing: 0.1em;
+  color: #FFFFFF;
 }
 
 .brandLogo {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-serif);
   font-size: 32px;
-  font-weight: 500;
+  font-weight: 600;
   margin: 0 0 12px;
-  color: #fff;
+  color: #FFFFFF;
   letter-spacing: 0.02em;
 }
 
 .brandTagline {
-  color: #a0a0a0;
+  color: #A0A09A;
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.7;
   margin: 0 0 24px;
 }
 
 .contactList {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .contactItem {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #a0a0a0;
+  color: #A0A09A;
   font-size: 13px;
 }
 
 .contactIcon {
-  color: #666;
+  color: var(--accent);
   flex-shrink: 0;
 }
 
 .footerLinks {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .footerLink {
-  color: #a0a0a0;
+  color: #A0A09A;
   text-decoration: none;
   font-size: 14px;
   font-weight: 400;
-  transition: color 0.2s;
+  transition: color var(--duration-fast) var(--ease-out), padding-left var(--duration-fast) var(--ease-out);
 }
 
 .footerLink:hover {
-  color: #fff;
+  color: #FFFFFF;
+  padding-left: 4px;
 }
 
 .newsletterText {
-  color: #a0a0a0;
+  color: #A0A09A;
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.7;
   margin-bottom: 16px;
 }
 
@@ -91,68 +91,72 @@
 
 .newsletterInput {
   flex: 1;
-  padding: 11px 14px;
-  background: #1e1e1e;
-  border: 1px solid #333;
-  border-radius: 4px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
   color: #fff;
   font-size: 13px;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
   min-width: 0;
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
 }
 
 .newsletterInput::placeholder {
-  color: #777;
+  color: #6B6B65;
 }
 
 .newsletterInput:focus {
   outline: none;
-  border-color: #555;
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .newsletterBtn {
-  padding: 11px 18px;
-  background: #fff;
-  color: #111;
+  padding: 12px 20px;
+  background: var(--accent);
+  color: #FFFFFF;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all var(--duration-fast) var(--ease-out);
   white-space: nowrap;
 }
 
 .newsletterBtn:hover {
-  opacity: 0.85;
+  background: var(--accent-hover);
+  transform: translateY(-1px);
 }
 
 .socials {
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 
 .socialLink {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: #1e1e1e;
-  border: 1px solid #333;
-  color: #a0a0a0;
-  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #A0A09A;
+  transition: all var(--duration-normal) var(--ease-out);
 }
 
 .socialLink:hover {
-  background: #fff;
-  color: #111;
-  border-color: #fff;
+  background: var(--accent);
+  color: #FFFFFF;
+  border-color: var(--accent);
+  transform: translateY(-2px);
 }
 
 .footerBottom {
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding-top: 24px;
   display: flex;
   justify-content: space-between;
@@ -160,17 +164,17 @@
   gap: 16px;
   flex-wrap: wrap;
   font-size: 13px;
-  color: #777;
+  color: #6B6B65;
 }
 
 .credit strong {
-  color: #cfcfcf;
+  color: #A0A09A;
   font-weight: 600;
 }
 
 @media (max-width: 900px) {
   .footer {
-    padding: 40px 24px 20px;
+    padding: 48px 24px 24px;
   }
 
   .footerGrid {

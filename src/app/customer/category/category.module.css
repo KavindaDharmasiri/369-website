@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: #FFFFFF;
+  background: var(--bg);
 }
 
 .header {
@@ -8,12 +8,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 60px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border);
 }
 
 .logo {
   font-size: 24px;
-  font-family: serif;
+  font-family: var(--font-serif);
 }
 
 .nav {
@@ -22,14 +22,15 @@
 }
 
 .navLink {
-  color: #666;
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 14px;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .navLink.active {
-  color: #000;
-  border-bottom: 2px solid #000;
+  color: var(--text);
+  border-bottom: 2px solid var(--text);
   padding-bottom: 2px;
 }
 
@@ -51,7 +52,7 @@
 .title {
   font-size: 48px;
   font-weight: 400;
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-serif);
   margin-bottom: 40px;
   letter-spacing: -0.02em;
 }
@@ -70,11 +71,16 @@
 
 .filterBtn {
   padding: 8px 20px;
-  background: #f5f5f5;
+  background: var(--surface);
   border: none;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   font-size: 14px;
   cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+
+.filterBtn:hover {
+  background: var(--border);
 }
 
 .sort {
@@ -82,7 +88,7 @@
   align-items: center;
   gap: 10px;
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .sortSelect {
@@ -100,23 +106,24 @@
 
 .product {
   cursor: pointer;
-  border: 1px solid #f0f0f0;
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   padding: 10px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all var(--duration-normal) var(--ease-out);
+  box-shadow: var(--shadow-sm);
 }
 
 .product:hover {
   transform: translateY(-8px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-strong);
 }
 
 .productImage {
   width: 100%;
   height: 350px;
   margin-bottom: 15px;
-  background: #f5f5f5;
+  background: var(--surface);
 }
 
 .productImage img {
@@ -133,7 +140,7 @@
 }
 
 .productPrice {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
   font-weight: 400;
 }
@@ -146,13 +153,13 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  background: #c8102e;
-  color: #fff;
+  background: var(--error);
+  color: var(--accent-text);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
   padding: 5px 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   text-transform: uppercase;
   z-index: 2;
 }
@@ -165,12 +172,12 @@
 }
 
 .salePrice {
-  color: #c8102e;
+  color: var(--error);
   font-weight: 600;
 }
 
 .originalPrice {
-  color: #999;
+  color: var(--text-muted);
   font-size: 13px;
   text-decoration: line-through;
 }
@@ -180,7 +187,7 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 60px;
   padding: 60px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border);
   margin-top: 60px;
 }
 
@@ -191,7 +198,7 @@
 }
 
 .footerSection p {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -203,24 +210,25 @@
 }
 
 .footerLink {
-  color: #666;
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 14px;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .loginBtn {
   padding: 8px 20px;
-  background: #1a1a1a;
-  color: white;
+  background: var(--accent);
+  color: var(--accent-text);
   border: none;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .loginBtn:hover {
-  background: #333;
+  background: var(--accent-hover);
 }
 
 .overlay {
@@ -239,11 +247,11 @@
   right: 0;
   width: 450px;
   height: 100vh;
-  background: white;
+  background: var(--surface);
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-xl);
 }
 
 .cartHeader {
@@ -251,19 +259,19 @@
   justify-content: space-between;
   align-items: flex-start;
   padding: 30px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border);
 }
 
 .cartTitle {
   font-size: 24px;
   font-weight: 400;
-  font-family: serif;
+  font-family: var(--font-serif);
   margin: 0;
 }
 
 .itemCount {
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   margin: 5px 0 0;
 }
 
@@ -272,7 +280,8 @@
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #666;
+  color: var(--text-secondary);
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .cartItems {
@@ -285,13 +294,13 @@
   display: flex;
   gap: 20px;
   padding: 20px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border);
 }
 
 .cartItemImage {
   width: 80px;
   height: 100px;
-  background: #f5f5f5;
+  background: var(--surface);
   flex-shrink: 0;
 }
 
@@ -313,7 +322,7 @@
 
 .cartItemVariant {
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   margin: 0 0 10px;
 }
 
@@ -332,9 +341,9 @@
   display: flex;
   align-items: center;
   gap: 15px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   padding: 5px 15px;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
 }
 
 .qtyBtn {
@@ -342,21 +351,23 @@
   border: none;
   font-size: 16px;
   cursor: pointer;
-  color: #666;
+  color: var(--text-secondary);
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .removeBtn {
   background: none;
   border: none;
-  color: #666;
+  color: var(--text-secondary);
   text-decoration: underline;
   cursor: pointer;
   font-size: 14px;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .cartSummary {
   padding: 30px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border);
 }
 
 .summaryRow {
@@ -376,24 +387,29 @@
 
 .totalAmount {
   font-size: 24px;
-  font-family: serif;
+  font-family: var(--font-serif);
 }
 
 .checkoutBtn {
   width: 100%;
   padding: 16px;
-  background: #1a1a1a;
-  color: white;
+  background: var(--accent);
+  color: var(--accent-text);
   border: none;
-  border-radius: 32px;
+  border-radius: var(--radius-pill);
   font-size: 16px;
   cursor: pointer;
   margin-bottom: 10px;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.checkoutBtn:hover {
+  background: var(--accent-hover);
 }
 
 .taxNote {
   text-align: center;
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
   margin: 0;
 }

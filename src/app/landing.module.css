@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: #FFFFFF;
+  background: var(--bg);
   display: flex;
   flex-direction: column;
 }
@@ -9,38 +9,51 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 30px 60px;
+  padding: 28px 60px;
 }
 
 .logo {
   font-size: 30px;
   font-family: var(--font-serif);
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   letter-spacing: 0.02em;
+  color: var(--text);
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.logo:hover {
+  opacity: 0.7;
 }
 
 .userIcon {
   font-size: 20px;
   cursor: pointer;
+  color: var(--text-secondary);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.userIcon:hover {
+  color: var(--text);
 }
 
 .loginBtn {
   padding: 10px 28px;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-text);
   border: none;
   border-radius: var(--radius-pill);
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
+  transition: all var(--duration-normal) var(--ease-out);
   font-family: var(--font-sans);
 }
 
 .loginBtn:hover {
   background: var(--accent-hover);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(190, 118, 53, 0.3);
 }
 
 .main {
@@ -58,17 +71,24 @@
   height: 440px;
   margin-bottom: 50px;
   overflow: hidden;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
 }
 
 .heroImage img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 600ms var(--ease-out);
+}
+
+.heroImage:hover img {
+  transform: scale(1.02);
 }
 
 .title {
   font-size: 48px;
-  font-weight: 400;
+  font-weight: 500;
   font-family: var(--font-serif);
   margin-bottom: 40px;
   text-align: center;
@@ -78,7 +98,7 @@
 
 .buttons {
   display: flex;
-  gap: 20px;
+  gap: 16px;
   margin-bottom: 40px;
   flex-wrap: wrap;
   justify-content: center;
@@ -87,13 +107,13 @@
 .shopBtn {
   padding: 16px 48px;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-text);
   border: none;
   border-radius: var(--radius-pill);
   font-size: 15px;
-  font-weight: 400;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--duration-normal) var(--ease-out);
   font-family: var(--font-sans);
   letter-spacing: 0.01em;
 }
@@ -101,24 +121,24 @@
 .shopBtn:hover {
   background: var(--accent-hover);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 8px 24px rgba(190, 118, 53, 0.3);
 }
 
 .browseLink {
   background: none;
   border: none;
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 15px;
-  font-weight: 400;
+  font-weight: 500;
   cursor: pointer;
   text-decoration: none;
-  border-bottom: 1px solid var(--muted);
+  border-bottom: 1px solid var(--border-strong);
   padding-bottom: 2px;
-  transition: color 0.2s;
+  transition: all var(--duration-normal) var(--ease-out);
   font-family: var(--font-sans);
 }
 
 .browseLink:hover {
-  color: var(--text);
-  border-bottom-color: var(--text);
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }

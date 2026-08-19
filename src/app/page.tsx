@@ -122,16 +122,16 @@ export default function Landing() {
                 >
                   <div style={{ aspectRatio: '3 / 4', overflow: 'hidden', borderRadius: 'var(--radius-md)', marginBottom: '12px', position: 'relative' }}>
                     {isOnSale && (
-                      <span style={{ position: 'absolute', top: '10px', left: '10px', background: 'var(--danger)', color: '#fff', fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em', padding: '5px 10px', borderRadius: '3px', zIndex: 2 }}>{product.discountPercent}% OFF</span>
+                      <span style={{ position: 'absolute', top: '10px', left: '10px', background: 'var(--error)', color: '#fff', fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em', padding: '5px 10px', borderRadius: 'var(--radius-xs)', zIndex: 2 }}>{product.discountPercent}% OFF</span>
                     )}
                     <img src={getOptimizedImageUrl(product.prodImg) || fallbackImg} alt={product.prodName} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div style={{ fontSize: '15px', color: 'var(--text)', marginBottom: '4px' }}>{product.prodName}</div>
                   <div style={{ fontSize: '14px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                    <span style={{ color: isOnSale ? 'var(--danger)' : 'var(--muted)', fontWeight: isOnSale ? 600 : 400 }}>
+                    <span style={{ color: isOnSale ? 'var(--error)' : 'var(--text-secondary)', fontWeight: isOnSale ? 600 : 400 }}>
                       LKR {Number(product.salePrice ?? product.prodPrice).toLocaleString()}
                     </span>
-                    {isOnSale && <span style={{ color: 'var(--subtle)', fontSize: '13px', textDecoration: 'line-through' }}>LKR {Number(product.originalPrice).toLocaleString()}</span>}
+                    {isOnSale && <span style={{ color: 'var(--text-muted)', fontSize: '13px', textDecoration: 'line-through' }}>LKR {Number(product.originalPrice).toLocaleString()}</span>}
                   </div>
                 </div>
               )
