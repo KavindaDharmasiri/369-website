@@ -18,6 +18,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
+
 const REPLICATE_VERSION =
   process.env.TRYON_REPLICATE_VERSION || '0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985'
 const REPLICATE_CATEGORY = process.env.TRYON_REPLICATE_CATEGORY || 'upper_body'
