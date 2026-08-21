@@ -1,6 +1,6 @@
 'use client'
 import styles from './OnDeviceTryOn.module.css'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { renderTryOn, type HemLength } from '@practics/tryon-core'
 import { renderPantsToPose } from '@/lib/pantsCompositor'
 import { createInferenceWorker } from '@/lib/tryonWorkers'
@@ -11,7 +11,7 @@ import type {
   SkirtAnchors,
 } from '@practics/tryon-core'
 import type { GarmentType } from '@/lib/garmentType'
-import { countFaces } from '@/lib/faceDetection'
+import { countPersons } from '@/lib/faceDetection'
 import { prepareGarment, type PreparedGarment } from '@/lib/garmentCutout'
 import { getOptimizedImageUrl } from '@/lib/cloudinary'
 import { Sparkles, Upload, RefreshCw, CheckCircle2, MonitorSmartphone, Zap, Lock } from 'lucide-react'
@@ -138,6 +138,14 @@ export default function OnDeviceTryOn({
   const pendingRef = useRef(new Map<number, { resolve: (r: ResultResponse) => void; reject: (e: Error) => void }>())
   const seqRef = useRef(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const previewUrlRef = useRef<string | null>(null)
+
+  const clearPreviewUrl = () => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current)
+      previewUrlRef.current = null
+    }
+  }
 
   useEffect(() => {
     const worker = createInferenceWorker()
@@ -163,6 +171,10 @@ export default function OnDeviceTryOn({
         if (resolver) {
           pendingRef.current.delete(msg.seq)
           resolver.resolve(msg)
+        } else {
+          // Late/stray result (e.g. after the caller timed out or unmounted):
+          // close its bitmap or the GPU-backed memory leaks.
+          msg.maskBitmap.close()
         }
       }
     }
@@ -176,6 +188,10 @@ export default function OnDeviceTryOn({
       accelerator: 'webgpu',
     })
     return () => {
+      for (const { reject } of pendingRef.current.values()) {
+        reject(new Error('Preview engine was closed'))
+      }
+      pendingRef.current.clear()
       worker.terminate()
       workerRef.current = null
     }
@@ -208,13 +224,22 @@ export default function OnDeviceTryOn({
     }
   }, [garmentUrl])
 
-  const reset = useCallback(() => {
+  useEffect(() => {
+    return () => {
+      garmentRef.current?.bitmap.close()
+      garmentRef.current = null
+      clearPreviewUrl()
+    }
+  }, [])
+
+  const reset = () => {
     setPersonFile(null)
+    clearPreviewUrl()
     setPreviewUrl(null)
     setFaceStatus('idle')
     setResultUrl(null)
     setError(null)
-  }, [])
+  }
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -224,7 +249,9 @@ export default function OnDeviceTryOn({
     setError(null)
     setResultUrl(null)
     setPersonFile(file)
+    clearPreviewUrl()
     const url = URL.createObjectURL(file)
+    previewUrlRef.current = url
     setPreviewUrl(url)
 
     const img = new Image()
@@ -236,7 +263,7 @@ export default function OnDeviceTryOn({
 
     setFaceStatus('checking')
     try {
-      const { count } = await countFaces(img)
+      const { count } = await countPersons(img)
       if (count === 1) setFaceStatus('ok')
       else if (count === 0) setFaceStatus('no-person')
       else setFaceStatus('multiple')
@@ -289,32 +316,35 @@ export default function OnDeviceTryOn({
         ? garment.pantsAnchors
         : expandAnchors(garment.anchors, COVERAGE_EXPAND)
 
-      const garmentLayer = await adjustGarmentToPersonLighting(
-        garment.bitmap,
-        renderFrame,
-        result.maskBitmap
-      )
-
-      const status = pants
-        ? renderPantsToPose(ctx, {
-            frame: renderFrame,
-            maskBitmap: result.maskBitmap,
-            keypoints: result.keypoints,
-            garmentImage: garmentLayer,
-            garmentAnchors: srcAnchors as SkirtAnchors,
-            hemLength,
-            config: FIT_CONFIG,
-          })
-        : renderTryOn(ctx, {
-            frame: renderFrame,
-            maskBitmap: result.maskBitmap,
-            keypoints: result.keypoints,
-            garmentImage: garmentLayer,
-            garmentAnchors: srcAnchors as GarmentAnchors,
-            hemLength,
-            config: FIT_CONFIG,
-          })
-      result.maskBitmap.close()
+      let status: 'ok' | 'pose-not-anchorable'
+      try {
+        const garmentLayer = await adjustGarmentToPersonLighting(
+          garment.bitmap,
+          renderFrame,
+          result.maskBitmap
+        )
+        status = pants
+          ? renderPantsToPose(ctx, {
+              frame: renderFrame,
+              maskBitmap: result.maskBitmap,
+              keypoints: result.keypoints,
+              garmentImage: garmentLayer,
+              garmentAnchors: srcAnchors as SkirtAnchors,
+              hemLength,
+              config: FIT_CONFIG,
+            })
+          : renderTryOn(ctx, {
+              frame: renderFrame,
+              maskBitmap: result.maskBitmap,
+              keypoints: result.keypoints,
+              garmentImage: garmentLayer,
+              garmentAnchors: srcAnchors as GarmentAnchors,
+              hemLength,
+              config: FIT_CONFIG,
+            })
+      } finally {
+        result.maskBitmap.close()
+      }
       if (status === 'pose-not-anchorable') {
         setError(pants
           ? 'Could not detect a full body pose in your photo. Try a photo where your full body is visible.'

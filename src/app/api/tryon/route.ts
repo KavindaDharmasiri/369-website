@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { v2 as cloudinary } from 'cloudinary'
-import { encrypt } from '@/lib/encryption'
 import { requireAuth } from '@/lib/apiMiddleware'
-import prisma from '@/lib/db'
-import {
-  ensureTryOnRecord,
-  getPackageState,
-  todayStr,
-} from '@/lib/tryonSpace'
+import { Client } from '@gradio/client'
 
 export const runtime = 'nodejs'
-export const maxDuration = 60
+export const maxDuration = 180
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -18,12 +12,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-
-const REPLICATE_VERSION =
-  process.env.TRYON_REPLICATE_VERSION || '0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985'
-const REPLICATE_CATEGORY = process.env.TRYON_REPLICATE_CATEGORY || 'upper_body'
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const HF_SPACE = process.env.TRYON_SPACE || 'yisol/IDM-VTON'
+const HF_TOKEN = process.env.HF_TOKEN || ''
 
 function uploadToCloudinary(buffer: Buffer, folder: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -38,61 +28,69 @@ function uploadToCloudinary(buffer: Buffer, folder: string): Promise<string> {
   })
 }
 
-async function runReplicateTryOn(
+const MAX_ATTEMPTS = 3
+const RETRYABLE = /session not found|connection closed|disconnect|fetch failed|network|timed? ?out|502|503/i
+
+async function tryOnce(
   personUrl: string,
   garmentUrl: string,
   garmentDescription: string
 ): Promise<string> {
-  const token = process.env.REPLICATE_API_TOKEN
-  if (!token) {
-    throw new Error('Try-on is not configured (REPLICATE_API_TOKEN missing). Contact the store admin.')
-  }
+  const client = await Client.connect(HF_SPACE, { hf_token: HF_TOKEN as `hf_${string}` })
 
-  const res = await fetch(`https://api.replicate.com/v1/predictions`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+  const result = await client.predict('/tryon', {
+    dict: {
+      background: { url: personUrl, path: personUrl, meta: { _type: 'gradio.FileData' } },
+      layers: [],
+      composite: null,
     },
-    body: JSON.stringify({
-      version: REPLICATE_VERSION,
-      input: {
-        human_img: personUrl,
-        garm_img: garmentUrl,
-        garment_des: garmentDescription,
-        category: REPLICATE_CATEGORY,
-      },
-    }),
+    garm_img: { url: garmentUrl, path: garmentUrl, meta: { _type: 'gradio.FileData' } },
+    garment_des: garmentDescription,
+    is_checked: true,
+    is_checked_crop: false,
+    denoise_steps: 30,
+    seed: 42,
   })
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => null)
-    const message = body?.error || body?.detail || `Try-on request failed (${res.status})`
-    throw new Error(message)
+  const data = (result.data ?? []) as unknown[]
+  if (!data || data.length === 0) {
+    throw new Error('Try-on produced no output')
   }
 
-  const prediction = await res.json()
-  const id = prediction.id
-  const deadline = Date.now() + 50000
+  const output = data[0]
+  if (typeof output === 'string') return output
+  if (output && typeof output === 'object' && 'url' in output) {
+    return (output as { url: string }).url
+  }
+  if (output && typeof output === 'object' && 'path' in output) {
+    return (output as { path: string }).path
+  }
+  throw new Error('Try-on produced an unexpected output format')
+}
 
-  while (Date.now() < deadline) {
-    await sleep(2000)
-    const poll = await fetch(`https://api.replicate.com/v1/predictions/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    const p = await poll.json()
-    if (p.status === 'succeeded') {
-      const out = p.output
-      const url = typeof out === 'string' ? out : Array.isArray(out) ? out[0] : undefined
-      if (url) return url
-      throw new Error('Try-on produced no output image')
-    }
-    if (p.status === 'failed') {
-      throw new Error(p.error || 'Try-on failed')
-    }
+async function runHFTryOn(
+  personUrl: string,
+  garmentUrl: string,
+  garmentDescription: string
+): Promise<string> {
+  if (!HF_TOKEN) {
+    throw new Error('Try-on is not configured (HF_TOKEN missing). Contact the store admin.')
   }
 
-  throw new Error('Try-on is taking too long. Please try again.')
+  let lastError: unknown
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      return await tryOnce(personUrl, garmentUrl, garmentDescription)
+    } catch (error) {
+      lastError = error
+      const message = error instanceof Error ? error.message : String(error)
+      // The free space sleeps/restarts under load and kills sessions mid-request;
+      // a fresh connection usually succeeds on retry.
+      if (attempt === MAX_ATTEMPTS || !RETRYABLE.test(message)) throw error
+      await new Promise((resolve) => setTimeout(resolve, attempt * 2000))
+    }
+  }
+  throw lastError
 }
 
 export const POST = requireAuth(async (request: NextRequest, user: any) => {
@@ -105,64 +103,27 @@ export const POST = requireAuth(async (request: NextRequest, user: any) => {
     if (!personFile || !garmentUrl) {
       return NextResponse.json({ error: 'Person image and garment image are required' }, { status: 400 })
     }
-
-    let record = await ensureTryOnRecord(user.userId)
-
-    const today = todayStr()
-    let usedToday = record.usedToday
-    if (record.usageDate !== today) {
-      usedToday = 0
-      await prisma.tryOnSpace.update({
-        where: { userId: user.userId },
-        data: { usedToday: 0, usageDate: today },
-      })
-    }
-
-    const pkg = getPackageState(record)
-    if (!pkg.active) {
-      return NextResponse.json(
-        {
-          error: 'The free instant preview runs entirely on your device. Upgrade to the package for photorealistic results.',
-          payToContinue: true,
-          remaining: 0,
-        },
-        { status: 402 }
-      )
-    }
-
-    if (usedToday >= pkg.dailyLimit) {
-      return NextResponse.json(
-        { error: `Daily try-on limit reached (${pkg.dailyLimit}/day). Try again tomorrow.`, remaining: 0 },
-        { status: 429 }
-      )
+    if (!/^https:\/\//i.test(garmentUrl)) {
+      return NextResponse.json({ error: 'Invalid garment image URL' }, { status: 400 })
     }
 
     const personBuffer = Buffer.from(await personFile.arrayBuffer())
     const personUrl = await uploadToCloudinary(personBuffer, 'tryon-uploads')
-    const resultUrl = await runReplicateTryOn(personUrl, garmentUrl, garmentDescription)
+
+    let resultUrl = await runHFTryOn(personUrl, garmentUrl, garmentDescription)
+
+    if (resultUrl.startsWith('/')) {
+      resultUrl = `https://${HF_SPACE.replace('/', '-').toLowerCase()}.hf.space${resultUrl}`
+    }
 
     const imageRes = await fetch(resultUrl)
     if (!imageRes.ok) {
       return NextResponse.json({ error: 'Failed to download try-on result' }, { status: 502 })
     }
     const imageBuffer = Buffer.from(await imageRes.arrayBuffer())
-
     const uploadedUrl = await uploadToCloudinary(imageBuffer, 'tryon')
 
-    await prisma.tryOnSpace.update({
-      where: { userId: user.userId },
-      data: { usedToday: { increment: 1 }, usageDate: today },
-    })
-
-    return NextResponse.json({
-      data: encrypt(
-        JSON.stringify({
-          url: uploadedUrl,
-          remaining: pkg.dailyLimit - usedToday - 1,
-          free: false,
-        })
-      ),
-    })
+    return NextResponse.json({ url: uploadedUrl })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Try-on failed' }, { status: 500 })
   }

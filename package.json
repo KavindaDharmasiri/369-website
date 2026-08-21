@@ -15,6 +15,7 @@
     "db:seed": "node --experimental-strip-types --no-warnings prisma/seed.ts"
   },
   "dependencies": {
+    "@gradio/client": "^1.8.0",
     "@mediapipe/tasks-vision": "^1.0.1",
     "@practics/tryon-core": "^0.2.0",
     "@prisma/client": "^5.0.0",

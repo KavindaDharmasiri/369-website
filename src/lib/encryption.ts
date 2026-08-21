@@ -14,8 +14,13 @@ export function encrypt(text: string): string {
 }
 
 export function decrypt(text: string): string {
-  const bytes = CryptoJS.AES.decrypt(text, getSecretKey())
-  return bytes.toString(CryptoJS.enc.Utf8)
+  if (!text) return ''
+  try {
+    const bytes = CryptoJS.AES.decrypt(text, getSecretKey())
+    return bytes.toString(CryptoJS.enc.Utf8)
+  } catch {
+    return ''
+  }
 }
 
 export function encryptData(data: any): string {
@@ -23,6 +28,13 @@ export function encryptData(data: any): string {
 }
 
 export function decryptData(encrypted: string): any {
-  const bytes = CryptoJS.AES.decrypt(encrypted, getSecretKey())
-  return JSON.parse(bytes.toString(CryptoJS.enc.Utf8))
+  if (!encrypted) return null
+  try {
+    const bytes = CryptoJS.AES.decrypt(encrypted, getSecretKey())
+    const result = bytes.toString(CryptoJS.enc.Utf8)
+    if (!result) return null
+    return JSON.parse(result)
+  } catch {
+    return null
+  }
 }

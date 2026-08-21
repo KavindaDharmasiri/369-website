@@ -603,11 +603,6 @@ function ProductContent() {
         garmentUrl={tryOnGarmentUrl}
         productName={product?.prodName || ''}
         skuName={tryOnSkuName}
-        garmentType={detectGarmentType(
-          product?.prodSubCategoryName,
-          product?.prodCategoryName,
-          product?.prodName
-        )}
       />
     </div>
   )
