@@ -18,11 +18,16 @@
   font-weight: 500;
   cursor: pointer;
   letter-spacing: 0.02em;
+  color: inherit;
+  text-decoration: none;
 }
 
 .userIcon {
   font-size: 20px;
   cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+  display: inline-flex;
 }
 
 .loginBtn {
@@ -36,6 +41,8 @@
   cursor: pointer;
   transition: background 0.2s, transform 0.2s;
   font-family: var(--font-sans);
+  text-decoration: none;
+  display: inline-block;
 }
 
 .loginBtn:hover {
@@ -96,6 +103,8 @@
   transition: all 0.2s;
   font-family: var(--font-sans);
   letter-spacing: 0.01em;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .shopBtn:hover {
@@ -116,6 +125,7 @@
   padding-bottom: 2px;
   transition: color 0.2s;
   font-family: var(--font-sans);
+  display: inline-block;
 }
 
 .browseLink:hover {

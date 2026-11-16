@@ -24,7 +24,7 @@
 .statsCard {
   background: white;
   border: 1px solid #e9ecef;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -34,7 +34,7 @@
 .tableWrap {
   background: white;
   border: 1px solid #e9ecef;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 16px;
   display: flex;
   flex-direction: column;

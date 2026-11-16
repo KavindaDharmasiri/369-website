@@ -31,7 +31,7 @@
   padding: 10px 20px;
   color: #6c757d;
   text-decoration: none;
-  border-radius: 8px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -162,7 +162,7 @@
   cursor: pointer;
   color: #6c757d;
   padding: 6px;
-  border-radius: 6px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   transition: background 0.15s ease, color 0.15s ease;
@@ -179,7 +179,7 @@
   right: 0;
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border-radius: 10px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   margin-bottom: 8px;
   min-width: 120px;
@@ -212,7 +212,7 @@
   cursor: pointer;
   color: #6c757d;
   padding: 6px;
-  border-radius: 6px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
@@ -234,7 +234,7 @@
   font-weight: 700;
   min-width: 16px;
   height: 16px;
-  border-radius: 8px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -302,7 +302,7 @@
   font-size: 11px;
   font-weight: 600;
   padding: 3px 10px;
-  border-radius: 20px;
+  border-radius: 24px;
 }
 
 .bellClose {
@@ -454,7 +454,7 @@
   color: #6c757d;
   cursor: pointer;
   padding: 6px;
-  border-radius: 6px;
+  border-radius: 10px;
 }
 
 .mobileClose:hover {
@@ -472,7 +472,7 @@
     z-index: 190;
     background: white;
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 8px;
     color: #111827;
     cursor: pointer;

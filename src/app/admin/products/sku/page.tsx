@@ -2,7 +2,8 @@
 import styles from './sku.module.css'
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getAuthUser } from '@/lib/clientAuth'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
+import { useCurrentProductId } from '@/lib/useCurrentProductId'
 import { decryptData } from '@/lib/clientEncryption'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
@@ -13,8 +14,8 @@ function GeneratedSKUContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const urlProductId = searchParams.get('productId')
-  const [user, setUser] = useState<any>(null)
-  const [productId, setProductId] = useState<string | null>(null)
+  const user = useClientAuthUser()
+  const productId = useCurrentProductId(urlProductId)
   const [skus, setSkus] = useState<any[]>([])
   const [product, setProduct] = useState<any>(null)
   const [currentPage, setCurrentPage] = useState(1)
@@ -34,23 +35,23 @@ function GeneratedSKUContent() {
   const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser || authUser.userType !== 'admin') {
       router.push('/signin')
       return
     }
-    setUser(authUser)
-    const storedProductId = urlProductId || sessionStorage.getItem('currentProductId')
+    const storedProductId = productId
+    if (storedProductId === undefined) return
     if (!storedProductId) {
       router.push('/admin/products')
       return
     }
-    setProductId(storedProductId)
     fetchProduct(storedProductId)
     fetchSkus(storedProductId)
-  }, [router, urlProductId])
+  }, [router, productId, user])
 
-  const fetchProduct = async (prodId: string) => {
+  async function fetchProduct(prodId: string) {
     const token = localStorage.getItem('authToken')
     const res = await fetch(`/api/products/${prodId}`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -60,7 +61,7 @@ function GeneratedSKUContent() {
     setProduct(decrypted)
   }
 
-  const fetchSkus = async (prodId: string) => {
+  async function fetchSkus(prodId: string) {
     const token = localStorage.getItem('authToken')
     const res = await fetch(`/api/products/${prodId}/skus`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -296,7 +297,7 @@ function GeneratedSKUContent() {
               <tbody>
                 {skus.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '40px' }}>No SKUs generated. Click "Generate SKUs" button.</td>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '40px' }}>No SKUs generated. Click &quot;Generate SKUs&quot; button.</td>
                   </tr>
                 ) : (
                   skus.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((sku) => (

@@ -1,6 +1,7 @@
 'use client'
 import styles from './coupons.module.css'
 import { useEffect, useState } from 'react'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { useRouter } from 'next/navigation'
 import { getAuthUser, getAuthToken } from '@/lib/clientAuth'
 import AdminSidebar from '@/components/AdminSidebar'
@@ -40,7 +41,7 @@ const emptyForm = {
 
 export default function CouponsManagement() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -49,16 +50,16 @@ export default function CouponsManagement() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser || authUser.userType !== 'admin') {
       router.push('/signin')
       return
     }
-    setUser(authUser)
     fetchCoupons()
-  }, [router])
+  }, [router, user])
 
-  const fetchCoupons = async () => {
+  async function fetchCoupons() {
     setLoading(true)
     try {
       const token = getAuthToken()

@@ -32,7 +32,7 @@
   padding: 12px 20px;
   color: #6c757d;
   text-decoration: none;
-  border-radius: 8px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -152,7 +152,7 @@
 
 .tableWrapper {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 24px;
   margin-bottom: 24px;
   border: 1px solid #e9ecef;
@@ -217,7 +217,7 @@
   color: #212529;
   border: 1px solid #dee2e6;
   padding: 12px 32px;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
@@ -233,7 +233,7 @@
   color: white;
   border: none;
   padding: 12px 32px;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
@@ -248,7 +248,7 @@
   color: #212529;
   border: 1px solid #dee2e6;
   padding: 12px 32px;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
@@ -263,7 +263,7 @@
   background: #212529;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   margin-bottom: 20px;
@@ -287,7 +287,7 @@
   background: white;
   color: #212529;
   border: 1px solid #dee2e6;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
@@ -312,7 +312,7 @@
   color: #212529;
   border: 1px solid #dee2e6;
   padding: 10px 24px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   display: flex;
@@ -341,7 +341,7 @@
 
 .modal {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
@@ -397,7 +397,7 @@
   width: 100%;
   padding: 10px 14px;
   border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   background: white;
   box-sizing: border-box;
@@ -407,7 +407,7 @@
   width: 100%;
   padding: 10px 14px;
   border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   resize: vertical;
   font-family: inherit;
@@ -426,7 +426,7 @@
   background: #ffc107;
   color: #000;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   font-weight: 500;
@@ -443,7 +443,7 @@
   background: white;
   color: #212529;
   border: 1px solid #dee2e6;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
 }
@@ -461,7 +461,7 @@
   color: white;
   border: none;
   padding: 10px 32px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -478,7 +478,7 @@
   color: #212529;
   border: none;
   padding: 10px 32px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -492,7 +492,7 @@
 
 .mediaManager {
   border: 1px solid #e9ecef;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 20px;
   background: white;
   margin-top: 12px;
@@ -515,7 +515,7 @@
   display: flex;
   gap: 0;
   background: #f1f3f5;
-  border-radius: 6px;
+  border-radius: 10px;
   padding: 3px;
 }
 
@@ -524,7 +524,7 @@
   background: transparent;
   color: #868e96;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
@@ -547,7 +547,7 @@
   position: relative;
   width: 180px;
   height: 240px;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   border: 1px solid #e9ecef;
   background: white;
@@ -572,7 +572,7 @@
   background: #495057;
   color: white;
   padding: 5px 12px;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 12px;
   font-weight: 400;
   z-index: 1;
@@ -582,7 +582,7 @@
   width: 180px;
   height: 240px;
   border: 2px dashed #dee2e6;
-  border-radius: 8px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -623,7 +623,7 @@
 .aiStudio {
   padding: 20px;
   background: #fafbfc;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .aiHeader {
@@ -644,7 +644,7 @@
   height: 120px;
   background: #f8f9fa;
   border: 1px solid #e9ecef;
-  border-radius: 6px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -682,7 +682,7 @@
   bottom: 0;
   background-color: #dee2e6;
   transition: 0.4s;
-  border-radius: 24px;
+  border-radius: 28px;
 }
 
 .slider:before {
@@ -711,7 +711,7 @@
   background: #212529;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   transition: background 0.2s;
@@ -749,7 +749,7 @@
   max-width: 80%;
   max-height: 80%;
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 20px;
 }
 
@@ -757,7 +757,7 @@
   max-width: 100%;
   max-height: 70vh;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: 12px;
   display: block;
 }
 

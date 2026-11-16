@@ -1,6 +1,7 @@
 'use client'
 import styles from '../adminShared.module.css'
 import { useEffect, useState } from 'react'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { useRouter } from 'next/navigation'
 import { getAuthUser, removeAuthToken, getAuthToken } from '@/lib/clientAuth'
 import { decryptData } from '@/lib/clientEncryption'
@@ -11,13 +12,14 @@ import toast from 'react-hot-toast'
 
 export default function AdminSettings() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState({ taxMode: 'percentage', taxRate: '8', lowStockThreshold: '10' })
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser) {
       router.push('/signin')
       return
@@ -32,12 +34,7 @@ export default function AdminSettings() {
       router.push('/signin')
       return
     }
-    setUser(authUser)
-    fetchSettings()
-  }, [router])
-
-  const fetchSettings = () => {
-    setLoading(true)
+    function fetchSettings() {
     fetch('/api/settings')
       .then(async (res) => {
         const json = await res.json()
@@ -54,6 +51,9 @@ export default function AdminSettings() {
       })
       .finally(() => setLoading(false))
   }
+
+    fetchSettings()
+  }, [router, user])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()

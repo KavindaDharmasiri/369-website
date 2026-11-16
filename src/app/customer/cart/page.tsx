@@ -3,6 +3,7 @@ import styles from './cart.module.css'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { getAuthUser } from '@/lib/clientAuth'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { decryptData } from '@/lib/clientEncryption'
 import { enrichServerCartItem } from '@/lib/cartEnrich'
 import { computeTax } from '@/lib/pricing'
@@ -12,16 +13,36 @@ import CustomerHeader from '@/components/CustomerHeader'
 import CustomerFooter from '@/components/CustomerFooter'
 import { PageSkeleton } from '@/components/Skeleton'
 import Swal from 'sweetalert2'
+import Link from 'next/link'
+import { ClientRequestError, createRequestGuard, mutationJson, responseJson } from '@/lib/clientRequests'
+import { mergeGuestCartDurably, removeSavedGuestItem, withGuestCartLock, GUEST_CART_RECEIPT_KEY, GuestMergeResult } from '@/lib/guestCart'
+import { loadCheckoutResources, orderConfirmationText, parseCheckoutQuote, checkoutTotalsDiffer, quoteChangeText } from '@/lib/checkoutState'
+import { clearOrderAttempt, PendingCheckoutError, prepareOrderAttempt, readOrderAttempt } from '@/lib/checkoutAttempts'
+
+const QUOTE_ERROR_CODES = new Set(['QUOTE_REQUIRED', 'QUOTE_INVALID', 'QUOTE_EXPIRED', 'QUOTE_MISMATCH', 'QUOTE_CHANGED'])
 
 export default function CartPage() {
+  const user = useClientAuthUser()
+  const identity = user?.userId ?? (user === undefined ? 'hydrating' : 'signed-out')
+  return <CartSession key={identity} user={user} />
+}
+
+function CartSession({ user }: { user: any }) {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
   const [cartItems, setCartItems] = useState<any[]>([])
   const [shippingFee, setShippingFee] = useState(0)
   const [shippingType, setShippingType] = useState('Standard')
   const [taxSettings, setTaxSettings] = useState({ taxMode: 'percentage', taxRate: 8 })
   const [loading, setLoading] = useState(true)
   const hasMigrated = useRef(false)
+  const initializing = useRef(false)
+  const cartMutation = useRef(false)
+  const orderSubmission = useRef(false)
+  const couponRequests = useRef(createRequestGuard())
+  const [changingCart, setChangingCart] = useState(false)
+  const [checkoutError, setCheckoutError] = useState('')
+  const [guestMerge, setGuestMerge] = useState<GuestMergeResult | null>(null)
+  const [pendingOrderKey, setPendingOrderKey] = useState<string | null>(null)
   
   const [deliveryForm, setDeliveryForm] = useState({
     firstName: '',
@@ -41,73 +62,146 @@ export default function CartPage() {
   const [couponMsg, setCouponMsg] = useState('')
   const [applyingCoupon, setApplyingCoupon] = useState(false)
 
-  useEffect(() => {
-    const authUser = getAuthUser()
-    if (!authUser) {
-      sessionStorage.setItem('redirectAfterLogin', '/customer/cart')
-      router.push('/signin')
-      return
-    }
-    setUser(authUser)
-    if (!hasMigrated.current) {
-      const initCart = async () => {
-        await migrateAndLoadCart()
-        await loadShippingFee()
-        await loadTaxSettings()
-        await loadSavedAddress()
-      }
-      initCart()
-    }
-  }, [])
+  const invalidateCoupon = (showMessage = true) => {
+    couponRequests.current.invalidate()
+    setApplyingCoupon(false)
+    setAppliedCoupon(null)
+    setCouponMsg(showMessage ? 'The bag changed. Apply your coupon again to refresh its discount.' : '')
+  }
 
-  const migrateAndLoadCart = async () => {
-    if (hasMigrated.current) return
-    hasMigrated.current = true
-    
+  async function initializeCheckout() {
+    if (initializing.current || cartMutation.current || orderSubmission.current) return
+    initializing.current = true
+    setLoading(true)
+    setCheckoutError('')
+    invalidateCoupon(false)
     try {
-      const token = localStorage.getItem('authToken')
-      const localCart = JSON.parse(localStorage.getItem('cart') || '[]')
+      await loadCheckoutResources([migrateAndLoadCart, loadShippingFee, loadTaxSettings, loadSavedAddress, loadPendingOrderAttempt])
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : 'Checkout could not be loaded. Please retry.')
+    } finally {
+      initializing.current = false
+      setLoading(false)
+    }
+  }
 
-      // Load existing cart from DB first
-      const res = await fetch('/api/cart', {
-        headers: { 'Authorization': `Bearer ${token}` }
+  const loadPendingOrderAttempt = async () => {
+    const authUser = getAuthUser()
+    const attempt = readOrderAttempt(localStorage, authUser?.userId)
+    setPendingOrderKey(attempt?.key || null)
+  }
+
+  const resolvePendingOrder = async () => {
+    if (orderSubmission.current || cartMutation.current || initializing.current) return
+    orderSubmission.current = true
+    setPlacing(true)
+    try {
+      const authUser = getAuthUser()
+      const attempt = readOrderAttempt(localStorage, authUser?.userId)
+      if (!attempt) { setPendingOrderKey(null); return }
+      const answer = await Swal.fire({
+        icon: 'question', title: 'Resolve earlier checkout?',
+        text: 'This will return an already placed order or retire the earlier request so it cannot create a late order. It never cancels a placed order.',
+        showCancelButton: true, confirmButtonText: 'Resolve earlier request', confirmButtonColor: '#000',
       })
-      const result = await res.json()
-      const data = decryptData(result.data)
-      const existingCart = data.cartItems || []
-
-      // Migrate localStorage cart to DB if exists and DB cart is empty
-      if (localCart.length > 0 && existingCart.length === 0) {
-        for (const item of localCart) {
-          await fetch('/api/cart', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(item)
-          })
-        }
-        localStorage.removeItem('cart')
-        
-        // Reload cart after migration
-        const newRes = await fetch('/api/cart', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        const newResult = await newRes.json()
-        const newData = decryptData(newResult.data)
-        setCartItems((newData.cartItems || []).map(enrichServerCartItem))
-      } else {
-        // Just clear localStorage if DB already has items
-        if (localCart.length > 0) {
-          localStorage.removeItem('cart')
-        }
-        setCartItems((existingCart || []).map(enrichServerCartItem))
+      if (!answer.isConfirmed) return
+      const token = localStorage.getItem('authToken')
+      const result = await responseJson(await fetch(`/api/orders/requests/${encodeURIComponent(attempt.key)}`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` },
+      }))
+      const data = result?.data
+      if (!result?.success || !['completed', 'abandoned'].includes(data?.state) ||
+          (data.state === 'completed' && (!Number.isInteger(data.order?.orderId) || data.order.orderId < 1))) {
+        throw new Error('The earlier request could not be resolved. Its key has been kept.')
+      }
+      clearOrderAttempt(localStorage, authUser.userId, attempt.key)
+      setPendingOrderKey(null)
+      setCheckoutError('')
+      invalidateCoupon(false)
+      if (data.state === 'completed') {
+        setCartItems([])
+        window.dispatchEvent(new Event('cartUpdated'))
+        router.push(`/customer/account/orders/${data.order.orderId}`)
       }
     } catch (error) {
-      console.error('Failed to load cart:', error)
+      setCheckoutError(error instanceof Error ? error.message : 'The earlier request could not be resolved. Its key has been kept.')
     } finally {
-      setLoading(false)
+      orderSubmission.current = false
+      setPlacing(false)
+    }
+  }
+
+  const migrateAndLoadCart = async () => {
+    const token = localStorage.getItem('authToken')
+    if (!token) throw new Error('Please sign in again to load your bag.')
+    const fetchAccountCart = async () => {
+      const result = await responseJson(await fetch('/api/cart', { headers: { Authorization: `Bearer ${token}` } }))
+      const data = decryptData(result.data)
+      if (!Array.isArray(data?.cartItems)) throw new Error('The account bag response could not be read. Saved items were not discarded.')
+      return data.cartItems
+    }
+    // Confirm access before sending any saved items, even if the account bag is nonempty.
+    let accountCart = await fetchAccountCart()
+    const result = await withGuestCartLock(() => mergeGuestCartDurably(localStorage, user.userId, async (items, key) => {
+      try {
+        const body = await responseJson(await fetch('/api/cart/merge', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, 'Idempotency-Key': key },
+          body: JSON.stringify({ items }),
+        }))
+        return { acknowledged: body.success === true, requestKey: body.data?.requestKey }
+      } catch (error) {
+        if (error instanceof ClientRequestError) return { acknowledged: false, definitive: error.code === 'CART_NOT_MERGED', message: error.message }
+        throw error
+      }
+    }, () => localStorage.getItem('authToken') === token))
+    setGuestMerge(result)
+    if (result.migrated > 0 || result.uncertain) accountCart = await fetchAccountCart()
+    setCartItems(accountCart.map(enrichServerCartItem))
+    window.dispatchEvent(new Event('cartUpdated'))
+  }
+
+  const retryGuestMerge = async () => {
+    if (initializing.current || cartMutation.current || orderSubmission.current) return
+    try {
+      if (guestMerge?.uncertain && localStorage.getItem(GUEST_CART_RECEIPT_KEY)) {
+        const answer = await Swal.fire({
+          icon: 'warning', title: 'Review both bags first',
+          text: 'The last import may already be in your account bag. Remove any saved duplicates first. Retrying can add their quantities again. Have you checked both bags?',
+          showCancelButton: true, confirmButtonText: 'I checked; retry saved items', confirmButtonColor: '#000',
+        })
+        if (!answer.isConfirmed) return
+        await withGuestCartLock(() => localStorage.removeItem(GUEST_CART_RECEIPT_KEY))
+      }
+      await initializeCheckout()
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : 'Saved items could not be retried.')
+    }
+  }
+
+  const discardSavedItem = async (index: number, item: any) => {
+    const answer = await Swal.fire({ icon: 'warning', title: 'Remove saved item?', text: 'This removes only the saved copy on this device, not an account-bag item.', showCancelButton: true, confirmButtonColor: '#000' })
+    if (!answer.isConfirmed) return
+    try {
+      const pending = await withGuestCartLock(() => removeSavedGuestItem(localStorage, index, item))
+      setGuestMerge((previous) => previous ? { ...previous, pending, uncertain: pending.length > 0 && previous.uncertain } : null)
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : 'The saved item could not be removed.')
+    }
+  }
+
+  const runCartMutation = async (operation: () => Promise<void>) => {
+    if (cartMutation.current || orderSubmission.current || initializing.current) return
+    cartMutation.current = true
+    setChangingCart(true)
+    invalidateCoupon()
+    try {
+      await operation()
+      window.dispatchEvent(new Event('cartUpdated'))
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : 'The bag change could not be confirmed. Refresh before checkout.')
+    } finally {
+      cartMutation.current = false
+      setChangingCart(false)
     }
   }
 
@@ -126,23 +220,18 @@ export default function CartPage() {
       return
     }
     
-    try {
+    await runCartMutation(async () => {
       const token = localStorage.getItem('authToken')
-      await fetch(`/api/cart/${item.id}`, {
+      await mutationJson(await fetch(`/api/cart/${item.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ quantity: newQuantity })
-      })
-      
-      const updated = [...cartItems]
-      updated[index].quantity = newQuantity
-      setCartItems(updated)
-    } catch (error) {
-      console.error('Failed to update quantity:', error)
-    }
+      }))
+      setCartItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, quantity: newQuantity } : entry))
+    })
   }
 
   const removeItem = async (index: number) => {
@@ -161,45 +250,34 @@ export default function CartPage() {
     
     if (!result.isConfirmed) return
     
-    try {
+    await runCartMutation(async () => {
       const token = localStorage.getItem('authToken')
-      await fetch(`/api/cart/${item.id}`, {
+      await mutationJson(await fetch(`/api/cart/${item.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
-      })
-      
-      const updated = cartItems.filter((_, i) => i !== index)
-      setCartItems(updated)
-    } catch (error) {
-      console.error('Failed to remove item:', error)
+      }))
+      setCartItems((current) => current.filter((entry) => entry.id !== item.id))
+    })
+  }
+
+  async function loadShippingFee() {
+    const result = await responseJson(await fetch('/api/shipping'))
+    if (result.data) {
+      const shipping = decryptData(result.data)
+      if (!shipping || !Number.isFinite(Number(shipping.value)) || Number(shipping.value) < 0 || typeof shipping.type !== 'string') throw new Error('Invalid shipping response')
+      setShippingFee(Number(shipping.value))
+      setShippingType(shipping.type)
+    } else {
+      setShippingFee(0)
+      setShippingType('Standard')
     }
   }
 
-  const loadShippingFee = async () => {
-    try {
-      const res = await fetch('/api/shipping')
-      const result = await res.json()
-      if (result.data) {
-        const decrypted = decryptData(result.data)
-        setShippingFee(Number(decrypted.value))
-        setShippingType(decrypted.type)
-      }
-    } catch (error) {
-      console.error('Failed to load shipping fee:', error)
-    }
-  }
-
-  const loadTaxSettings = async () => {
-    try {
-      const res = await fetch('/api/settings')
-      const result = await res.json()
-      if (result.data) {
-        const settings = decryptData(result.data)
-        setTaxSettings({ taxMode: settings.taxMode || 'percentage', taxRate: settings.taxRate || 0 })
-      }
-    } catch (error) {
-      console.error('Failed to load tax settings:', error)
-    }
+  async function loadTaxSettings() {
+    const result = await responseJson(await fetch('/api/settings'))
+    const settings = decryptData(result.data)
+    if (!settings || !['percentage', 'fixed'].includes(settings.taxMode) || !Number.isFinite(Number(settings.taxRate)) || Number(settings.taxRate) < 0) throw new Error('Invalid tax settings response')
+    setTaxSettings({ taxMode: settings.taxMode, taxRate: Number(settings.taxRate) })
   }
 
   const loadSavedAddress = async () => {
@@ -208,7 +286,7 @@ export default function CartPage() {
       const res = await fetch('/api/addresses', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
-      const result = await res.json()
+      const result = await responseJson(res)
       if (result.success && result.data.length > 0) {
         const latestAddress = result.data[0]
         setDeliveryForm({
@@ -254,6 +332,8 @@ export default function CartPage() {
           confirmButtonColor: '#000',
           timer: 2000
         })
+      } else {
+        await responseJson(response)
       }
     } catch (error) {
       console.error('Failed to save address:', error)
@@ -267,6 +347,7 @@ export default function CartPage() {
   }
 
   const applyCoupon = async () => {
+    if (cartMutation.current || orderSubmission.current || initializing.current) return
     const code = couponInput.trim()
     if (!code) {
       Swal.fire({
@@ -278,6 +359,7 @@ export default function CartPage() {
       return
     }
 
+    const requestId = couponRequests.current.next()
     setApplyingCoupon(true)
     setCouponMsg('')
     try {
@@ -290,10 +372,13 @@ export default function CartPage() {
         },
         body: JSON.stringify({ code, subtotal })
       })
-      const result = await res.json()
+      const result = await responseJson(res)
       const data = decryptData(result.data)
+      if (!couponRequests.current.isCurrent(requestId)) return
+      if (!data || typeof data.valid !== 'boolean') throw new Error('Invalid coupon response')
 
       if (data.valid) {
+        if (typeof data.code !== 'string' || !Number.isFinite(data.discount) || data.discount < 0 || data.discount > subtotal) throw new Error('Invalid coupon amount')
         setAppliedCoupon(data)
         setCouponInput('')
         setCouponMsg('')
@@ -302,131 +387,180 @@ export default function CartPage() {
         setCouponMsg(data.message || 'Invalid coupon code')
       }
     } catch (error) {
-      console.error('Apply coupon error:', error)
-      setCouponMsg('Failed to apply coupon')
+      if (couponRequests.current.isCurrent(requestId)) {
+        setAppliedCoupon(null)
+        setCouponMsg(error instanceof Error ? error.message : 'Failed to apply coupon')
+      }
     } finally {
-      setApplyingCoupon(false)
+      if (couponRequests.current.isCurrent(requestId)) setApplyingCoupon(false)
     }
   }
 
   const removeCoupon = () => {
+    couponRequests.current.invalidate()
+    setApplyingCoupon(false)
     setAppliedCoupon(null)
     setCouponMsg('')
   }
 
   const handlePlaceOrder = async () => {
-    // Validate cart
-    if (cartItems.length === 0) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Empty Cart',
-        text: 'Your cart is empty. Add items before placing an order.',
-        confirmButtonColor: '#000'
-      })
-      return
-    }
-
-    // Validate delivery form
-    if (!deliveryForm.firstName || !deliveryForm.lastName || !deliveryForm.address || 
-        !deliveryForm.city || !deliveryForm.state || !deliveryForm.zipCode || !deliveryForm.phone) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Incomplete Information',
-        text: 'Please fill in all delivery information fields.',
-        confirmButtonColor: '#000'
-      })
-      return
-    }
-
-    // Show confirmation
-    const result = await Swal.fire({
-      title: 'Confirm Order',
-      html: `
-        <div style="text-align: left; padding: 10px;">
-          <p><strong>Total Amount:</strong> LKR ${total.toFixed(2)}</p>
-          ${itemSavings > 0 ? `<p><strong>Item Discounts:</strong> -LKR ${itemSavings.toFixed(2)}</p>` : ''}
-          ${discount > 0 ? `<p><strong>Coupon Discount:</strong> -LKR ${discount.toFixed(2)} (${appliedCoupon.code})</p>` : ''}
-          <p><strong>Payment Method:</strong> ${paymentMethod === 'card' ? 'Card Payment' : 'Cash on Delivery'}</p>
-          <p><strong>Delivery Address:</strong><br/>
-          ${deliveryForm.firstName} ${deliveryForm.lastName}<br/>
-          ${deliveryForm.address}${deliveryForm.apartment ? ', ' + deliveryForm.apartment : ''}<br/>
-          ${deliveryForm.city}, ${deliveryForm.state} ${deliveryForm.zipCode}<br/>
-          ${deliveryForm.phone}</p>
-        </div>
-      `,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#000',
-      cancelButtonColor: '#999',
-      confirmButtonText: 'Place Order',
-      cancelButtonText: 'Cancel'
-    })
-
-    if (!result.isConfirmed) return
-
+    if (orderSubmission.current || cartMutation.current || initializing.current || checkoutError || applyingCoupon) return
+    orderSubmission.current = true
     setPlacing(true)
-
+    let confirmedOrderId: number | null = null
+    let attemptedKey: string | null = null
+    let requestSent = false
     try {
+      if (cartItems.length === 0) {
+        await Swal.fire({
+          icon: 'warning', title: 'Empty Cart',
+          text: 'Your cart is empty. Add items before placing an order.', confirmButtonColor: '#000'
+        })
+        return
+      }
+      if (!isDeliveryFormComplete()) {
+        await Swal.fire({
+          icon: 'warning', title: 'Incomplete Information',
+          text: 'Please fill in all delivery information fields.', confirmButtonColor: '#000'
+        })
+        return
+      }
       const token = localStorage.getItem('authToken')
+      const input = {
+        email: user.email, ...deliveryForm, paymentMethod, items: cartItems,
+        couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+      }
+      // The dialog total must come from the same server quote the order route
+      // verifies, so a stale client total can never be silently charged.
+      const quoted = parseCheckoutQuote((await responseJson(await fetch('/api/orders/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(input),
+      }))).data)
+      const priceChanged = checkoutTotalsDiffer(
+        { subtotal, productDiscount: itemSavings, shippingFee: calculatedShippingFee, tax, discount, total },
+        quoted.totals)
+      const confirmationText = priceChanged
+        ? `${quoteChangeText(total, quoted.totals.total)}\n\n${orderConfirmationText({
+            total: quoted.totals.total, itemSavings: quoted.totals.productDiscount, discount: quoted.totals.discount,
+            couponCode: appliedCoupon?.code, paymentMethod, delivery: deliveryForm })}`
+        : orderConfirmationText({
+            total: quoted.totals.total, itemSavings: quoted.totals.productDiscount, discount: quoted.totals.discount,
+            couponCode: appliedCoupon?.code, paymentMethod, delivery: deliveryForm })
+      const result = await Swal.fire({
+        title: priceChanged ? 'Review the updated total' : 'Confirm Order',
+        text: confirmationText,
+        icon: priceChanged ? 'warning' : 'question', showCancelButton: true, confirmButtonColor: '#000', cancelButtonColor: '#999',
+        confirmButtonText: priceChanged ? 'Place order at the new total' : 'Place Order', cancelButtonText: 'Cancel'
+      })
+      if (!result.isConfirmed) return
+
+      const attempt = await prepareOrderAttempt(localStorage, user.userId, input)
+      attemptedKey = attempt.key
+      setPendingOrderKey(attempt.key)
+      requestSent = true
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Idempotency-Key': attempt.key,
         },
-        body: JSON.stringify({
-          email: user.email,
-          firstName: deliveryForm.firstName,
-          lastName: deliveryForm.lastName,
-          address: deliveryForm.address,
-          apartment: deliveryForm.apartment,
-          city: deliveryForm.city,
-          state: deliveryForm.state,
-          zipCode: deliveryForm.zipCode,
-          phone: deliveryForm.phone,
-          subtotal: Number(subtotal),
-          shippingFee: Number(calculatedShippingFee),
-          tax: Number(tax),
-          total: Number(total),
-          paymentMethod,
-          items: cartItems,
-          couponCode: appliedCoupon ? appliedCoupon.code : undefined
-        })
+        body: JSON.stringify({ ...input, quoteToken: quoted.quoteToken })
       })
 
-      const data = await response.json()
+      const data = await responseJson(response)
 
-      if (data.success) {
+      if (data?.success && Number.isInteger(data.data?.orderId) && data.data.orderId > 0 && typeof data.data.orderNumber === 'string') {
+        confirmedOrderId = data.data.orderId
+        clearOrderAttempt(localStorage, user.userId, attempt.key)
+        setPendingOrderKey(null)
+        setCartItems([])
+        removeCoupon()
+        window.dispatchEvent(new Event('cartUpdated'))
         await Swal.fire({
           icon: 'success',
           title: 'Order Placed!',
-          html: `
-            <p>Your order has been placed successfully.</p>
-            <p><strong>Order Number:</strong> ${data.data.orderNumber}</p>
-          `,
+          text: `Your order has been placed successfully. Order Number: ${data.data.orderNumber}`,
           confirmButtonColor: '#000',
           confirmButtonText: 'View My Order'
         })
         
         // Clear cart and redirect to order confirmation
-        setCartItems([])
-        window.dispatchEvent(new Event('cartUpdated'))
         router.push(`/customer/account/orders/${data.data.orderId}`)
       } else {
-        throw new Error(data.error)
+        throw new ClientRequestError('The order response could not be confirmed. Check My Orders before retrying.', response.status, true)
       }
     } catch (error) {
+      if (confirmedOrderId !== null) {
+        router.push(`/customer/account/orders/${confirmedOrderId}`)
+        return
+      }
       console.error('Place order error:', error)
+      const quoteRejected = error instanceof ClientRequestError && QUOTE_ERROR_CODES.has(error.code || '')
+      if (quoteRejected) {
+        // A quote is verified before any order write, and QUOTE_CHANGED rolls the
+        // whole transaction back, so this key provably created no order.
+        if (attemptedKey) {
+          try {
+            clearOrderAttempt(localStorage, user.userId, attemptedKey)
+            setPendingOrderKey(null)
+          } catch {
+            setCheckoutError('The saved request could not be cleared. Resolve it before starting another checkout.')
+          }
+        }
+        setCheckoutError('')
+        await Swal.fire({
+          icon: 'warning', title: 'Review the updated total',
+          text: `${error instanceof Error ? error.message : 'The quote could not be confirmed.'} Nothing has been ordered. Review the current total and try again.`,
+          confirmButtonColor: '#000',
+        })
+        return
+      }
+      if (error instanceof ClientRequestError && error.code === 'ORDER_REQUEST_ABANDONED' && attemptedKey) {
+        try {
+          clearOrderAttempt(localStorage, user.userId, attemptedKey)
+          setPendingOrderKey(null)
+        } catch {
+          setCheckoutError('The saved request could not be cleared. Resolve it before starting another checkout.')
+        }
+      } else if (attemptedKey || error instanceof PendingCheckoutError) {
+        setCheckoutError('Resolve the saved checkout or retry its unchanged contents with the same key. Check My Orders before starting another request.')
+      }
       Swal.fire({
         icon: 'error',
-        title: 'Order Failed',
-        text: 'Failed to place order. Please try again.',
+        title: !requestSent || (error instanceof ClientRequestError && !error.uncertain) ? 'Checkout needs review' : 'Order confirmation unavailable',
+        text: !requestSent && error instanceof Error ? error.message : error instanceof ClientRequestError && !error.uncertain ? error.message : 'We could not confirm whether the order was placed. Keep the saved key and resolve the earlier request or retry unchanged.',
         confirmButtonColor: '#000'
       })
     } finally {
+      orderSubmission.current = false
       setPlacing(false)
     }
   }
+
+  useEffect(() => {
+    if (user === undefined) return
+    if (!user) {
+      sessionStorage.setItem('redirectAfterLogin', '/customer/cart')
+      router.push('/signin')
+      return
+    }
+    if (!hasMigrated.current) {
+      hasMigrated.current = true
+      initializing.current = true
+      // Initial state is already loading with no coupon/error to clear.
+      // Retry events use initializeCheckout, which explicitly resets that UI.
+      void loadCheckoutResources([migrateAndLoadCart, loadShippingFee, loadTaxSettings, loadSavedAddress, loadPendingOrderAttempt])
+        .catch(error => setCheckoutError(error instanceof Error ? error.message : 'Checkout could not be loaded. Please retry.'))
+        .finally(() => {
+          initializing.current = false
+          setLoading(false)
+        })
+    }
+    const requests = couponRequests.current
+    return () => requests.invalidate()
+  }, [user, router])
 
   if (loading) {
     return (
@@ -452,6 +586,38 @@ export default function CartPage() {
   return (
     <div className={styles.container}>
       <CustomerHeader user={user} onCartOpen={() => {}} />
+
+      {pendingOrderKey && (
+        <div role="status" style={{ padding: '20px', border: '1px solid #bbb', margin: '20px' }}>
+          <p>A checkout identity is saved on this device. Unchanged retries reuse it. Resolve it before changing the checkout.</p>
+          <button onClick={resolvePendingOrder} disabled={placing || changingCart}>Resolve earlier checkout</button>
+        </div>
+      )}
+
+      {checkoutError && (
+        <div role="alert" style={{ padding: '20px', border: '1px solid #c8102e', margin: '20px' }}>
+          <p>{checkoutError}</p>
+          <Link href="/customer/account/orders">Check My Orders</Link>{' '}
+          <button onClick={initializeCheckout} disabled={changingCart || placing}>Reload checkout</button>
+        </div>
+      )}
+      {guestMerge && guestMerge.pending.length > 0 && (
+        <section aria-label="Saved items awaiting import" style={{ padding: '20px', border: '1px solid #bbb', margin: '20px' }}>
+          <p role="status">{guestMerge.message || 'Some saved items remain on this device.'}</p>
+          <p>Only the account-bag items shown in the order summary will be ordered.</p>
+          <ul>
+            {guestMerge.pending.map((item, index) => (
+              <li key={index}>
+                {Number.isInteger(item?.productId) && item.productId > 0
+                  ? <Link href={`/customer/product?id=${item.slug || item.productId}`}>{typeof item.name === 'string' ? item.name : 'Review product options'}</Link>
+                  : 'Unreadable saved item'}
+                {' '}<button onClick={() => discardSavedItem(index, item)} disabled={changingCart || placing}>Remove saved copy</button>
+              </li>
+            ))}
+          </ul>
+          <button onClick={retryGuestMerge} disabled={changingCart || placing}>Review and retry saved items</button>
+        </section>
+      )}
       
       <div className={styles.content}>
         <div className={styles.leftSection}>
@@ -609,7 +775,7 @@ export default function CartPage() {
               </div>
             </div>
 
-            <button className={styles.placeOrderBtn} onClick={handlePlaceOrder} disabled={placing}>
+            <button className={styles.placeOrderBtn} onClick={handlePlaceOrder} disabled={placing || changingCart || applyingCoupon || !!checkoutError || cartItems.length === 0}>
               {placing ? 'Placing Order...' : 'Place Order'}
             </button>
             <p className={styles.terms}>
@@ -635,17 +801,18 @@ export default function CartPage() {
                       <button 
                         className={styles.qtyBtn} 
                         onClick={() => updateQuantity(index, item.quantity - 1)}
-                        disabled={item.quantity <= 1}
+                        disabled={item.quantity <= 1 || changingCart || placing || !!checkoutError}
                       >−</button>
                       <span>{item.quantity}</span>
                       <button 
                         className={styles.qtyBtn} 
                         onClick={() => updateQuantity(index, item.quantity + 1)}
-                        disabled={item.stock != null && item.quantity >= item.stock}
+                        disabled={changingCart || placing || !!checkoutError || (item.stock != null && item.quantity >= item.stock)}
                       >+</button>
                       <button 
                         className={styles.removeBtn} 
                         onClick={() => removeItem(index)}
+                        disabled={changingCart || placing || !!checkoutError}
                       >Remove</button>
                     </div>
                   </div>
@@ -666,7 +833,7 @@ export default function CartPage() {
               <div className={styles.discountApplied}>
                 <div>
                   <span className={styles.discountLabel}>Discount ({appliedCoupon.code})</span>
-                  <button className={styles.discountRemove} onClick={removeCoupon}>Remove</button>
+                  <button className={styles.discountRemove} onClick={removeCoupon} disabled={placing || changingCart}>Remove</button>
                 </div>
                 <span>-LKR {appliedCoupon.discount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
@@ -678,9 +845,9 @@ export default function CartPage() {
                   value={couponInput}
                   onChange={(e) => setCouponInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && applyCoupon()}
-                  disabled={applyingCoupon}
+                  disabled={applyingCoupon || changingCart || placing || !!checkoutError}
                 />
-                <button onClick={applyCoupon} disabled={applyingCoupon}>
+                <button onClick={applyCoupon} disabled={applyingCoupon || changingCart || placing || !!checkoutError}>
                   {applyingCoupon ? '...' : 'Apply'}
                 </button>
               </div>

@@ -1,13 +1,13 @@
 'use client'
 import styles from './signin.module.css'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useState } from 'react'
 import toast, { Toaster } from 'react-hot-toast'
 import { encryptData, decryptData } from '@/lib/clientEncryption'
 import { setAuthToken } from '@/lib/clientAuth'
+import { authDestination } from '@/lib/authNavigation'
 
 export default function SignIn() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -34,19 +34,22 @@ export default function SignIn() {
         return
       }
 
+      if (typeof data.token !== 'string' || data.token.split('.').length !== 3 || !data.user) {
+        throw new Error('Sign-in could not be confirmed')
+      }
       setAuthToken(data.token)
+
+      // Saved guest items remain on-device for the guarded cart recovery flow.
+      // Do not clear them based only on a batch HTTP 200 (items may be skipped).
+
       toast.success('Login successful!')
       
       // Check for redirect after login
       const redirectTo = sessionStorage.getItem('redirectAfterLogin')
-      if (redirectTo) {
-        sessionStorage.removeItem('redirectAfterLogin')
-        setTimeout(() => router.push(redirectTo), 1000)
-      } else if (data.user.userType === 'admin') {
-        setTimeout(() => router.push('/admin'), 1000)
-      } else {
-        setTimeout(() => router.push('/customer/shop'), 1000)
-      }
+      sessionStorage.removeItem('redirectAfterLogin')
+      // A client-set cookie does not invalidate prefetched unauthenticated RSC
+      // redirects. A document navigation starts a fresh authenticated router.
+      window.location.replace(authDestination(redirectTo, data.user.userType))
     } catch (error) {
       console.error('Login error:', error)
       toast.error('Something went wrong. Please try again.')
@@ -57,7 +60,7 @@ export default function SignIn() {
   return (
     <main className={styles.container}>
       <Toaster position="top-center" />
-      <header className={styles.logo} onClick={() => router.push('/')} style={{ cursor: 'pointer' }}>369</header>
+      <header className={styles.logo}><Link href="/" style={{ color: 'inherit', textDecoration: 'none' }}>369</Link></header>
       
       <h1 className={styles.title}>Sign In</h1>
       

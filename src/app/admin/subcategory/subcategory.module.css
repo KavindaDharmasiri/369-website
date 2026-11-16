@@ -55,7 +55,7 @@
   background: #212529;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   display: flex;
@@ -85,7 +85,7 @@
 .filterInput {
   padding: 10px 14px;
   border: 1px solid #ced4da;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   color: #212529;
   background: white;
@@ -109,7 +109,7 @@
   height: 24px;
   appearance: none;
   background: #ced4da;
-  border-radius: 12px;
+  border-radius: 16px;
   position: relative;
   cursor: pointer;
   outline: none;
@@ -138,7 +138,7 @@
 
 .tableWrapper {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1px solid #e9ecef;
   overflow: hidden;
   margin-bottom: 20px;
@@ -180,7 +180,7 @@
 .statusActive {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 12px;
   background: #d1fae5;
   color: #065f46;
@@ -216,7 +216,7 @@
 .pageSelect {
   padding: 6px 10px;
   border: 1px solid #ced4da;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 13px;
   margin: 0 8px;
 }
@@ -234,7 +234,7 @@
   padding: 6px 12px;
   border: 1px solid #ced4da;
   background: white;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
   transition: all 0.2s;
@@ -259,7 +259,7 @@
 
 .modal {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   width: 90%;
   max-width: 800px;
   max-height: 90vh;
@@ -305,7 +305,7 @@
 .input {
   padding: 10px 14px;
   border: 1px solid #ced4da;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   color: #212529;
 }
@@ -317,7 +317,7 @@
 .textarea {
   padding: 10px 14px;
   border: 1px solid #ced4da;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   color: #212529;
   resize: vertical;
@@ -331,7 +331,7 @@
 .select {
   padding: 10px 14px;
   border: 1px solid #ced4da;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   color: #212529;
   background: white;
@@ -351,7 +351,7 @@
   background: white;
   color: #212529;
   border: 1px solid #dee2e6;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
@@ -366,7 +366,7 @@
   background: white;
   color: #212529;
   border: 1px solid #dee2e6;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
@@ -381,7 +381,7 @@
   background: #212529;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
@@ -404,7 +404,7 @@
 .statusInactive {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 12px;
   background: #fee;
   color: #c00;
@@ -433,7 +433,7 @@
   margin: 0;
   padding: 10px 14px;
   background: #f8f9fa;
-  border-radius: 6px;
+  border-radius: 10px;
 }
 
 .deleteBtn {
@@ -441,7 +441,7 @@
   background: #dc3545;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;

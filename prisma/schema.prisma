@@ -13,6 +13,7 @@ model User {
   password    String
   userType    String     @default("customer") @map("user_type")
   isActive    Boolean    @default(true) @map("is_active")
+  sessionVersion Int     @default(0) @map("session_version")
   firstName   String?    @map("first_name")
   lastName    String?    @map("last_name")
   phone       String?
@@ -22,6 +23,8 @@ model User {
   addresses   Address[]
   cartItems   CartItem[]
   orders      Order[]
+  orderRequests OrderRequest[]
+  cartMergeRequests CartMergeRequest[]
   wishlistItems WishlistItem[]
   reviews     Review[]
   tryOnSpace  TryOnSpace?
@@ -118,6 +121,7 @@ model AdBanner {
 
 model Product {
   id                  Int            @id @default(autoincrement()) @map("product_id")
+  slug                String?        @unique @map("slug")
   status              String         @default("INACTIVE")
   stockStatus         Boolean        @default(true) @map("stock_status")
   prodMarket          String         @default("DRAFT") @map("prod_market")
@@ -193,12 +197,29 @@ model Order {
   orderItems    OrderItem[]
   user          User        @relation(fields: [userId], references: [id])
   coupon        Coupon?     @relation(fields: [couponId], references: [id])
+  request       OrderRequest?
 
   @@index([userId])
   @@index([orderNumber])
   @@index([status])
   @@index([createdAt])
   @@map("orders")
+}
+
+model OrderRequest {
+  id          Int      @id @default(autoincrement()) @map("order_request_id")
+  userId      Int      @map("user_id")
+  key         String   @db.VarChar(128)
+  requestHash String   @map("request_hash") @db.Char(64)
+  orderId     Int?     @unique @map("order_id")
+  response    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id])
+  order       Order?   @relation(fields: [orderId], references: [id])
+
+  @@unique([userId, key])
+  @@index([createdAt])
+  @@map("order_requests")
 }
 
 model OrderItem {
@@ -223,6 +244,7 @@ model OrderItem {
 
 model Category {
   id            Int           @id @default(autoincrement()) @map("category_id")
+  slug          String?       @unique @map("slug")
   name          String        @unique
   description   String?       @db.Text
   isActive      Boolean       @default(true) @map("is_active")
@@ -239,6 +261,7 @@ model Category {
 
 model SubCategory {
   id          Int       @id @default(autoincrement()) @map("sub_category_id")
+  slug        String?   @map("slug")
   name        String
   description String?   @db.Text
   categoryId  Int       @map("category_id")
@@ -250,6 +273,7 @@ model SubCategory {
   discounts   Discount[]
 
   @@unique([name, categoryId])
+  @@unique([categoryId, slug])
   @@index([categoryId, isActive])
   @@index([name])
   @@map("subcategories")
@@ -350,6 +374,7 @@ model CartItem {
   productId Int         @map("product_id")
   skuId     Int?        @map("sku_id")
   quantity  Int         @default(1)
+  revision  Int         @default(1)
   specs     String?     @db.Text
   createdAt DateTime    @default(now()) @map("created_at")
   updatedAt DateTime    @updatedAt @map("updated_at")
@@ -357,9 +382,24 @@ model CartItem {
   product   Product     @relation(fields: [productId], references: [id])
   sku       ProductSku? @relation(fields: [skuId], references: [id])
 
+  @@unique([userId, productId, skuId])
   @@index([userId])
   @@index([productId])
   @@map("cart_items")
+}
+
+model CartMergeRequest {
+  id          Int      @id @default(autoincrement()) @map("cart_merge_request_id")
+  userId      Int      @map("user_id")
+  key         String
+  requestHash String   @map("request_hash")
+  response    Json
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, key])
+  @@index([createdAt])
+  @@map("cart_merge_requests")
 }
 
 model Address {
@@ -472,4 +512,20 @@ model Discount {
   @@index([categoryId])
   @@index([subCategoryId])
   @@map("discounts")
+}
+
+model SlugRedirect {
+  id         Int      @id @default(autoincrement()) @map("slug_redirect_id")
+  entityType String   @map("entity_type")
+  entityId   Int?     @map("entity_id")
+  fromPath   String   @unique @map("from_path")
+  toPath     String   @map("to_path")
+  statusCode Int      @default(301) @map("status_code")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([entityType, entityId])
+  @@index([isActive])
+  @@map("slug_redirects")
 }

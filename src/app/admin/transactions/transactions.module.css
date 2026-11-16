@@ -49,7 +49,7 @@
 .statCard {
   background: white;
   padding: 24px;
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1px solid #e9ecef;
 }
 
@@ -67,7 +67,7 @@
 .chartSection {
   background: white;
   padding: 24px;
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1px solid #e9ecef;
   margin-bottom: 32px;
 }
@@ -88,7 +88,7 @@
 .periodSelect {
   padding: 8px 16px;
   border: 1px solid #dee2e6;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   background: white;
   cursor: pointer;
@@ -97,13 +97,13 @@
 .chartPlaceholder {
   height: 250px;
   background: #f8f9fa;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .tableSection {
   background: white;
   padding: 24px;
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1px solid #e9ecef;
 }
 
@@ -125,7 +125,7 @@
   background: #212529;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
 }
@@ -161,7 +161,7 @@
   padding: 4px 12px;
   background: #d1e7dd;
   color: #0f5132;
-  border-radius: 12px;
+  border-radius: 16px;
   font-size: 13px;
   font-weight: 500;
 }
@@ -185,7 +185,7 @@
 .pageSize {
   padding: 4px 8px;
   border: 1px solid #dee2e6;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 14px;
 }
 
@@ -202,7 +202,7 @@
   height: 32px;
   background: white;
   border: 1px solid #dee2e6;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
 }

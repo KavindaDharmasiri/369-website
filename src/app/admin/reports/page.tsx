@@ -2,6 +2,7 @@
 import styles from '../adminShared.module.css'
 import reportStyles from './reports.module.css'
 import { useEffect, useState } from 'react'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { useRouter } from 'next/navigation'
 import { getAuthUser, removeAuthToken, getAuthToken } from '@/lib/clientAuth'
 import Link from 'next/link'
@@ -20,14 +21,15 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function AdminReports() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [stats, setStats] = useState<any>(null)
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser) {
       router.push('/signin')
       return
@@ -42,7 +44,6 @@ export default function AdminReports() {
       router.push('/signin')
       return
     }
-    setUser(authUser)
 
     const token = getAuthToken()
     Promise.all([
@@ -55,7 +56,7 @@ export default function AdminReports() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [router])
+  }, [router, user])
 
   if (!user) return null
 

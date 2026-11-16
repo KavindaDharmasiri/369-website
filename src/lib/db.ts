@@ -5,7 +5,8 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: ['error'],
+  // Raw Prisma error events can include SQL/PII. Route boundaries use serverLog.
+  log: [],
   datasources: {
     db: {
       url: process.env.DATABASE_URL

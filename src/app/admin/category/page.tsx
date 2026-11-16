@@ -1,6 +1,7 @@
 'use client'
 import styles from './category.module.css'
 import { useEffect, useState } from 'react'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { useRouter } from 'next/navigation'
 import { getAuthUser, getAuthToken } from '@/lib/clientAuth'
 import Link from 'next/link'
@@ -21,7 +22,7 @@ interface Category {
 
 export default function CategoryManagement() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [categoryName, setCategoryName] = useState('')
   const [categoryDesc, setCategoryDesc] = useState('')
   const [activeOnly, setActiveOnly] = useState(true)
@@ -40,17 +41,16 @@ export default function CategoryManagement() {
   const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser || authUser.userType !== 'admin') {
       router.push('/signin')
       return
     }
-    setUser(authUser)
-  }, [router])
+  }, [router, user])
 
   useEffect(() => {
     if (user) {
-      setCurrentPage(1)
       fetchCategories()
     }
   }, [activeOnly, user])
@@ -58,13 +58,12 @@ export default function CategoryManagement() {
   useEffect(() => {
     if (!user) return
     const timer = setTimeout(() => {
-      setCurrentPage(1)
-      fetchCategories()
+       fetchCategories()
     }, 400)
     return () => clearTimeout(timer)
   }, [categoryName, categoryDesc])
 
-  const fetchCategories = async () => {
+  async function fetchCategories() {
     try {
       const token = getAuthToken()
       const params = new URLSearchParams()
@@ -77,7 +76,10 @@ export default function CategoryManagement() {
       })
       const data = await res.json()
       const decrypted = decryptData(data.data)
-      if (decrypted.categories) setCategories(decrypted.categories)
+      if (decrypted.categories) {
+        setCategories(decrypted.categories)
+        setCurrentPage(1)
+      }
     } catch (error) {
       toast.error('Failed to load categories')
     }

@@ -1,6 +1,7 @@
 'use client'
 import styles from '../adminShared.module.css'
 import { useEffect, useState } from 'react'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { useRouter } from 'next/navigation'
 import { getAuthUser, removeAuthToken, getAuthToken } from '@/lib/clientAuth'
 import Link from 'next/link'
@@ -9,14 +10,15 @@ import { TableSkeleton } from '@/components/Skeleton'
 
 export default function AdminUsers() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [users, setUsers] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser) {
       router.push('/signin')
       return
@@ -31,11 +33,10 @@ export default function AdminUsers() {
       router.push('/signin')
       return
     }
-    setUser(authUser)
     fetchUsers('')
-  }, [router])
+  }, [router, user])
 
-  const fetchUsers = (q: string) => {
+  function fetchUsers(q: string) {
     setLoading(true)
     setError('')
     const params = new URLSearchParams({ limit: '100' })

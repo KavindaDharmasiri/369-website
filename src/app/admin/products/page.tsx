@@ -2,7 +2,7 @@
 import styles from './products.module.css'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getAuthUser } from '@/lib/clientAuth'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { decryptData } from '@/lib/clientEncryption'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
@@ -11,7 +11,7 @@ import { X, PenLine } from 'lucide-react'
 
 export default function AdminProducts() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [products, setProducts] = useState<any[]>([])
   const [productName, setProductName] = useState('')
   const [productType, setProductType] = useState('All')
@@ -21,16 +21,16 @@ export default function AdminProducts() {
   const [shippingValue, setShippingValue] = useState('')
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser || authUser.userType !== 'admin') {
       router.push('/signin')
       return
     }
-    setUser(authUser)
     fetchProducts()
-  }, [router])
+  }, [router, user])
 
-  const fetchProducts = async () => {
+  async function fetchProducts() {
     try {
       const token = localStorage.getItem('authToken')
       const res = await fetch('/api/products', {

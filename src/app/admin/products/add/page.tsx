@@ -2,7 +2,7 @@
 import styles from './add.module.css'
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getAuthUser } from '@/lib/clientAuth'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { decryptData } from '@/lib/clientEncryption'
 import { useLoading } from '@/lib/LoadingContext'
 import Link from 'next/link'
@@ -18,7 +18,7 @@ function AddProductContent() {
   const mode = searchParams.get('mode') || 'add'
   const isViewMode = mode === 'view'
   const isEditMode = mode === 'edit'
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [categories, setCategories] = useState<any[]>([])
   const [subCategories, setSubCategories] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState('details')
@@ -62,12 +62,12 @@ function AddProductContent() {
   })
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser || authUser.userType !== 'admin') {
       router.push('/signin')
       return
     }
-    setUser(authUser)
     const loadData = async () => {
       showLoading()
       await fetchCategories()
@@ -79,9 +79,9 @@ function AddProductContent() {
       hideLoading()
     }
     loadData()
-  }, [router, productId])
+  }, [router, productId, user])
 
-  const fetchProduct = async (id: string) => {
+  async function fetchProduct(id: string) {
     const token = localStorage.getItem('authToken')
     const res = await fetch(`/api/products/${id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -127,7 +127,7 @@ function AddProductContent() {
     fetchSubCategories(product.categoryId.toString())
   }
 
-  const fetchSpecs = async (prodId: string) => {
+  async function fetchSpecs(prodId: string) {
     const token = localStorage.getItem('authToken')
     const res = await fetch(`/api/products/${prodId}/specs`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -137,7 +137,7 @@ function AddProductContent() {
     setSpecs(specs || [])
   }
 
-  const fetchSkus = async (prodId: string) => {
+  async function fetchSkus(prodId: string) {
     const token = localStorage.getItem('authToken')
     const res = await fetch(`/api/products/${prodId}/skus`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -146,7 +146,7 @@ function AddProductContent() {
     setSkus(data || [])
   }
 
-  const fetchCategories = async () => {
+  async function fetchCategories() {
     const token = localStorage.getItem('authToken')
     const res = await fetch('/api/categories', {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -156,7 +156,7 @@ function AddProductContent() {
     setCategories(decrypted.categories || [])
   }
 
-  const fetchSubCategories = async (categoryId: string) => {
+  async function fetchSubCategories(categoryId: string) {
     const token = localStorage.getItem('authToken')
     const res = await fetch(`/api/subcategories?categoryId=${categoryId}`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -532,7 +532,7 @@ function AddProductContent() {
               <div className={styles.visibilityOption}>
                 <div>
                   <div className={styles.optionTitle}>Show in New Arrivals</div>
-                  <div className={styles.optionDesc}>Add to the 'Just In' collection automatically</div>
+                  <div className={styles.optionDesc}>Add to the &apos;Just In&apos; collection automatically</div>
                 </div>
                 <label className={styles.switch}>
                   <input type="checkbox" checked={formData.showInNewArrivals} onChange={(e) => setFormData({...formData, showInNewArrivals: e.target.checked})} disabled={isViewMode} />

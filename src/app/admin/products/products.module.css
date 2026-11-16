@@ -32,7 +32,7 @@
   padding: 12px 20px;
   color: #6c757d;
   text-decoration: none;
-  border-radius: 8px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -148,7 +148,7 @@
   background: #212529;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   display: flex;
@@ -190,7 +190,7 @@
 .filterSelect {
   padding: 10px 14px;
   border: 1px solid #ced4da;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   color: #212529;
   background: white;
@@ -206,7 +206,7 @@
 
 .tableWrapper {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1px solid #e9ecef;
   overflow: hidden;
 }
@@ -243,7 +243,7 @@
 .badge {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 12px;
   background: #f5f5f5;
   color: #666;
@@ -252,7 +252,7 @@
 .marketBadge {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 12px;
   background: #000;
   color: white;
@@ -261,7 +261,7 @@
 .draftBadge {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 12px;
   background: #f0f0f0;
   color: #999;
@@ -270,7 +270,7 @@
 .statusActive {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 12px;
   background: #e8f5e9;
   color: #2e7d32;
@@ -279,7 +279,7 @@
 .lowStock {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 12px;
   font-weight: 600;
   background: #fce8e8;
@@ -290,7 +290,7 @@
 .stockOk {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 12px;
   background: #f5f5f5;
   color: #666;
@@ -327,7 +327,7 @@
 .pageSelect {
   padding: 6px 10px;
   border: 1px solid #ced4da;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 13px;
   margin: 0 8px;
 }
@@ -345,7 +345,7 @@
   padding: 6px 12px;
   border: 1px solid #ced4da;
   background: white;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
   transition: all 0.2s;
@@ -360,7 +360,7 @@
   background: #6c757d;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
@@ -385,7 +385,7 @@
 
 .modal {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   width: 500px;
   max-width: 90%;
 }
@@ -433,7 +433,7 @@
   width: 100%;
   padding: 10px 14px;
   border: 1px solid #ced4da;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
 }
 
@@ -450,7 +450,7 @@
   background: #212529;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
 }
@@ -464,7 +464,7 @@
   background: #e9ecef;
   color: #212529;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
 }

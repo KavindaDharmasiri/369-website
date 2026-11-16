@@ -1,6 +1,7 @@
 'use client'
 import styles from './detail.module.css'
 import { useEffect, useState } from 'react'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { useRouter, useParams } from 'next/navigation'
 import { getAuthUser, removeAuthToken } from '@/lib/clientAuth'
 import { getOptimizedImageUrl } from '@/lib/cloudinary'
@@ -27,13 +28,14 @@ const getStatusClass = (status: string) => {
 export default function OrderDetail() {
   const router = useRouter()
   const params = useParams()
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [order, setOrder] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser || authUser.userType !== 'admin') {
       router.push('/signin')
       return
@@ -44,12 +46,7 @@ export default function OrderDetail() {
       router.push('/signin')
       return
     }
-    setUser(authUser)
-    fetchOrder()
-  }, [])
-
-  const fetchOrder = async () => {
-    setError(null)
+    async function fetchOrder() {
     try {
       const token = localStorage.getItem('authToken')
       const res = await fetch(`/api/orders/${params.id}`, {
@@ -68,6 +65,9 @@ export default function OrderDetail() {
       setLoading(false)
     }
   }
+
+    void fetchOrder()
+  }, [router, params.id, user])
 
   if (!user) return null
 

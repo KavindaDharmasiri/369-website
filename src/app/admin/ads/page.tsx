@@ -1,6 +1,7 @@
 'use client'
 import styles from '../adminShared.module.css'
 import { useEffect, useState } from 'react'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { useRouter } from 'next/navigation'
 import { getAuthUser, removeAuthToken, getAuthToken } from '@/lib/clientAuth'
 import { decryptData } from '@/lib/clientEncryption'
@@ -12,7 +13,7 @@ import Swal from 'sweetalert2'
 
 export default function AdminAds() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [banners, setBanners] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -22,7 +23,8 @@ export default function AdminAds() {
   const [form, setForm] = useState(emptyForm)
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser) {
       router.push('/signin')
       return
@@ -37,11 +39,10 @@ export default function AdminAds() {
       router.push('/signin')
       return
     }
-    setUser(authUser)
     fetchBanners()
-  }, [router])
+  }, [router, user])
 
-  const fetchBanners = () => {
+  function fetchBanners() {
     setLoading(true)
     setError('')
     fetch('/api/ads?position=all', { headers: { Authorization: `Bearer ${getAuthToken()}` } })

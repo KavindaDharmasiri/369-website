@@ -44,7 +44,7 @@
   padding: 10px 24px;
   border: none;
   background: #f5f5f5;
-  border-radius: 24px;
+  border-radius: 28px;
   cursor: pointer;
   font-size: 14px;
 }
@@ -85,7 +85,7 @@
 .formGroup select {
   padding: 12px;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 14px;
 }
 
@@ -114,7 +114,7 @@
   gap: 15px;
   padding: 20px;
   border: 2px solid #ddd;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -149,7 +149,7 @@
   height: 36px;
   color: #1a1a1a;
   background: #f5f5f5;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .paymentTitle {
@@ -169,7 +169,7 @@
   background: #000;
   color: #fff;
   border: none;
-  border-radius: 32px;
+  border-radius: 36px;
   font-size: 16px;
   cursor: pointer;
   margin-top: 20px;
@@ -206,7 +206,7 @@
 .orderSummary {
   background: #f9f9f9;
   padding: 30px;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .summaryTitle {
@@ -227,7 +227,7 @@
   width: 60px;
   height: 75px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 .itemInfo {
@@ -260,7 +260,7 @@
   height: 24px;
   border: 1px solid #ddd;
   background: #fff;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -314,7 +314,7 @@
   padding: 10px 12px;
   background: #fdf2f4;
   border: 1px solid #f5d0d6;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   color: #c8102e;
 }
@@ -333,7 +333,7 @@
   flex: 1;
   padding: 10px;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 .discountCode button {
@@ -341,7 +341,7 @@
   background: #000;
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
 }
 
@@ -358,7 +358,7 @@
   padding: 10px 12px;
   background: #e8f5e8;
   border: 1px solid #c8e6c9;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   color: #2d5a2d;
 }

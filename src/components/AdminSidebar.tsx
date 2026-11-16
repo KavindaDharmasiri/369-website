@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import styles from './AdminSidebar.module.css'
 import { removeAuthToken } from '@/lib/clientAuth'
+import { startVisibilityPolling } from '@/lib/visibilityPolling'
 
 interface AdminSidebarProps {
   userEmail: string
@@ -42,27 +43,27 @@ function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const notificationSequence = useRef(0)
 
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('authToken')
-      const res = await fetch('/api/notifications?limit=15', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      })
+  const fetchNotifications = useCallback((signal: AbortSignal) => {
+    const sequence = ++notificationSequence.current
+    const token = localStorage.getItem('authToken')
+    return fetch('/api/notifications?limit=15', {
+      signal,
+      headers: { 'Authorization': `Bearer ${token}` },
+    }).then(async res => {
+      if (!res.ok) throw new Error('Notifications unavailable')
       const result = await res.json()
+      if (signal.aborted || sequence !== notificationSequence.current || token !== localStorage.getItem('authToken')) return
       if (result.success) {
         setNotifications(result.data.notifications || [])
         setUnreadCount(result.data.unreadCount || 0)
       }
-    } catch {
-      // silent
-    }
+    })
   }, [])
 
   useEffect(() => {
-    fetchNotifications()
-    const interval = setInterval(fetchNotifications, 20000)
-    return () => clearInterval(interval)
+    return startVisibilityPolling(fetchNotifications, { document })
   }, [fetchNotifications])
 
   useEffect(() => {
@@ -77,11 +78,13 @@ function NotificationBell() {
   const markAllRead = async () => {
     try {
       const token = localStorage.getItem('authToken')
-      await fetch('/api/notifications', {
+      const response = await fetch('/api/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({}),
       })
+      if (!response.ok) return
+      notificationSequence.current++
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
       setUnreadCount(0)
     } catch {
@@ -174,6 +177,11 @@ export default function AdminSidebar({ userEmail }: AdminSidebarProps) {
   const router = useRouter()
   const [showLogout, setShowLogout] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [previousPathname, setPreviousPathname] = useState(pathname)
+  if (previousPathname !== pathname) {
+    setPreviousPathname(pathname)
+    setMobileOpen(false)
+  }
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -185,10 +193,6 @@ export default function AdminSidebar({ userEmail }: AdminSidebarProps) {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  useEffect(() => {
-    setMobileOpen(false)
-  }, [pathname])
 
   const handleLogout = () => {
     removeAuthToken()

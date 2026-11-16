@@ -6,7 +6,7 @@ import { useAuditTrail } from './useAuditTrail'
 export function useActivityTracker() {
   const pathname = usePathname()
   const { logActivity } = useAuditTrail()
-  const pageStartTime = useRef<number>(Date.now())
+  const pageStartTime = useRef<number>(0)
 
   useEffect(() => {
     const token = localStorage.getItem('authToken')

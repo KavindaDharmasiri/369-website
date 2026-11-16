@@ -7,16 +7,22 @@ interface LoadingScreenProps {
 }
 
 export default function LoadingScreen({ isLoading }: LoadingScreenProps) {
-  const [show, setShow] = useState(false)
+  const [show, setShow] = useState(isLoading)
+  const [previousLoading, setPreviousLoading] = useState(isLoading)
+
+  // Preserve the exit animation, but show immediately when a new load starts.
+  // Adjusting this component's state during render avoids an extra effect render.
+  if (previousLoading !== isLoading) {
+    setPreviousLoading(isLoading)
+    if (isLoading) setShow(true)
+  }
 
   useEffect(() => {
-    if (isLoading) {
-      setShow(true)
-    } else {
+    if (!isLoading && show) {
       const timer = setTimeout(() => setShow(false), 300)
       return () => clearTimeout(timer)
     }
-  }, [isLoading])
+  }, [isLoading, show])
 
   if (!show) return null
 

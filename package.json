@@ -3,16 +3,27 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack --hostname 127.0.0.1",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "typecheck": "tsc --project tsconfig.build.json --noEmit --incremental false",
+    "test": "node --test tests/*.test.cjs",
+    "test:postgres": "node tools/verify-postgres.cjs --allow-isolated-schema",
+    "test:browser-fixture": "node tools/browser-fixture.cjs --allow-isolated-schema",
+    "test:browser-stop": "node tools/browser-fixture.cjs --stop",
+    "db:preflight-cart": "node tools/cart-integrity-preflight.cjs",
+    "db:status": "node tools/database-migrate.cjs status",
+    "db:diff": "node tools/database-migrate.cjs diff",
+    "db:deploy": "node tools/database-migrate.cjs deploy",
+    "check:migrations": "node tools/migration-coverage.cjs --check",
     "setup:tryon": "node tools/setup-tryon-assets.mjs",
     "postinstall": "prisma generate && node tools/setup-tryon-assets.mjs",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
-    "db:seed": "node --experimental-strip-types --no-warnings prisma/seed.ts"
+    "db:seed": "node --experimental-strip-types --no-warnings prisma/seed.ts",
+    "db:backfill-slugs": "node tools/backfill-slugs.mjs"
   },
   "dependencies": {
     "@gradio/client": "^1.8.0",
@@ -24,13 +35,18 @@
     "crypto-js": "^4.2.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^1.29.0",
-    "next": "^14",
+    "next": "16.4.6",
     "pdf-lib": "^1.17.1",
     "react": "^18",
     "react-dom": "^18",
     "react-hot-toast": "^2.4.1",
     "sweetalert2": "^11.26.18",
     "thin-plate-spline": "^0.1.0"
+  },
+  "overrides": {
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "11.0.1"
+    }
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -39,6 +55,8 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "eslint": "9.39.1",
+    "eslint-config-next": "16.4.6",
     "prisma": "^5.0.0",
     "typescript": "^5"
   }

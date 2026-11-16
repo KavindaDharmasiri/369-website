@@ -9,14 +9,19 @@ export interface DiscountInfo {
 }
 
 export function computeSalePrice(price: number, discount: any): number {
+  if (!Number.isFinite(price) || price < 0) throw new Error('Invalid product price')
+  const value = Number(discount.discountValue)
+  // Legacy invalid promotions must never produce negative prices or surcharges.
+  if (!Number.isFinite(value) || value <= 0 || !['percentage', 'fixed'].includes(discount.discountType) ||
+      (discount.discountType === 'percentage' && value > 100)) return price
   if (discount.discountType === 'percentage') {
-    return Math.round((price * (100 - Number(discount.discountValue))) / 100 * 100) / 100
+    return fromMinor(discountedMinor(moneyMinor(price), discount.discountValue))
   }
-  return Math.max(0, Math.round((price - Number(discount.discountValue)) * 100) / 100)
+  return fromMinor(Math.max(0, moneyMinor(price) - moneyMinor(discount.discountValue)))
 }
 
 export function buildDiscountInfo(price: number, discount: any | null): DiscountInfo {
-  const originalPrice = Math.round(Number(price) * 100) / 100
+  const originalPrice = roundMoney(price)
   if (!discount) {
     return { originalPrice, salePrice: originalPrice, discountPercent: 0, discountType: '', discountValue: 0, discountName: '', isOnSale: false }
   }
@@ -47,8 +52,7 @@ export async function getActiveDiscounts(db: any): Promise<any[]> {
   })
 }
 
-export function bestDiscountForProduct(discounts: any[], product: any): any | null {
-  const price = Number(product.prodPrice)
+export function bestDiscountForProduct(discounts: any[], product: any, price = Number(product.prodPrice)): any | null {
   let candidates: any[] = []
 
   const productDisc = discounts.filter((d: any) => d.scope === 'product' && d.productId === product.id)
@@ -78,3 +82,4 @@ export async function attachDiscountInfo(db: any, products: any[]): Promise<any[
     return { ...p, ...info }
   })
 }
+import { discountedMinor, fromMinor, moneyMinor, roundMoney } from './money'

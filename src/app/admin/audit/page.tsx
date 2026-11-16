@@ -1,6 +1,7 @@
 'use client'
 import styles from '../adminShared.module.css'
 import { useEffect, useState } from 'react'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { useRouter } from 'next/navigation'
 import { getAuthUser, removeAuthToken, getAuthToken } from '@/lib/clientAuth'
 import Link from 'next/link'
@@ -9,7 +10,7 @@ import { TableSkeleton } from '@/components/Skeleton'
 
 export default function AdminAudit() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [records, setRecords] = useState<any[]>([])
   const [action, setAction] = useState('')
   const [search, setSearch] = useState('')
@@ -17,7 +18,8 @@ export default function AdminAudit() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser) {
       router.push('/signin')
       return
@@ -32,11 +34,10 @@ export default function AdminAudit() {
       router.push('/signin')
       return
     }
-    setUser(authUser)
     fetchRecords('', '')
-  }, [router])
+  }, [router, user])
 
-  const fetchRecords = (act: string, q: string) => {
+  function fetchRecords(act: string, q: string) {
     setLoading(true)
     setError('')
     const params = new URLSearchParams({ limit: '200' })

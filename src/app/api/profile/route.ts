@@ -1,33 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { verifyToken } from '@/lib/auth'
+import { requireAuth } from '@/lib/apiMiddleware'
 import { encrypt } from '@/lib/encryption'
 
-export async function GET(request: NextRequest) {
-  try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '')
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+const publicProfileSelect = {
+  id: true, email: true, userType: true, firstName: true, lastName: true,
+  phone: true, avatarUrl: true, dateOfBirth: true, createdAt: true,
+} as const
 
-    const user = verifyToken(token)
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+const privateNoStore = { 'Cache-Control': 'private, no-store' }
+
+async function getHandler(request: NextRequest, user: any) {
+  try {
 
     const profile = await prisma.user.findUnique({
       where: { id: user.userId },
       select: {
-        id: true,
-        email: true,
-        userType: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        avatarUrl: true,
-        dateOfBirth: true,
-        createdAt: true,
+        ...publicProfileSelect,
         addresses: true,
       },
     })
 
-    if (!profile) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    if (!profile) return NextResponse.json({ error: 'User not found' }, { status: 404, headers: privateNoStore })
 
     const [orderCount, totalSpentAgg] = await Promise.all([
       prisma.order.count({ where: { userId: user.userId } }),
@@ -37,36 +31,59 @@ export async function GET(request: NextRequest) {
     const data = encrypt(JSON.stringify({
       profile: { ...profile, orderCount, totalSpent: Number(totalSpentAgg._sum.total || 0) },
     }))
-    return NextResponse.json({ data })
+    return NextResponse.json({ data }, { headers: privateNoStore })
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500, headers: privateNoStore })
   }
 }
 
-export async function PUT(request: NextRequest) {
+async function putHandler(request: NextRequest, user: any) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '')
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const user = verifyToken(token)
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await request.json()
-    const { firstName, lastName, phone, dateOfBirth } = body
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'A JSON object is required' }, { status: 400, headers: privateNoStore })
+    }
+    const optionalText = (value: unknown, name: string, max: number) => {
+      if (value === undefined) return undefined
+      if (value === null || value === '') return null
+      if (typeof value !== 'string' || value.trim().length > max) throw new Error(`${name} must be at most ${max} characters`)
+      return value.trim()
+    }
+    let firstName: string | null | undefined
+    let lastName: string | null | undefined
+    let phone: string | null | undefined
+    let dateOfBirth: Date | null | undefined
+    try {
+      firstName = optionalText(body.firstName, 'First name', 100)
+      lastName = optionalText(body.lastName, 'Last name', 100)
+      phone = optionalText(body.phone, 'Phone', 100)
+      if (body.dateOfBirth === undefined) dateOfBirth = undefined
+      else if (body.dateOfBirth === null || body.dateOfBirth === '') dateOfBirth = null
+      else if (typeof body.dateOfBirth !== 'string' || Number.isNaN(new Date(body.dateOfBirth).getTime())) {
+        throw new Error('Invalid date of birth')
+      } else dateOfBirth = new Date(body.dateOfBirth)
+    } catch (validationError) {
+      return NextResponse.json({ error: validationError instanceof Error ? validationError.message : 'Invalid profile data' }, { status: 400, headers: privateNoStore })
+    }
 
     const profile = await prisma.user.update({
       where: { id: user.userId },
+      select: publicProfileSelect,
       data: {
-        firstName: firstName ?? undefined,
-        lastName: lastName ?? undefined,
-        phone: phone ?? undefined,
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+        ...(firstName !== undefined ? { firstName } : {}),
+        ...(lastName !== undefined ? { lastName } : {}),
+        ...(phone !== undefined ? { phone } : {}),
+        ...(dateOfBirth !== undefined ? { dateOfBirth } : {}),
       },
     })
 
     const data = encrypt(JSON.stringify({ message: 'Profile updated successfully', profile }))
-    return NextResponse.json({ data })
+    return NextResponse.json({ data }, { headers: privateNoStore })
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to update profile' }, { status: 500, headers: privateNoStore })
   }
 }
+
+export const GET = requireAuth(getHandler)
+export const PUT = requireAuth(putHandler)

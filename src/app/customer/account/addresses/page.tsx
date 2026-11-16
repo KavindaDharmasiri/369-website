@@ -23,7 +23,7 @@ export default function AddressesPage() {
     loadAddresses()
   }, [])
 
-  const loadAddresses = async () => {
+  async function loadAddresses() {
     try {
       const token = localStorage.getItem('authToken')
       const res = await fetch('/api/addresses', {

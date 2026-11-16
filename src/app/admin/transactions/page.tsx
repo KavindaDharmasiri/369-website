@@ -1,6 +1,7 @@
 'use client'
 import styles from './transactions.module.css'
 import { useEffect, useState } from 'react'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { useRouter } from 'next/navigation'
 import { getAuthUser, removeAuthToken, getAuthToken } from '@/lib/clientAuth'
 import Link from 'next/link'
@@ -21,13 +22,14 @@ function formatLKR(value: number) {
 
 export default function Transactions() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser) {
       router.push('/signin')
       return
@@ -42,7 +44,6 @@ export default function Transactions() {
       router.push('/signin')
       return
     }
-    setUser(authUser)
 
     fetch('/api/orders', { headers: { Authorization: `Bearer ${getAuthToken()}` } })
       .then(async (res) => {
@@ -52,7 +53,7 @@ export default function Transactions() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [router])
+  }, [router, user])
 
   if (!user) return null
 

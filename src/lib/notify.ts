@@ -1,4 +1,5 @@
 import prisma from '@/lib/db'
+import { settingNumber } from '@/lib/settings'
 
 interface NotificationInput {
   type: string
@@ -16,7 +17,7 @@ export async function createNotification({ type, title, message, recipient = 'ad
 
 export async function notifyLowStock() {
   const thresholdRow = await prisma.appSetting.findUnique({ where: { key: 'lowStockThreshold' } })
-  const threshold = thresholdRow ? parseInt(thresholdRow.value) || 10 : 10
+  const threshold = settingNumber(thresholdRow?.value, 10, true)
 
   const lowSkus = await prisma.productSku.findMany({
     where: { isActive: true, stock: { lte: threshold } },

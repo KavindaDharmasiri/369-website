@@ -1,5 +1,6 @@
 'use client'
 import styles from './error.module.css'
+import Link from 'next/link'
 
 export default function Error({
   reset,
@@ -14,7 +15,7 @@ export default function Error({
       <p className={styles.message}>An unexpected error occurred. Please try again.</p>
       <div className={styles.actions}>
         <button className={styles.primaryBtn} onClick={reset}>Try Again</button>
-        <a className={styles.secondaryBtn} href="/">Back to Home</a>
+        <Link className={styles.secondaryBtn} href="/">Back to Home</Link>
       </div>
     </div>
   )

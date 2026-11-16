@@ -132,6 +132,13 @@ export default function OnDeviceTryOn({
   const [generating, setGenerating] = useState(false)
   const [resultUrl, setResultUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [previousGarmentUrl, setPreviousGarmentUrl] = useState(garmentUrl)
+  if (previousGarmentUrl !== garmentUrl) {
+    setPreviousGarmentUrl(garmentUrl)
+    setGarmentStatus('loading')
+    setGarmentError(null)
+    setResultUrl(null)
+  }
 
   const workerRef = useRef<Worker | null>(null)
   const garmentRef = useRef<PreparedGarment | null>(null)
@@ -187,11 +194,12 @@ export default function OnDeviceTryOn({
       },
       accelerator: 'webgpu',
     })
+    const pending = pendingRef.current
     return () => {
-      for (const { reject } of pendingRef.current.values()) {
+      for (const { reject } of pending.values()) {
         reject(new Error('Preview engine was closed'))
       }
-      pendingRef.current.clear()
+      pending.clear()
       worker.terminate()
       workerRef.current = null
     }
@@ -199,12 +207,12 @@ export default function OnDeviceTryOn({
 
   useEffect(() => {
     let cancelled = false
-    setGarmentStatus('loading')
-    setGarmentError(null)
-    setResultUrl(null)
     prepareGarment(getOptimizedImageUrl(garmentUrl, 'w_900,q_auto,f_auto'))
       .then((prepared) => {
-        if (cancelled) return
+        if (cancelled) {
+          prepared?.bitmap.close()
+          return
+        }
         if (!prepared) {
           setGarmentStatus('error')
           setGarmentError('Could not isolate the garment from this product photo.')

@@ -7,29 +7,32 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState('all')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    fetchOrders()
-  }, [])
-
-  const fetchOrders = async () => {
-    try {
-      const token = localStorage.getItem('authToken')
-      const res = await fetch('/api/orders', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const result = await res.json()
+    const controller = new AbortController()
+    const token = localStorage.getItem('authToken')
+    fetch('/api/orders', {
+      signal: controller.signal, headers: { 'Authorization': `Bearer ${token}` },
+    }).then(res => {
+      if (!res.ok) throw new Error('Orders could not be loaded')
+      return res.json()
+    }).then(result => {
+      if (controller.signal.aborted) return
       if (result.success) {
         const data = result.data.orders ? result.data.orders : result.data
         setOrders(Array.isArray(data) ? data : [])
       }
-    } catch (error) {
+    }).catch(error => {
+      if (controller.signal.aborted) return
       console.error('Failed to fetch orders:', error)
+      setError('Orders could not be loaded. Please reload to try again.')
       setOrders([])
-    } finally {
-      setLoading(false)
-    }
-  }
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoading(false)
+    })
+    return () => controller.abort()
+  }, [])
 
   const getStatusClass = (status: string) => {
     switch (status.toLowerCase()) {
@@ -60,6 +63,8 @@ export default function OrdersPage() {
     if (activeTab === 'returns') return order.status.toLowerCase() === 'returned'
     return true
   })
+
+  if (error) return <p role="alert">{error}</p>
 
   return (
     <div className={styles.orderHistory}>

@@ -1,6 +1,7 @@
 'use client'
 import styles from './discounts.module.css'
 import { useEffect, useState } from 'react'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { useRouter } from 'next/navigation'
 import { getAuthUser, getAuthToken } from '@/lib/clientAuth'
 import { decryptData } from '@/lib/clientEncryption'
@@ -45,7 +46,7 @@ const emptyForm = {
 
 export default function DiscountsManagement() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [discounts, setDiscounts] = useState<Discount[]>([])
   const [products, setProducts] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
@@ -59,19 +60,19 @@ export default function DiscountsManagement() {
   const [productOpen, setProductOpen] = useState(false)
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser || authUser.userType !== 'admin') {
       router.push('/signin')
       return
     }
-    setUser(authUser)
     fetchDiscounts()
     fetchProducts()
     fetchCategories()
     fetchSubcategories()
-  }, [router])
+  }, [router, user])
 
-  const fetchDiscounts = async () => {
+  async function fetchDiscounts() {
     setLoading(true)
     try {
       const token = getAuthToken()
@@ -89,7 +90,7 @@ export default function DiscountsManagement() {
     }
   }
 
-  const fetchProducts = async () => {
+  async function fetchProducts() {
     try {
       const token = getAuthToken()
       const res = await fetch('/api/products', {
@@ -105,7 +106,7 @@ export default function DiscountsManagement() {
     }
   }
 
-  const fetchCategories = async () => {
+  async function fetchCategories() {
     try {
       const res = await fetch('/api/categories')
       const result = await res.json()
@@ -116,7 +117,7 @@ export default function DiscountsManagement() {
     }
   }
 
-  const fetchSubcategories = async () => {
+  async function fetchSubcategories() {
     try {
       const res = await fetch('/api/subcategories')
       const result = await res.json()

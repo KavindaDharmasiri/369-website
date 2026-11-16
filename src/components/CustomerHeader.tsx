@@ -2,10 +2,11 @@
 import styles from './CustomerHeader.module.css'
 import Link from 'next/link'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { ShoppingCart, User, Search, Heart, Package, LogOut } from 'lucide-react'
 import { decryptData } from '@/lib/clientEncryption'
 import { getAuthUser, removeAuthToken } from '@/lib/clientAuth'
+import { readGuestCart, withGuestCartLock } from '@/lib/guestCart'
 import Swal from 'sweetalert2'
 
 interface CustomerHeaderProps {
@@ -43,23 +44,11 @@ export default function CustomerHeader({ user, onCartOpen }: CustomerHeaderProps
   const [categories, setCategories] = useState<any[]>([])
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [cartCount, setCartCount] = useState(0)
-  const [wishlistCount, setWishlistCount] = useState(0)
+  const [accountWishlistCount, setWishlistCount] = useState(0)
+  const wishlistCount = user ? accountWishlistCount : 0
   const [searchTerm, setSearchTerm] = useState('')
-
-  useEffect(() => {
-    fetchCategories()
-    loadCartCount()
-    loadWishlistCount()
-
-    const handleCartUpdate = () => loadCartCount()
-    const handleWishlistUpdate = () => loadWishlistCount()
-    window.addEventListener('cartUpdated', handleCartUpdate)
-    window.addEventListener('wishlistUpdated', handleWishlistUpdate)
-    return () => {
-      window.removeEventListener('cartUpdated', handleCartUpdate)
-      window.removeEventListener('wishlistUpdated', handleWishlistUpdate)
-    }
-  }, [])
+  const cartSequence = useRef(0)
+  const wishlistSequence = useRef(0)
 
   useEffect(() => {
     const handleClickOutside = () => setShowUserMenu(false)
@@ -69,56 +58,77 @@ export default function CustomerHeader({ user, onCartOpen }: CustomerHeaderProps
     }
   }, [showUserMenu])
 
-  const fetchCategories = async () => {
-    try {
-      const res = await fetch('/api/categories')
-      const result = await res.json()
+  useEffect(() => {
+    const controller = new AbortController()
+    fetch('/api/categories', { signal: controller.signal }).then(res => {
+      if (!res.ok) throw new Error('Categories unavailable')
+      return res.json()
+    }).then(result => {
+      if (controller.signal.aborted) return
       const decrypted = decryptData(result.data)
       const activeCategories = (decrypted.categories || []).filter((cat: any) => cat.isActive === true)
       setCategories(activeCategories)
-    } catch (error) {
+    }).catch(error => {
+      if (controller.signal.aborted) return
       console.error('Failed to fetch categories:', error)
-    }
-  }
+    })
+    return () => controller.abort()
+  }, [])
 
-  const loadCartCount = async () => {
+  const loadCartCount = useCallback(() => {
+    const sequence = ++cartSequence.current
+    const token = localStorage.getItem('authToken')
     const authUser = getAuthUser()
-    if (authUser) {
-      try {
-        const token = localStorage.getItem('authToken')
-        const res = await fetch('/api/cart', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        const result = await res.json()
-        const data = decryptData(result.data)
-        setCartCount(data.cartItems?.length || 0)
-      } catch (error) {
-        setCartCount(0)
-      }
-    } else {
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-      setCartCount(cart.length)
-    }
-  }
+    const count = authUser
+      ? fetch('/api/cart', { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => {
+          if (!res.ok) throw new Error('Bag unavailable')
+          return res.json()
+        }).then(result => decryptData(result.data).cartItems?.length || 0)
+      : withGuestCartLock(() => readGuestCart(localStorage)).then(cart => cart.length)
+    return count.then(value => {
+      if (sequence === cartSequence.current && token === localStorage.getItem('authToken')) setCartCount(value)
+    }).catch(() => {
+      if (sequence === cartSequence.current && token === localStorage.getItem('authToken')) setCartCount(0)
+    })
+  }, [])
 
-  const loadWishlistCount = async () => {
+  const loadWishlistCount = useCallback(() => {
+    const sequence = ++wishlistSequence.current
     const authUser = getAuthUser()
-    if (!authUser) {
-      setWishlistCount(0)
-      return
-    }
-    try {
-      const token = localStorage.getItem('authToken')
-      const res = await fetch('/api/wishlist', {
+    if (!authUser) return
+    const token = localStorage.getItem('authToken')
+    return fetch('/api/wishlist', {
         headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const result = await res.json()
+      }).then(res => {
+        if (!res.ok) throw new Error('Wishlist unavailable')
+        return res.json()
+      }).then(result => {
+      if (sequence !== wishlistSequence.current || token !== localStorage.getItem('authToken')) return
       const data = decryptData(result.data)
       setWishlistCount(data.wishlist?.length || 0)
-    } catch (error) {
-      setWishlistCount(0)
+    }).catch(() => {
+      if (sequence === wishlistSequence.current && token === localStorage.getItem('authToken')) setWishlistCount(0)
+    })
+  }, [])
+
+  useEffect(() => {
+    loadCartCount()
+    loadWishlistCount()
+
+    const handleCartUpdate = () => loadCartCount()
+    const handleWishlistUpdate = () => loadWishlistCount()
+    window.addEventListener('cartUpdated', handleCartUpdate)
+    window.addEventListener('wishlistUpdated', handleWishlistUpdate)
+    const cartSeq = cartSequence
+    const wishlistSeq = wishlistSequence
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate)
+      window.removeEventListener('wishlistUpdated', handleWishlistUpdate)
+      cartSeq.current++
+      wishlistSeq.current++
     }
-  }
+  }, [user, loadCartCount, loadWishlistCount])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()

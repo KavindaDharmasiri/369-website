@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { requireAdmin } from '@/lib/apiMiddleware'
 import { encrypt, decrypt } from '@/lib/encryption'
+import { uniqueSlug } from '@/lib/slugStore'
+
+function isMissingSlugColumn(error: any) {
+  return error?.code === 'P2022' || /slug|does not exist|Unknown arg/i.test(error?.message || '')
+}
 
 const getHandler = async (req: NextRequest, user: any) => {
   try {
@@ -20,11 +25,25 @@ const getHandler = async (req: NextRequest, user: any) => {
     if (activeOnly === 'true') where.isActive = true
     else if (activeOnly === 'false') where.isActive = false
 
-    const subcategories = await prisma.subCategory.findMany({
-      where,
-      include: { category: true },
-      orderBy: { name: 'asc' },
-    })
+    let subcategories: any[]
+    try {
+      subcategories = await prisma.subCategory.findMany({
+        where,
+        include: { category: true },
+        orderBy: { name: 'asc' },
+      })
+    } catch (error: any) {
+      if (isMissingSlugColumn(error)) {
+        subcategories = await prisma.subCategory.findMany({
+          where,
+          orderBy: { name: 'asc' },
+          select: {
+            id: true, name: true, description: true, categoryId: true, isActive: true, createdAt: true,
+            category: { select: { id: true, name: true, description: true, isActive: true, createdAt: true } },
+          } as any,
+        })
+      } else throw error
+    }
 
     const encrypted = encrypt(JSON.stringify({ subcategories }))
     return NextResponse.json({ data: encrypted })
@@ -55,14 +74,25 @@ const postHandler = async (req: NextRequest, user: any) => {
       return NextResponse.json({ data: encrypted }, { status: 400 })
     }
 
-    const subcategory = await prisma.subCategory.create({
-      data: {
-        name: name.trim(),
-        description: description?.trim() || null,
-        categoryId: parseInt(categoryId),
-        isActive: isActive ?? true,
-      },
-    })
+    const data: any = {
+      name: name.trim(),
+      description: description?.trim() || null,
+      categoryId: parseInt(categoryId),
+      isActive: isActive ?? true,
+    }
+
+    let subcategory
+    try {
+      data.slug = await uniqueSlug(prisma, 'subCategory', name.trim(), { extraWhere: { categoryId: parseInt(categoryId) } })
+      subcategory = await (prisma.subCategory.create as any)({ data })
+    } catch (error: any) {
+      if (error?.code === 'P2022' || /slug|Unknown arg/i.test(error?.message || '')) {
+        delete data.slug
+        subcategory = await prisma.subCategory.create({ data })
+      } else {
+        throw error
+      }
+    }
 
     const encrypted = encrypt(JSON.stringify({ success: true, subcategory }))
     return NextResponse.json({ data: encrypted }, { status: 201 })
@@ -93,11 +123,25 @@ export async function GET(req: NextRequest) {
     if (activeOnly === 'true') where.isActive = true
     else if (activeOnly === 'false') where.isActive = false
 
-    const subcategories = await prisma.subCategory.findMany({
-      where,
-      include: { category: true },
-      orderBy: { name: 'asc' },
-    })
+    let subcategories: any[]
+    try {
+      subcategories = await prisma.subCategory.findMany({
+        where,
+        include: { category: true },
+        orderBy: { name: 'asc' },
+      })
+    } catch (error: any) {
+      if (isMissingSlugColumn(error)) {
+        subcategories = await prisma.subCategory.findMany({
+          where,
+          orderBy: { name: 'asc' },
+          select: {
+            id: true, name: true, description: true, categoryId: true, isActive: true, createdAt: true,
+            category: { select: { id: true, name: true, description: true, isActive: true, createdAt: true } },
+          } as any,
+        })
+      } else throw error
+    }
 
     const encrypted = encrypt(JSON.stringify({ subcategories }))
     return NextResponse.json({ data: encrypted })

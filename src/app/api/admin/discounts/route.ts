@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/apiMiddleware'
 import prisma from '@/lib/db'
+import { discountData, assertDiscountTarget } from '@/lib/promotions'
+import { readJsonObject, ValidationError } from '@/lib/validation'
+import { recordAudit } from '@/lib/audit'
 
 async function listHandler(request: NextRequest, user: any) {
   try {
@@ -14,67 +17,28 @@ async function listHandler(request: NextRequest, user: any) {
       take: 200
     })
 
-    return NextResponse.json({ success: true, data: { discounts } })
+    return NextResponse.json({ success: true, data: { discounts } }, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error) {
-    console.error('Get discounts error:', error)
-    return NextResponse.json({ error: 'Failed to fetch discounts' }, { status: 500 })
+    logServerError('Get discounts error', error)
+    return NextResponse.json({ error: 'Failed to fetch discounts' }, { status: 500, headers: { 'Cache-Control': 'private, no-store' } })
   }
 }
 
 async function createHandler(request: NextRequest, user: any) {
   try {
-    const body = await request.json()
-    const { name, description, discountType, discountValue, scope, productId, categoryId, subCategoryId, isActive, validFrom, validUntil } = body
+    const data = discountData(await readJsonObject(request))
+    await assertDiscountTarget(prisma, data)
+    const discount = await prisma.discount.create({ data })
+    await recordAudit({ userId: user.userId, userEmail: user.email, action: 'DISCOUNT_CREATE', entityType: 'discount', entityId: discount.id, request, metadata: { name: discount.name, scope: discount.scope } })
 
-    if (!name || !name.trim()) {
-      return NextResponse.json({ error: 'Discount name is required' }, { status: 400 })
-    }
-    if (!discountValue || Number(discountValue) <= 0) {
-      return NextResponse.json({ error: 'Discount value must be greater than 0' }, { status: 400 })
-    }
-    if (!['percentage', 'fixed'].includes(discountType || 'percentage')) {
-      return NextResponse.json({ error: 'Invalid discount type' }, { status: 400 })
-    }
-    if (discountType === 'percentage' && Number(discountValue) > 100) {
-      return NextResponse.json({ error: 'Percentage discount cannot exceed 100%' }, { status: 400 })
-    }
-    if (!['product', 'category', 'subcategory'].includes(scope || 'product')) {
-      return NextResponse.json({ error: 'Invalid discount scope' }, { status: 400 })
-    }
-
-    const targetMap: Record<string, any> = {
-      product: productId,
-      category: categoryId,
-      subcategory: subCategoryId
-    }
-    const target = targetMap[scope]
-
-    if (!target) {
-      return NextResponse.json({ error: 'Please select the target product or category' }, { status: 400 })
-    }
-
-    const discount = await prisma.discount.create({
-      data: {
-        name: name.trim(),
-        description: description || null,
-        discountType,
-        discountValue: Number(discountValue),
-        scope,
-        productId: scope === 'product' ? Number(productId) : null,
-        categoryId: scope === 'category' ? Number(categoryId) : null,
-        subCategoryId: scope === 'subcategory' ? Number(subCategoryId) : null,
-        isActive: isActive !== undefined ? isActive : true,
-        validFrom: validFrom ? new Date(validFrom) : null,
-        validUntil: validUntil ? new Date(validUntil) : null
-      }
-    })
-
-    return NextResponse.json({ success: true, data: { discount } }, { status: 201 })
+    return NextResponse.json({ success: true, data: { discount } }, { status: 201, headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error) {
-    console.error('Create discount error:', error)
-    return NextResponse.json({ error: 'Failed to create discount' }, { status: 500 })
+    if (error instanceof ValidationError) return NextResponse.json({ error: error.message }, { status: error.status, headers: { 'Cache-Control': 'private, no-store' } })
+    logServerError('Create discount error', error)
+    return NextResponse.json({ error: 'Failed to create discount' }, { status: 500, headers: { 'Cache-Control': 'private, no-store' } })
   }
 }
 
 export const GET = requireAdmin(listHandler)
 export const POST = requireAdmin(createHandler)
+import { logServerError } from '@/lib/serverLog'

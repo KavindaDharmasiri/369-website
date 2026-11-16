@@ -2,7 +2,8 @@
 import styles from './specifications.module.css'
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getAuthUser } from '@/lib/clientAuth'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
+import { useCurrentProductId } from '@/lib/useCurrentProductId'
 import { decryptData } from '@/lib/clientEncryption'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
@@ -14,8 +15,8 @@ function ProductSpecificationsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const urlProductId = searchParams.get('productId')
-  const [user, setUser] = useState<any>(null)
-  const [productId, setProductId] = useState<string | null>(null)
+  const user = useClientAuthUser()
+  const productId = useCurrentProductId(urlProductId)
   const [showModal, setShowModal] = useState(false)
   const [viewModal, setViewModal] = useState(false)
   const [editModal, setEditModal] = useState(false)
@@ -30,20 +31,20 @@ function ProductSpecificationsContent() {
   const itemsPerPage = 10
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser || authUser.userType !== 'admin') {
       router.push('/signin')
       return
     }
-    setUser(authUser)
-    const storedProductId = urlProductId || sessionStorage.getItem('currentProductId')
+    const storedProductId = productId
+    if (storedProductId === undefined) return
     if (!storedProductId) {
       router.push('/admin/products')
       return
     }
-    setProductId(storedProductId)
     fetchSpecs(storedProductId)
-  }, [router, urlProductId])
+  }, [router, productId, user])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -55,7 +56,7 @@ function ProductSpecificationsContent() {
     return () => document.removeEventListener('click', handleClickOutside)
   }, [showOptionsMenu])
 
-  const fetchSpecs = async (prodId: string) => {
+  async function fetchSpecs(prodId: string) {
     const token = localStorage.getItem('authToken')
     const res = await fetch(`/api/products/${prodId}/specs`, {
       headers: { 'Authorization': `Bearer ${token}` }

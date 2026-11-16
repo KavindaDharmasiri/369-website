@@ -13,27 +13,30 @@ export default function WishlistPage() {
   const router = useRouter()
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    fetchWishlist()
-  }, [])
-
-  const fetchWishlist = async () => {
-    try {
-      const token = localStorage.getItem('authToken')
-      const res = await fetch('/api/wishlist', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const result = await res.json()
+    const controller = new AbortController()
+    const token = localStorage.getItem('authToken')
+    fetch('/api/wishlist', {
+      signal: controller.signal, headers: { 'Authorization': `Bearer ${token}` },
+    }).then(res => {
+      if (!res.ok) throw new Error('Wishlist could not be loaded')
+      return res.json()
+    }).then(result => {
+      if (controller.signal.aborted) return
       const data = decryptData(result.data)
       setItems(data.wishlist || [])
-    } catch (error) {
+    }).catch(error => {
+      if (controller.signal.aborted) return
       console.error('Failed to fetch wishlist:', error)
+      setError('Wishlist could not be loaded. Please reload to try again.')
       setItems([])
-    } finally {
-      setLoading(false)
-    }
-  }
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoading(false)
+    })
+    return () => controller.abort()
+  }, [])
 
   const handleRemove = async (index: number) => {
     const item = items[index]
@@ -54,16 +57,17 @@ export default function WishlistPage() {
       const token = localStorage.getItem('authToken')
       const skuId = item.skuId || item.sku?.id
       const url = `/api/wishlist?productId=${item.productId}${skuId ? `&skuId=${skuId}` : ''}`
-      await fetch(url, {
+      const response = await fetch(url, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       })
+      if (!response.ok) throw new Error('The item could not be removed. Please try again.')
 
-      const updated = items.filter((_, i) => i !== index)
-      setItems(updated)
+      setItems(current => current.filter(saved => saved.id !== item.id))
       window.dispatchEvent(new Event('wishlistUpdated'))
     } catch (error) {
       console.error('Failed to remove item:', error)
+      await Swal.fire({ icon: 'error', title: 'Item not removed', text: 'Please try again. Your saved item has been kept.' })
     }
   }
 
@@ -78,6 +82,8 @@ export default function WishlistPage() {
     }
     return item.product?.prodImg
   }
+
+  if (error) return <p role="alert">{error}</p>
 
   return (
     <div className={styles.orderHistory}>

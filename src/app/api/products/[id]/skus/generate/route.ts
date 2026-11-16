@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { requireAdmin } from '@/lib/apiMiddleware'
 
-const postHandler = async (req: NextRequest, user: any, { params }: { params: { id: string } }) => {
+const postHandler = async (req: NextRequest, user: any, { params }: { params: Promise<{ id: string }> }) => {
   try {
-    const productId = parseInt(params.id)
+    const productId = parseInt((await params).id)
 
     const product = await prisma.product.findUnique({ where: { id: productId } })
     if (!product) return NextResponse.json({ error: 'Product not found' }, { status: 404 })
@@ -76,9 +76,9 @@ const postHandler = async (req: NextRequest, user: any, { params }: { params: { 
       orderBy: { id: 'asc' }
     })
 
-    return NextResponse.json(allSkus, { status: 201 })
+    return NextResponse.json(allSkus, { status: 201, headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Failed to generate SKUs' }, { status: 500, headers: { 'Cache-Control': 'private, no-store' } })
   }
 }
 

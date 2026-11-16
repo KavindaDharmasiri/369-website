@@ -1,25 +1,14 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/db'
+import { createReadinessProbe } from '@/lib/readiness'
+
+export const dynamic = 'force-dynamic'
+const probe = createReadinessProbe(() => prisma.$queryRaw`SELECT 1`)
 
 export async function GET() {
-  const serverKey = process.env.ENCRYPTION_KEY
-  const publicKey = process.env.NEXT_PUBLIC_ENCRYPTION_KEY
-
-  let dbConnected = false
-  let dbError = ''
-  try {
-    await prisma.$queryRaw`SELECT 1`
-    dbConnected = true
-  } catch (e: any) {
-    dbError = String(e?.message || e).slice(0, 300)
-  }
+  const dbConnected = await probe()
 
   return NextResponse.json({
-    serverKeySet: !!serverKey,
-    publicKeySet: !!publicKey,
-    keysMatch: !!serverKey && !!publicKey && serverKey === publicKey,
-    jwtSet: !!process.env.JWT_SECRET,
-    dbConnected,
-    dbError
-  })
+    status: dbConnected ? 'ok' : 'unavailable',
+  }, { status: dbConnected ? 200 : 503, headers: { 'Cache-Control': 'no-store' } })
 }

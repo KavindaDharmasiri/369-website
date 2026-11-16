@@ -4,38 +4,46 @@ import { useParams } from 'next/navigation'
 import styles from '../../account.module.css'
 import { getOptimizedImageUrl } from '@/lib/cloudinary'
 import { Skeleton } from '@/components/Skeleton'
+import { paymentLabel } from '@/lib/checkoutState'
 
 export default function OrderDetailsPage() {
   const params = useParams()
   const [order, setOrder] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [previousId, setPreviousId] = useState(params.id)
+  if (previousId !== params.id) {
+    setPreviousId(params.id)
+    setOrder(null)
+    setLoading(true)
+    setError('')
+  }
 
   useEffect(() => {
-    fetchOrderDetails()
-  }, [params.id])
-
-  const fetchOrderDetails = async () => {
-    try {
-      const token = localStorage.getItem('authToken')
-      const res = await fetch(`/api/orders/${params.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const result = await res.json()
+    const controller = new AbortController()
+    const token = localStorage.getItem('authToken')
+    fetch(`/api/orders/${params.id}`, {
+      signal: controller.signal, headers: { 'Authorization': `Bearer ${token}` },
+    }).then(res => {
+      if (!res.ok) throw new Error(res.status === 404 ? 'Order not found' : 'Order could not be loaded. Please reload to try again.')
+      return res.json()
+    }).then(result => {
+      if (controller.signal.aborted) return
       if (result.success) {
         setOrder(result.data)
       }
-    } catch (error) {
+    }).catch(error => {
+      if (controller.signal.aborted) return
       console.error('Failed to fetch order details:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+      setError(error.message)
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoading(false)
+    })
+    return () => controller.abort()
+  }, [params.id])
 
   const getPaymentStatus = () => {
-    if (order.paymentMethod.toLowerCase() === 'cash' && order.status.toLowerCase() !== 'delivered') {
-      return 'not paid'
-    }
-    return 'paid'
+    return paymentLabel(order.status)
   }
 
   const getPaymentStatusClass = () => {
@@ -63,6 +71,7 @@ export default function OrderDetailsPage() {
       </div>
     )
   }
+  if (error) return <p role="alert">{error}</p>
   if (!order) return <div>Order not found</div>
 
   return (

@@ -1,25 +1,24 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { getAuthUser, getAuthToken } from '@/lib/clientAuth'
+import { getAuthToken } from '@/lib/clientAuth'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { decryptData } from '@/lib/clientEncryption'
 import toast from 'react-hot-toast'
 import styles from './profile.module.css'
 import { Skeleton } from '@/components/Skeleton'
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ firstName: '', lastName: '', phone: '', dateOfBirth: '' })
 
   useEffect(() => {
-    const authUser = getAuthUser()
-    setUser(authUser)
-    fetchProfile()
-  }, [])
+    if (user) fetchProfile()
+  }, [user])
 
-  const fetchProfile = async () => {
+  async function fetchProfile() {
     try {
       const res = await fetch('/api/profile', { headers: { Authorization: `Bearer ${getAuthToken()}` } })
       if (!res.ok) throw new Error('Failed to load profile')

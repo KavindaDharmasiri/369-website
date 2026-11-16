@@ -6,27 +6,51 @@ const prisma = new PrismaClient()
 const IMG = 'https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png'
 
 async function main() {
-  const adminPassword = await bcrypt.hash('Admin@12345', 10)
-  const customerPassword = await bcrypt.hash('Customer@123', 10)
+  const isProduction = process.env.NODE_ENV === 'production'
+  const allowDemoSeed = process.env.SEED_DEMO_DATA === 'true'
+  const seedDemoData = !isProduction || allowDemoSeed
 
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@gmail.com' },
-    update: {},
-    create: {
-      email: 'admin@gmail.com',
-      password: adminPassword,
-      userType: 'admin',
-    },
-  })
+  const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim()
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD
+
+  let admin: { id: number; email: string } | null = null
+  if (adminEmail && adminPassword) {
+    const hashedAdminPassword = await bcrypt.hash(adminPassword, 10)
+    admin = await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: { password: hashedAdminPassword, userType: 'admin', isActive: true },
+      create: {
+        email: adminEmail,
+        password: hashedAdminPassword,
+        userType: 'admin',
+        isActive: true,
+      },
+      select: { id: true, email: true },
+    })
+    console.log('Seeded bootstrap admin account from environment variables.')
+  } else {
+    console.log('Skipped admin bootstrap: set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD to create an admin account.')
+  }
+
+  if (!seedDemoData) {
+    console.log('Skipped demo catalog/customer/order data. Set SEED_DEMO_DATA=true to seed demo data intentionally.')
+    return
+  }
+
+  const demoCustomerEmail = process.env.SEED_DEMO_CUSTOMER_EMAIL?.trim() || 'customer@example.com'
+  const demoCustomerPassword = process.env.SEED_DEMO_CUSTOMER_PASSWORD || 'Customer@123'
+  const customerPassword = await bcrypt.hash(demoCustomerPassword, 10)
 
   const customer = await prisma.user.upsert({
-    where: { email: 'customer@example.com' },
+    where: { email: demoCustomerEmail },
     update: {},
     create: {
-      email: 'customer@example.com',
+      email: demoCustomerEmail,
       password: customerPassword,
       userType: 'customer',
+      isActive: true,
     },
+    select: { id: true, email: true },
   })
 
   const women = await prisma.category.upsert({
@@ -50,6 +74,8 @@ async function main() {
     update: {},
     create: { name: 'T-Shirts', categoryId: men.id },
   })
+
+  const creatorEmail = admin?.email || 'seed@local'
 
   const productDefs = [
     {
@@ -90,8 +116,8 @@ async function main() {
         chargeTax: false,
         featuredOnHomepage: def.featured,
         showInNewArrivals: def.newArrival,
-        createdBy: admin.email,
-        updatedBy: admin.email,
+        createdBy: creatorEmail,
+        updatedBy: creatorEmail,
         categoryId: def.cat.id,
         subCategoryId: def.sub.id,
         baseSku: `${def.cat.name.substring(0, 3).toUpperCase()}/${def.sub.name.substring(0, 3).toUpperCase()}/000001`,
@@ -119,7 +145,7 @@ async function main() {
       create: { name: def.sub.name, type: 'SUB_CATEGORY', code: def.sub.name.substring(0, 3).toUpperCase() },
     })
 
-    console.log('Seeded product:', def.name, '(id', product.id, ')')
+    console.log('Seeded demo product:', def.name, '(id', product.id, ')')
   }
 
   const firstProducts = await prisma.product.findMany({ orderBy: { id: 'asc' }, take: 2 })
@@ -175,10 +201,10 @@ async function main() {
         },
       },
     })
-    console.log('Seeded order for customer')
+    console.log('Seeded demo order for customer')
   }
 
-  console.log('Seed complete. admin@gmail.com / Admin@12345, customer@example.com / Customer@123')
+  console.log('Seed complete.')
 }
 
 main()

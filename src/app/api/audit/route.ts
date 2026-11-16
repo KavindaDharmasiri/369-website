@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
+import { loadActiveUser } from '@/lib/apiMiddleware'
 
 export async function GET(req: NextRequest) {
   try {
+    const privateNoStore = { 'Cache-Control': 'private, no-store' }
     const token = req.headers.get('authorization')?.replace('Bearer ', '')
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: privateNoStore })
 
-    const user = verifyToken(token)
-    if (!user || user.userType !== 'admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    const user = await loadActiveUser(verifyToken(token))
+    if (!user || !Number.isInteger(user.userId) || user.userId < 1) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401, headers: privateNoStore })
+    }
+    if (user.userType !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403, headers: privateNoStore })
     }
 
     const { searchParams } = new URL(req.url)
@@ -27,9 +32,9 @@ export async function GET(req: NextRequest) {
       take: limit,
     })
 
-    return NextResponse.json({ success: true, data: { records } })
+    return NextResponse.json({ success: true, data: { records } }, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch {
-    return NextResponse.json({ error: 'Failed to fetch audit records' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch audit records' }, { status: 500, headers: { 'Cache-Control': 'private, no-store' } })
   }
 }
 
@@ -42,7 +47,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
-    const user = verifyToken(token)
+    const user = await loadActiveUser(verifyToken(token))
     if (!user || user.userType !== 'customer') {
       return NextResponse.json({ success: true })
     }

@@ -1,6 +1,14 @@
 'use client'
 import { decryptData } from '@/lib/clientEncryption'
 
+export function parseCartSpecs(value: unknown): Record<string, string> | null {
+  try {
+    const specs = typeof value === 'string' ? JSON.parse(value) : value
+    if (!specs || typeof specs !== 'object' || Array.isArray(specs) || !Object.values(specs).every((entry) => typeof entry === 'string')) return null
+    return specs as Record<string, string>
+  } catch { return null }
+}
+
 export function enrichServerCartItem(item: any) {
   const product = item.product || {}
   const sku = item.sku || null
@@ -39,7 +47,7 @@ export function enrichServerCartItem(item: any) {
     originalPrice: Number(originalPrice),
     isOnSale: Number(price) < Number(originalPrice),
     stock,
-    specs: typeof item.specs === 'string' ? JSON.parse(item.specs) : item.specs
+    specs: parseCartSpecs(item.specs)
   }
 }
 
@@ -72,12 +80,8 @@ export async function enrichGuestCartItem(item: any) {
       price = product.salePrice
     }
 
-    if (item.price !== undefined && item.price !== null) {
-      price = item.price
-    }
-    if (item.originalPrice !== undefined && item.originalPrice !== null) {
-      originalPrice = item.originalPrice
-    }
+    // Local snapshots are presentation hints, never a price authority. Keep the
+    // freshly fetched product/SKU price rather than a stale or edited saved value.
 
     return {
       ...item,
@@ -87,7 +91,7 @@ export async function enrichGuestCartItem(item: any) {
       originalPrice: Number(originalPrice),
       isOnSale: Number(price) < Number(originalPrice),
       stock,
-      specs: typeof item.specs === 'string' ? JSON.parse(item.specs) : item.specs
+      specs: parseCartSpecs(item.specs)
     }
   } catch {
     return item

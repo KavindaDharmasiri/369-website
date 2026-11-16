@@ -9,20 +9,22 @@ export default function CustomerFooter() {
   const [categories, setCategories] = useState<any[]>([])
 
   useEffect(() => {
-    fetchCategories()
+    const controller = new AbortController()
+    fetch('/api/categories', { signal: controller.signal })
+      .then(res => {
+        if (!res.ok) throw new Error('Categories unavailable')
+        return res.json()
+      })
+      .then(result => {
+        if (controller.signal.aborted) return
+        const decrypted = decryptData(result.data)
+        setCategories((decrypted.categories || []).filter((cat: any) => cat.isActive === true))
+      })
+      .catch(error => {
+        if (!controller.signal.aborted) console.error('Failed to fetch categories:', error)
+      })
+    return () => controller.abort()
   }, [])
-
-  const fetchCategories = async () => {
-    try {
-      const res = await fetch('/api/categories')
-      const result = await res.json()
-      const decrypted = decryptData(result.data)
-      const activeCategories = (decrypted.categories || []).filter((cat: any) => cat.isActive === true)
-      setCategories(activeCategories)
-    } catch (error) {
-      console.error('Failed to fetch categories:', error)
-    }
-  }
 
   return (
     <footer className={styles.footer}>
@@ -56,7 +58,7 @@ export default function CustomerFooter() {
             {categories.slice(0, 4).map((category) => (
               <Link
                 key={category.id}
-                href={`/customer/category?type=${category.name.toLowerCase()}`}
+                href={`/customer/category?type=${encodeURIComponent(category.name.toLowerCase())}`}
                 className={styles.footerLink}
               >
                 {category.name}

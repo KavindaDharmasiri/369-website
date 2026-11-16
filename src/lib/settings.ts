@@ -21,20 +21,21 @@ export async function getAppSettings(): Promise<AppSettings> {
   }
   return {
     taxMode: map.taxMode,
-    taxRate: parseFloat(map.taxRate) || 0,
-    lowStockThreshold: parseInt(map.lowStockThreshold) || 10,
+    taxRate: settingNumber(map.taxRate, 8),
+    lowStockThreshold: settingNumber(map.lowStockThreshold, 10, true),
   }
 }
 
-export async function setAppSetting(key: string, value: string, description?: string) {
-  const existing = await prisma.appSetting.findUnique({ where: { key } })
-  if (existing) {
-    return prisma.appSetting.update({
-      where: { key },
-      data: { value, description: description ?? existing.description },
-    })
-  }
-  return prisma.appSetting.create({
-    data: { key, value, description },
+export function settingNumber(value: string | undefined, fallback: number, integer = false): number {
+  if (value === undefined || !value.trim()) return fallback
+  const number = Number(value)
+  return Number.isFinite(number) && number >= 0 && (!integer || Number.isInteger(number)) ? number : fallback
+}
+
+export function setAppSetting(key: string, value: string, description?: string) {
+  return prisma.appSetting.upsert({
+    where: { key },
+    update: { value, ...(description !== undefined ? { description } : {}) },
+    create: { key, value, description },
   })
 }

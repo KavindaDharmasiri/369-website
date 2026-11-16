@@ -1,142 +1,58 @@
-'use client'
-import styles from './category.module.css'
-import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { getAuthUser } from '@/lib/clientAuth'
-import { decryptData } from '@/lib/clientEncryption'
-import { getOptimizedImageUrl } from '@/lib/cloudinary'
-import CustomerHeader from '@/components/CustomerHeader'
-import CustomerFooter from '@/components/CustomerFooter'
-import Cart from '@/components/Cart'
-import { CardsSkeleton } from '@/components/Skeleton'
+import type { Metadata } from 'next'
+import { notFound, permanentRedirect, redirect } from 'next/navigation'
+import prisma from '@/lib/db'
+import { absoluteUrl } from '@/lib/siteUrl'
+import { resolveSlugRedirect } from '@/lib/slugRedirects'
+import { listPublicProducts } from '@/lib/publicCatalog'
+import CategoryClient from './CategoryClient'
 
-function CategoryContent() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [isCartOpen, setIsCartOpen] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [products, setProducts] = useState<any[]>([])
-  const [subCategories, setSubCategories] = useState<any[]>([])
-  const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null)
-  const [sortBy, setSortBy] = useState('newest')
-  const [loading, setLoading] = useState(true)
-  const category = searchParams.get('type') || 'women'
+export const dynamic = 'force-dynamic'
+type Props = { searchParams: Promise<{ type?: string }> }
 
-  useEffect(() => {
-    setUser(getAuthUser())
-    fetchProducts()
-    fetchSubCategories()
-  }, [category, sortBy, selectedSubCategory])
-
-  const fetchProducts = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/products/category/${encodeURIComponent(category)}?sort=${sortBy}`)
-      const result = await res.json()
-      const decrypted = decryptData(result.data)
-      let filteredProducts = decrypted.products || []
-      
-      if (selectedSubCategory) {
-        filteredProducts = filteredProducts.filter((p: any) => p.prodSubCategoryName === selectedSubCategory)
-      }
-      
-      setProducts(filteredProducts)
-    } catch (error) {
-      console.error('Failed to fetch products:', error)
-    } finally {
-      setLoading(false)
-    }
+async function findActiveCategory(type: string): Promise<{ id: number; name: string } | null> {
+  if (!type) return null
+  const byName = await prisma.category.findFirst({
+    where: { name: { equals: type, mode: 'insensitive' }, isActive: true },
+    select: { id: true, name: true },
+  })
+  if (byName) return byName
+  try {
+    return await prisma.category.findFirst({ where: { slug: type, isActive: true }, select: { id: true, name: true } })
+  } catch (error: any) {
+    if (error?.code === 'P2022' && /slug/i.test(String(error?.meta?.column || error?.message || ''))) return null
+    throw error
   }
-
-  const fetchSubCategories = async () => {
-    try {
-      const res = await fetch(`/api/subcategories?categoryName=${encodeURIComponent(category)}&activeOnly=true`)
-      const result = await res.json()
-      const decrypted = decryptData(result.data)
-      setSubCategories(decrypted.subcategories || [])
-    } catch (error) {
-      console.error('Failed to fetch subcategories:', error)
-    }
-  }
-
-  return (
-    <div className={styles.container}>
-      <CustomerHeader user={user} onCartOpen={() => setIsCartOpen(true)} />
-
-      <div className={styles.content}>
-        <h1 className={styles.title}>{category.charAt(0).toUpperCase() + category.slice(1)}</h1>
-
-        <div className={styles.filterBar}>
-          <div className={styles.filters}>
-            <button 
-              className={`${styles.filterBtn} ${!selectedSubCategory ? styles.active : ''}`}
-              onClick={() => setSelectedSubCategory(null)}
-            >
-              All
-            </button>
-            {subCategories.map((subCat) => (
-              <button 
-                key={subCat.id} 
-                className={`${styles.filterBtn} ${selectedSubCategory === subCat.name ? styles.active : ''}`}
-                onClick={() => setSelectedSubCategory(subCat.name)}
-              >
-                {subCat.name}
-              </button>
-            ))}
-          </div>
-          <div className={styles.sort}>
-            <span>Sort by</span>
-            <select className={styles.sortSelect} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
-              <option value="price_low">Price: Low to High</option>
-              <option value="price_high">Price: High to Low</option>
-            </select>
-          </div>
-        </div>
-
-        <div className={styles.products}>
-          {loading ? (
-            <div style={{ gridColumn: '1 / -1' }}>
-              <CardsSkeleton count={8} />
-            </div>
-          ) : products.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px', color: '#666', gridColumn: '1 / -1' }}>
-              <p>No products available in this category</p>
-            </div>
-          ) : (
-            products.map((product) => {
-              const isOnSale = product.isOnSale === true && Number(product.salePrice) < Number(product.prodPrice)
-              return (
-                <div key={product.id} className={styles.product} onClick={() => router.push(`/customer/product?id=${product.id}`)}>
-                  <div className={`${styles.productImage} ${styles.productImageWrap}`}>
-                    {isOnSale && <span className={styles.saleBadge}>{product.discountPercent}% OFF</span>}
-                    <img src={getOptimizedImageUrl(product.prodImg) || "https://res.cloudinary.com/do2otr6cu/image/upload/v1771230064/img_h8ghcn.png"} alt={product.prodName} loading="lazy" decoding="async" />
-                  </div>
-                  <div className={styles.productName}>{product.prodName}</div>
-                  <div className={styles.productPriceRow}>
-                    <div className={`${styles.productPrice} ${isOnSale ? styles.salePrice : ''}`}>LKR {Number(product.salePrice ?? product.prodPrice).toLocaleString()}</div>
-                    {isOnSale && <div className={styles.originalPrice}>LKR {Number(product.originalPrice).toLocaleString()}</div>}
-                  </div>
-                </div>
-              )
-            })
-          )}
-        </div>
-      </div>
-
-      <CustomerFooter />
-
-      <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-    </div>
-  )
 }
 
-export default function Category() {
-  return (
-    <Suspense fallback={<div style={{ padding: '60px 20px', textAlign: 'center' }}><CardsSkeleton count={8} /></div>}>
-      <CategoryContent />
-    </Suspense>
-  )
+export async function generateMetadata({ searchParams: pendingParams }: Props): Promise<Metadata> {
+  const searchParams = await pendingParams
+  const type = typeof searchParams.type === 'string' ? searchParams.type.trim().toLowerCase() : ''
+  const category = await findActiveCategory(type)
+  if (!category) return { title: 'Collection not found', robots: { index: false, follow: true } }
+  const canonical = absoluteUrl(`/customer/category?type=${encodeURIComponent(category.name.toLowerCase())}`)
+  const description = `Shop the ${category.name} collection at 369.`
+  return { title: `${category.name} collection`, description, alternates: { canonical },
+    openGraph: { title: `${category.name} collection | 369`, description, url: canonical } }
+}
+
+export default async function CategoryPage({ searchParams: pendingParams }: Props) {
+  const searchParams = await pendingParams
+  const type = typeof searchParams.type === 'string' ? searchParams.type.trim().toLowerCase() : ''
+  if (!type) redirect('/customer/shop')
+  const category = await findActiveCategory(type)
+  if (!category) {
+    const mapped = await resolveSlugRedirect(`/customer/category?type=${encodeURIComponent(type)}`)
+    if (mapped) permanentRedirect(mapped.toPath)
+    notFound()
+  }
+  // Keep name-based canonical URLs during the compatibility period. This also
+  // prevents client sort/filter APIs from accidentally querying a slug as a name.
+  const canonicalType = category.name.toLowerCase()
+  if (type !== canonicalType) permanentRedirect(`/customer/category?type=${encodeURIComponent(canonicalType)}`)
+  const [products, subCategories] = await Promise.all([
+    listPublicProducts(prisma, { where: { categoryId: category.id }, limit: 200 }),
+    prisma.subCategory.findMany({ where: { categoryId: category.id, isActive: true }, orderBy: { name: 'asc' },
+      select: { id: true, name: true, description: true, categoryId: true, isActive: true } }),
+  ])
+  return <CategoryClient initialType={canonicalType} initialProducts={products} initialSubCategories={subCategories} />
 }

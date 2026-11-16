@@ -30,14 +30,14 @@
 .barTrack {
   height: 10px;
   background: #f1f3f5;
-  border-radius: 6px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
 .barFill {
   height: 100%;
   background: linear-gradient(90deg, #111827, #4f46e5);
-  border-radius: 6px;
+  border-radius: 10px;
   transition: width 0.6s ease;
 }
 

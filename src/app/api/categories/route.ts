@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { encrypt, decrypt } from '@/lib/encryption'
 import { verifyToken } from '@/lib/auth'
+import { loadActiveUser } from '@/lib/apiMiddleware'
+import { uniqueSlug } from '@/lib/slugStore'
 
-function checkAdminAuth(req: NextRequest) {
+async function checkAdminAuth(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   const token = authHeader?.replace('Bearer ', '')
 
@@ -12,7 +14,7 @@ function checkAdminAuth(req: NextRequest) {
     return { authorized: false, response: NextResponse.json({ data: encrypted }, { status: 401 }) }
   }
 
-  const user = verifyToken(token)
+  const user = await loadActiveUser(verifyToken(token))
   if (!user || user.userType !== 'admin') {
     const encrypted = encrypt(JSON.stringify({ error: 'Admin access required' }))
     return { authorized: false, response: NextResponse.json({ data: encrypted }, { status: 403 }) }
@@ -22,7 +24,7 @@ function checkAdminAuth(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = checkAdminAuth(req)
+  const auth = await checkAdminAuth(req)
   if (!auth.authorized) return auth.response
 
   try {
@@ -45,13 +47,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ data: encrypted }, { status: 400 })
     }
 
-    const category = await prisma.category.create({
-      data: {
-        name: name.trim(),
-        description: description?.trim() || null,
-        isActive: isActive ?? true
+    let category
+    const data: any = {
+      name: name.trim(),
+      description: description?.trim() || null,
+      isActive: isActive ?? true
+    }
+    try {
+      data.slug = await uniqueSlug(prisma, 'category', name.trim())
+      category = await (prisma.category.create as any)({ data })
+    } catch (error: any) {
+      if (error?.code === 'P2022' || /slug|Unknown arg/i.test(error?.message || '')) {
+        delete data.slug
+        category = await prisma.category.create({ data })
+      } else {
+        throw error
       }
-    })
+    }
 
     const encrypted = encrypt(JSON.stringify({ success: true, category }))
     return NextResponse.json({ data: encrypted }, { status: 201 })
@@ -67,6 +79,11 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    const isAdminFetch = req.headers.has('authorization')
+    if (isAdminFetch) {
+      const auth = await checkAdminAuth(req)
+      if (!auth.authorized) return auth.response
+    }
     const { searchParams } = new URL(req.url)
     const name = searchParams.get('name')
     const description = searchParams.get('description')
@@ -81,13 +98,18 @@ export async function GET(req: NextRequest) {
       where.isActive = false
     }
 
-    const categories = await prisma.category.findMany({ where, orderBy: { createdAt: 'desc' } })
+    if (!isAdminFetch) where.isActive = true
+    const categories = await prisma.category.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, name: true, description: true, isActive: true, createdAt: true, updatedAt: true },
+      })
     const encrypted = encrypt(JSON.stringify({ categories }))
 
     const isPublicFetch = !name && !description && !activeOnly && !req.headers.get('authorization')
     const headers = isPublicFetch
       ? { 'Cache-Control': 'public, s-maxage=300, max-age=300, stale-while-revalidate=600' }
-      : undefined
+      : { 'Cache-Control': 'private, no-store' }
 
     return NextResponse.json({ data: encrypted }, headers ? { headers } : undefined)
   } catch (error) {

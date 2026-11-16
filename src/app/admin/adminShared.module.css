@@ -56,7 +56,7 @@
 .statCard {
   background: white;
   border: 1px solid #e9ecef;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 20px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
@@ -78,7 +78,7 @@
 .tableSection {
   background: white;
   border: 1px solid #e9ecef;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
 }
 
@@ -133,7 +133,7 @@
 .statusBadge {
   display: inline-block;
   padding: 4px 12px;
-  border-radius: 20px;
+  border-radius: 24px;
   font-size: 12px;
   font-weight: 500;
 }
@@ -142,7 +142,7 @@
   background: none;
   border: 1px solid #e5e7eb;
   padding: 6px 14px;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 13px;
   color: #374151;
   cursor: pointer;
@@ -162,7 +162,7 @@
   color: white;
   border: none;
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -184,7 +184,7 @@
 .searchInput {
   padding: 10px 14px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 14px;
   min-width: 240px;
   outline: none;
@@ -215,7 +215,7 @@
 
 .modal {
   background: white;
-  border-radius: 14px;
+  border-radius: 18px;
   width: 90%;
   max-width: 560px;
   max-height: 85vh;
@@ -274,7 +274,7 @@
   width: 100%;
   padding: 10px 14px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 14px;
   outline: none;
   font-family: inherit;

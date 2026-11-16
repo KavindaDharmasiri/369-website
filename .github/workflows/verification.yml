@@ -1,0 +1,59 @@
+name: Local safety checks
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verification-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Deliberately non-production: no shared secrets or database writes in PRs.
+      DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/unused
+      JWT_SECRET: ci-only-placeholder-not-a-deployment-secret
+      NEXT_PUBLIC_ENCRYPTION_KEY: ci-only-public-payload-key
+      NEXT_PUBLIC_SITE_URL: https://example.invalid
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies without provider setup scripts
+        run: npm ci --ignore-scripts
+      - name: Generate Prisma client (no migrations or seeding)
+        run: npm run prisma:generate
+      - name: Offline regression tests
+        run: npm test
+      - name: ESLint
+        run: npm run lint
+      - name: Structural migration coverage (no database access)
+        run: npm run check:migrations
+      - name: Production compilation
+        run: npm run build
+      - name: TypeScript verification
+        run: npm run typecheck
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      # Fail visibly on known advisories; never suppress the exit status.
+      - run: npm audit --audit-level=high

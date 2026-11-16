@@ -1,7 +1,8 @@
 'use client'
 import styles from './Cart.module.css'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getAuthUser } from '@/lib/clientAuth'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { decryptData } from '@/lib/clientEncryption'
 import { enrichServerCartItem, enrichGuestCartItem } from '@/lib/cartEnrich'
 import { getOptimizedImageUrl } from '@/lib/cloudinary'
@@ -9,6 +10,8 @@ import { computeTax } from '@/lib/pricing'
 import { useRouter } from 'next/navigation'
 import { X, Minus, Plus } from 'lucide-react'
 import Swal from 'sweetalert2'
+import { createRequestGuard, mutationJson, responseJson } from '@/lib/clientRequests'
+import { guestLineMatches, readGuestCart, withGuestCartLock } from '@/lib/guestCart'
 
 interface CartProps {
   isOpen: boolean
@@ -18,43 +21,50 @@ interface CartProps {
 export default function Cart({ isOpen, onClose }: CartProps) {
   const router = useRouter()
   const [cartItems, setCartItems] = useState<any[]>([])
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [shippingFee, setShippingFee] = useState(0)
   const [shippingType, setShippingType] = useState('Standard')
   const [taxSettings, setTaxSettings] = useState({ taxMode: 'percentage', taxRate: 8 })
+  const [cartError, setCartError] = useState('')
+  const [changingCart, setChangingCart] = useState(false)
+  const mutation = useRef(false)
+  const cartReads = useRef(createRequestGuard())
 
   useEffect(() => {
-    setUser(getAuthUser())
+    const reads = cartReads.current
     if (isOpen) {
       loadCart()
       loadShippingFee()
       loadTaxSettings()
     }
-  }, [isOpen])
+    return () => reads.invalidate()
+  }, [isOpen, user])
 
-  const loadCart = async () => {
+  async function loadCart() {
+    const requestId = cartReads.current.next()
+    setCartError('')
     const authUser = getAuthUser()
-    if (authUser) {
-      // Load from backend
-      try {
+    try {
+      if (authUser) {
         const token = localStorage.getItem('authToken')
         const res = await fetch('/api/cart', {
           headers: { 'Authorization': `Bearer ${token}` }
         })
-        const result = await res.json()
+        const result = await responseJson(res)
         const data = decryptData(result.data)
-        setCartItems((data.cartItems || []).map(enrichServerCartItem))
-      } catch (error) {
-        console.error('Failed to load cart:', error)
+        if (!Array.isArray(data?.cartItems)) throw new Error('The bag response could not be read.')
+        if (cartReads.current.isCurrent(requestId)) setCartItems(data.cartItems.map(enrichServerCartItem))
+      } else {
+        const cart = await withGuestCartLock(() => readGuestCart(localStorage))
+        const enriched = await Promise.all(cart.map(enrichGuestCartItem))
+        if (cartReads.current.isCurrent(requestId)) setCartItems(enriched)
       }
-    } else {
-      // Load from localStorage
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-      setCartItems(await Promise.all(cart.map(enrichGuestCartItem)))
+    } catch (error) {
+      if (cartReads.current.isCurrent(requestId)) setCartError(error instanceof Error ? error.message : 'The bag could not be loaded.')
     }
   }
 
-  const loadShippingFee = async () => {
+  async function loadShippingFee() {
     try {
       const res = await fetch('/api/shipping')
       const result = await res.json()
@@ -68,7 +78,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
     }
   }
 
-  const loadTaxSettings = async () => {
+  async function loadTaxSettings() {
     try {
       const res = await fetch('/api/settings')
       const result = await res.json()
@@ -82,6 +92,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
   }
 
   const updateQuantity = async (index: number, newQuantity: number) => {
+    if (mutation.current) return
     const item = cartItems[index]
     if (newQuantity < 1) return
 
@@ -95,8 +106,11 @@ export default function Cart({ isOpen, onClose }: CartProps) {
       return
     }
 
-    if (user) {
-      try {
+    mutation.current = true
+    setChangingCart(true)
+    cartReads.current.invalidate()
+    try {
+      if (user) {
         const token = localStorage.getItem('authToken')
         const res = await fetch(`/api/cart/${item.id}`, {
           method: 'PATCH',
@@ -106,27 +120,29 @@ export default function Cart({ isOpen, onClose }: CartProps) {
           },
           body: JSON.stringify({ quantity: newQuantity })
         })
-        if (!res.ok) return
-      } catch (error) {
-        console.error('Failed to update quantity:', error)
-        return
+        await mutationJson(res)
+      } else {
+        await withGuestCartLock(() => {
+          const cart = readGuestCart(localStorage)
+          const guestItem = cart[index]
+          if (!guestLineMatches(guestItem, item)) throw new Error('The saved bag changed. Reload before editing.')
+          guestItem.quantity = newQuantity
+          localStorage.setItem('cart', JSON.stringify(cart))
+        })
       }
-    } else {
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-      const guestItem = cart[index]
-      if (guestItem) {
-        guestItem.quantity = newQuantity
-        localStorage.setItem('cart', JSON.stringify(cart))
-      }
+      setCartItems((current) => current.map((entry, i) => i === index ? { ...entry, quantity: newQuantity } : entry))
+      window.dispatchEvent(new Event('cartUpdated'))
+    } catch (error) {
+      setCartError(error instanceof Error ? error.message : 'The bag change could not be confirmed. Reload before retrying.')
+    } finally {
+      mutation.current = false
+      setChangingCart(false)
     }
-
-    const updated = [...cartItems]
-    updated[index].quantity = newQuantity
-    setCartItems(updated)
-    window.dispatchEvent(new Event('cartUpdated'))
   }
 
   const removeItem = async (index: number) => {
+    if (mutation.current) return
+    const item = cartItems[index]
     const result = await Swal.fire({
       title: 'Remove Item?',
       text: 'Are you sure you want to remove this item from your cart?',
@@ -139,23 +155,34 @@ export default function Cart({ isOpen, onClose }: CartProps) {
     })
 
     if (!result.isConfirmed) return
+    if (mutation.current) return
+    mutation.current = true
+    setChangingCart(true)
+    cartReads.current.invalidate()
 
-    if (user) {
-      // Remove from backend
-      const item = cartItems[index]
-      const token = localStorage.getItem('authToken')
-      await fetch(`/api/cart/${item.id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-    } else {
-      // Remove from localStorage
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-      cart.splice(index, 1)
-      localStorage.setItem('cart', JSON.stringify(cart))
+    try {
+      if (user) {
+        const token = localStorage.getItem('authToken')
+        await mutationJson(await fetch(`/api/cart/${item.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        }))
+      } else {
+        await withGuestCartLock(() => {
+          const cart = readGuestCart(localStorage)
+          if (!guestLineMatches(cart[index], item)) throw new Error('The saved bag changed. Reload before removing an item.')
+          cart.splice(index, 1)
+          localStorage.setItem('cart', JSON.stringify(cart))
+        })
+      }
+      await loadCart()
+      window.dispatchEvent(new Event('cartUpdated'))
+    } catch (error) {
+      setCartError(error instanceof Error ? error.message : 'Removal could not be confirmed. Reload before retrying.')
+    } finally {
+      mutation.current = false
+      setChangingCart(false)
     }
-    loadCart()
-    window.dispatchEvent(new Event('cartUpdated'))
   }
 
   if (!isOpen) return null
@@ -188,6 +215,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
         </div>
 
         <div className={styles.items}>
+          {cartError && <div role="alert"><p>{cartError}</p><button onClick={loadCart} disabled={changingCart}>Reload bag</button></div>}
           {cartItems.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
               <p>Your cart is empty</p>
@@ -209,15 +237,15 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                   </p>
                   <div className={styles.itemActions}>
                     <div className={styles.quantity}>
-                      <button className={styles.qtyBtn} onClick={() => updateQuantity(index, item.quantity - 1)} aria-label="Decrease quantity">
+                      <button className={styles.qtyBtn} disabled={changingCart || !!cartError} onClick={() => updateQuantity(index, item.quantity - 1)} aria-label="Decrease quantity">
                         <Minus size={14} />
                       </button>
                       <span>{item.quantity}</span>
-                      <button className={styles.qtyBtn} onClick={() => updateQuantity(index, item.quantity + 1)} aria-label="Increase quantity">
+                      <button className={styles.qtyBtn} disabled={changingCart || !!cartError} onClick={() => updateQuantity(index, item.quantity + 1)} aria-label="Increase quantity">
                         <Plus size={14} />
                       </button>
                     </div>
-                    <button className={styles.removeBtn} onClick={() => removeItem(index)}>Remove</button>
+                    <button className={styles.removeBtn} disabled={changingCart || !!cartError} onClick={() => removeItem(index)}>Remove</button>
                   </div>
                 </div>
               </div>
@@ -242,7 +270,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
             <span>Total</span>
             <span className={styles.totalAmount}>LKR {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
-          <button className={styles.checkoutBtn} onClick={async () => {
+          <button className={styles.checkoutBtn} disabled={changingCart || !!cartError} onClick={async () => {
             const authUser = getAuthUser()
             if (!authUser) {
               // Save intended destination

@@ -18,26 +18,56 @@ async function handler(request: NextRequest, user: any) {
       ]
     }
 
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          email: true,
-          userType: true,
-          isActive: true,
-          firstName: true,
-          lastName: true,
-          phone: true,
-          createdAt: true,
-          _count: { select: { orders: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        skip: offset,
-      }),
-      prisma.user.count({ where }),
-    ])
+    let users: any[]
+    let total = 0
+    try {
+      [users, total] = await Promise.all([
+        (prisma.user.findMany as any)({
+          where,
+          select: {
+            id: true,
+            email: true,
+            userType: true,
+            isActive: true,
+            sessionVersion: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            createdAt: true,
+            _count: { select: { orders: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: limit,
+          skip: offset,
+        }),
+        prisma.user.count({ where }),
+      ])
+    } catch (error: any) {
+      if (error?.code === 'P2022' || /sessionVersion|session_version|Unknown arg|does not exist/i.test(error?.message || '')) {
+        [users, total] = await Promise.all([
+          prisma.user.findMany({
+            where,
+            select: {
+              id: true,
+              email: true,
+              userType: true,
+              isActive: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              createdAt: true,
+              _count: { select: { orders: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+            take: limit,
+            skip: offset,
+          }),
+          prisma.user.count({ where }),
+        ])
+      } else {
+        throw error
+      }
+    }
 
     const ids = users.map((u) => u.id)
     const spends = ids.length
@@ -55,9 +85,9 @@ async function handler(request: NextRequest, user: any) {
       totalSpent: spendMap.get(u.id) || 0,
     }))
 
-    return NextResponse.json({ success: true, data: { users: enriched, total } })
+    return NextResponse.json({ success: true, data: { users: enriched, total } }, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500, headers: { 'Cache-Control': 'private, no-store' } })
   }
 }
 

@@ -52,9 +52,9 @@ async function handler(request: NextRequest, user: any) {
       topProducts
     }
 
-    return NextResponse.json(stats)
+    return NextResponse.json(stats, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500, headers: { 'Cache-Control': 'private, no-store' } })
   }
 }
 

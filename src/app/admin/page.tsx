@@ -1,6 +1,7 @@
 'use client'
 import styles from './admin.module.css'
 import { useEffect, useState } from 'react'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { useRouter } from 'next/navigation'
 import { getAuthUser, removeAuthToken, getAuthToken } from '@/lib/clientAuth'
 import Link from 'next/link'
@@ -13,12 +14,13 @@ function formatLKR(value: number) {
 
 export default function Admin() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [stats, setStats] = useState<any>(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser) {
       router.push('/signin')
       return
@@ -34,7 +36,6 @@ export default function Admin() {
       router.push('/signin')
       return
     }
-    setUser(authUser)
 
     fetch('/api/admin/stats', { headers: { Authorization: `Bearer ${getAuthToken()}` } })
       .then(async (res) => {
@@ -43,7 +44,7 @@ export default function Admin() {
       })
       .then(setStats)
       .catch((err) => setError(err.message))
-  }, [router])
+  }, [router, user])
 
   if (!user) return null
 

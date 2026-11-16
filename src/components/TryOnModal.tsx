@@ -16,6 +16,12 @@ interface TryOnModalProps {
 type PersonStatus = 'idle' | 'checking' | 'ok' | 'no-person' | 'multiple'
 
 export default function TryOnModal({ open, onClose, garmentUrl, productName, skuName }: TryOnModalProps) {
+  // Closing unmounts the session, so reopening cannot reuse personal images/results.
+  if (!open) return null
+  return <TryOnSession key={garmentUrl} open={open} onClose={onClose} garmentUrl={garmentUrl} productName={productName} skuName={skuName} />
+}
+
+function TryOnSession({ open, onClose, garmentUrl, productName, skuName }: TryOnModalProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [personFile, setPersonFile] = useState<File | null>(null)
   const [personStatus, setPersonStatus] = useState<PersonStatus>('idle')
@@ -43,9 +49,8 @@ export default function TryOnModal({ open, onClose, garmentUrl, productName, sku
   }
 
   useEffect(() => {
-    if (open) reset()
     return clearPreviewUrl
-  }, [open])
+  }, [])
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {

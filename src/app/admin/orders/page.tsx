@@ -1,6 +1,7 @@
 'use client'
 import styles from './orders.module.css'
 import { useEffect, useState } from 'react'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { useRouter } from 'next/navigation'
 import { getAuthUser, removeAuthToken } from '@/lib/clientAuth'
 import { decryptData } from '@/lib/clientEncryption'
@@ -9,13 +10,14 @@ import AdminSidebar from '@/components/AdminSidebar'
 
 export default function Orders() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [activeTab, setActiveTab] = useState('All Orders')
   const [orders, setOrders] = useState<any[]>([])
   const [stats, setStats] = useState({ totalSpent: 0, openOrders: 0 })
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser) {
       router.push('/signin')
       return
@@ -30,11 +32,7 @@ export default function Orders() {
       router.push('/signin')
       return
     }
-    setUser(authUser)
-    fetchOrders()
-  }, [router])
-
-  const fetchOrders = async () => {
+    async function fetchOrders() {
     try {
       const token = localStorage.getItem('authToken')
       const res = await fetch('/api/orders', {
@@ -57,6 +55,9 @@ export default function Orders() {
       console.error('Failed to fetch orders:', error)
     }
   }
+
+    void fetchOrders()
+  }, [router, user])
 
   if (!user) return null
 

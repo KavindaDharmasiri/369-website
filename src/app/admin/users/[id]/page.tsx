@@ -1,6 +1,7 @@
 'use client'
 import styles from '../../adminShared.module.css'
 import { useEffect, useState } from 'react'
+import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { useRouter, useParams } from 'next/navigation'
 import { getAuthUser, removeAuthToken, getAuthToken } from '@/lib/clientAuth'
 import Link from 'next/link'
@@ -20,13 +21,14 @@ export default function AdminUserDetail() {
   const router = useRouter()
   const params = useParams()
   const id = params?.id as string
-  const [user, setUser] = useState<any>(null)
+  const user = useClientAuthUser()
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const authUser = getAuthUser()
+    const authUser = user
+    if (authUser === undefined) return
     if (!authUser) {
       router.push('/signin')
       return
@@ -41,7 +43,6 @@ export default function AdminUserDetail() {
       router.push('/signin')
       return
     }
-    setUser(authUser)
     if (!id) return
 
     fetch(`/api/admin/users/${id}`, { headers: { Authorization: `Bearer ${getAuthToken()}` } })
@@ -52,7 +53,7 @@ export default function AdminUserDetail() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [router, id])
+  }, [router, id, user])
 
   if (!user) return null
 

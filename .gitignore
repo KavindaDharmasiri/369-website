@@ -1,5 +1,6 @@
 node_modules
 .next
+.next-dev
 .env
 .env*.local
 out
@@ -9,3 +10,4 @@ dist
 .vscode/
 dev-server.log
 public/litert-wasm/
+lint-report.json

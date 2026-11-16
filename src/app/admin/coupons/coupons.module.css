@@ -34,7 +34,7 @@
   background: #212529;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   transition: background 0.2s;
@@ -46,7 +46,7 @@
 
 .tableWrapper {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
@@ -95,7 +95,7 @@
 .status {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: 24px;
   font-size: 12px;
   font-weight: 500;
   text-transform: capitalize;
@@ -130,7 +130,7 @@
 .toggleBtn {
   padding: 6px 12px;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 12px;
   cursor: pointer;
   transition: background 0.2s;
@@ -150,7 +150,7 @@
   padding: 6px;
   background: none;
   border: 1px solid #e0e0e0;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
   color: #6c757d;
   display: flex;
@@ -191,7 +191,7 @@
 
 .modal {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   width: 560px;
   max-width: 95vw;
   max-height: 90vh;
@@ -257,7 +257,7 @@
 .formGroup select {
   padding: 10px 12px;
   border: 1px solid #e0e0e0;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   font-family: 'Inter', sans-serif;
   width: 100%;
@@ -282,7 +282,7 @@
   padding: 10px 24px;
   background: none;
   border: 1px solid #e0e0e0;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   color: #495057;
@@ -298,7 +298,7 @@
   background: #212529;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
   transition: background 0.2s;

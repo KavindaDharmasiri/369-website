@@ -4,12 +4,19 @@ import bcrypt from 'bcryptjs'
 import { encrypt, decrypt } from '@/lib/encryption'
 import { generateToken } from '@/lib/auth'
 import { createNotification } from '@/lib/notify'
+import { checkRateLimit, getClientIp, rateLimitHeaders } from '@/lib/rateLimit'
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const decryptedPayload = JSON.parse(decrypt(body.data))
     const { email, password, firstName, lastName, phone } = decryptedPayload
+    const ip = getClientIp(request)
+    const rl = checkRateLimit(`register:${ip}`, 10, 60 * 60 * 1000)
+    if (!rl.allowed) {
+      const encrypted = encrypt(JSON.stringify({ error: 'Too many registration attempts. Please try again later.' }))
+      return NextResponse.json({ data: encrypted }, { status: 429, headers: rateLimitHeaders(rl) })
+    }
 
     const existingUser = await prisma.user.findUnique({
       where: { email }
@@ -17,7 +24,7 @@ export async function POST(request: Request) {
 
     if (existingUser) {
       const encrypted = encrypt(JSON.stringify({ error: 'Email already exists' }))
-      return NextResponse.json({ data: encrypted }, { status: 400 })
+      return NextResponse.json({ data: encrypted }, { status: 400, headers: { 'Cache-Control': 'private, no-store' } })
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)
@@ -39,7 +46,7 @@ export async function POST(request: Request) {
       entityId: String(user.id),
     }).catch(() => null)
 
-    const token = generateToken({ userId: user.id, email: user.email, userType: user.userType, createdAt: user.createdAt })
+    const token = generateToken({ userId: user.id, email: user.email, userType: user.userType, createdAt: user.createdAt, sessionVersion: (user as any).sessionVersion ?? 0 })
 
     const encrypted = encrypt(JSON.stringify({
       message: 'User created successfully',
@@ -52,10 +59,11 @@ export async function POST(request: Request) {
         createdAt: user.createdAt
       }
     }))
-    return NextResponse.json({ data: encrypted })
+    return NextResponse.json({ data: encrypted }, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error) {
-    console.error('Registration error:', error)
+    logServerError('Registration error', error)
     const encrypted = encrypt(JSON.stringify({ error: 'Registration failed' }))
-    return NextResponse.json({ data: encrypted }, { status: 500 })
+    return NextResponse.json({ data: encrypted }, { status: 500, headers: { 'Cache-Control': 'private, no-store' } })
   }
 }
+import { logServerError } from '@/lib/serverLog'

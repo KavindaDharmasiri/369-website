@@ -51,7 +51,7 @@
   background: #1a1a1a;
   color: white;
   border: none;
-  border-radius: 20px;
+  border-radius: 24px;
   font-size: 14px;
   cursor: pointer;
   transition: background 0.2s;
@@ -276,7 +276,7 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   padding: 5px 10px;
-  border-radius: 3px;
+  border-radius: 6px;
   text-transform: uppercase;
   z-index: 2;
 }
@@ -445,7 +445,7 @@
   gap: 15px;
   border: 1px solid #ddd;
   padding: 5px 15px;
-  border-radius: 20px;
+  border-radius: 24px;
 }
 
 .qtyBtn {
@@ -497,7 +497,7 @@
   background: #1a1a1a;
   color: white;
   border: none;
-  border-radius: 32px;
+  border-radius: 36px;
   font-size: 16px;
   cursor: pointer;
   margin-bottom: 10px;

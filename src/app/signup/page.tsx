@@ -1,13 +1,13 @@
 'use client'
 import styles from './signup.module.css'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useState } from 'react'
 import toast, { Toaster } from 'react-hot-toast'
 import { encryptData, decryptData } from '@/lib/clientEncryption'
 import { setAuthToken } from '@/lib/clientAuth'
+import { authDestination } from '@/lib/authNavigation'
 
 export default function SignUp() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -79,20 +79,16 @@ export default function SignUp() {
         return
       }
 
-      if (data.token) {
-        setAuthToken(data.token)
-      }
+      if (typeof data.token !== 'string' || data.token.split('.').length !== 3) throw new Error('Registration could not be confirmed')
+      setAuthToken(data.token)
+      // Keep saved guest items and uncertain-transfer receipts for cart recovery.
 
       toast.success('Account created successfully!')
       
       // Check for redirect after signup
       const redirectTo = sessionStorage.getItem('redirectAfterLogin')
-      if (redirectTo) {
-        sessionStorage.removeItem('redirectAfterLogin')
-        setTimeout(() => router.push(redirectTo), 1000)
-      } else {
-        setTimeout(() => router.push('/customer/shop'), 1000)
-      }
+      sessionStorage.removeItem('redirectAfterLogin')
+      window.location.replace(authDestination(redirectTo))
     } catch (error) {
       console.error('Signup error:', error)
       toast.error('Something went wrong. Please try again.')
@@ -103,7 +99,7 @@ export default function SignUp() {
   return (
     <main className={styles.container}>
       <Toaster position="top-center" />
-      <header className={styles.logo} onClick={() => router.push('/')} style={{ cursor: 'pointer' }}>369</header>
+      <header className={styles.logo}><Link href="/" style={{ color: 'inherit', textDecoration: 'none' }}>369</Link></header>
 
       <div className={styles.content}>
         <p className={styles.membership}>Membership</p>

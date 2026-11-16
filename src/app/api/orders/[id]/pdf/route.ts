@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
+import { loadActiveUser } from '@/lib/apiMiddleware'
+import { positiveId, ValidationError } from '@/lib/validation'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '') || request.cookies.get('authToken')?.value
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'Cache-Control': 'private, no-store' } })
     }
 
-    const decoded = verifyToken(token)
-    const orderId = parseInt(params.id)
+    const decoded = await loadActiveUser(verifyToken(token))
+    if (!decoded || (!Number.isInteger(decoded.userId) || decoded.userId < 1)) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401, headers: { 'Cache-Control': 'private, no-store' } })
+    }
+    const orderId = positiveId((await params).id)
 
     const order = await prisma.order.findFirst({
       where: decoded.userType === 'admin'
@@ -23,7 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     })
 
     if (!order) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Order not found' }, { status: 404, headers: { 'Cache-Control': 'private, no-store' } })
     }
 
     const pdfDoc = await PDFDocument.create()
@@ -116,12 +121,17 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     return new NextResponse(Buffer.from(pdfBytes), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename="369-invoice-${order.orderNumber}.pdf"`
+        'Content-Disposition': `inline; filename="369-invoice-${order.orderNumber}.pdf"`,
+        'Cache-Control': 'private, no-store'
       }
     })
 
   } catch (error) {
-    console.error('PDF generation error:', error)
-    return NextResponse.json({ error: 'Failed to generate PDF' }, { status: 500 })
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status, headers: { 'Cache-Control': 'private, no-store' } })
+    }
+    logServerError('PDF generation error', error)
+    return NextResponse.json({ error: 'Failed to generate PDF' }, { status: 500, headers: { 'Cache-Control': 'private, no-store' } })
   }
 }
+import { logServerError } from '@/lib/serverLog'

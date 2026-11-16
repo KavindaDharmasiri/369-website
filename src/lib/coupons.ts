@@ -17,6 +17,10 @@ export async function validateCoupon(
     return { valid: false, message: 'Coupon code is required' }
   }
 
+  if (!Number.isFinite(subtotal) || subtotal < 0) {
+    return { valid: false, message: 'Invalid order subtotal' }
+  }
+
   const coupon = await db.coupon.findUnique({ where: { code: normalizedCode } })
 
   if (!coupon) {
@@ -25,6 +29,14 @@ export async function validateCoupon(
 
   if (!coupon.isActive) {
     return { valid: false, message: 'This coupon is no longer active' }
+  }
+
+  const value = Number(coupon.discountValue)
+  if (!['percentage', 'fixed'].includes(coupon.discountType) || !Number.isFinite(value) || value <= 0 ||
+      (coupon.discountType === 'percentage' && value > 100) ||
+      [coupon.minSubtotal, coupon.maxDiscount].some((amount) => amount != null && (!Number.isFinite(Number(amount)) || Number(amount) < 0)) ||
+      (coupon.maxUses != null && (!Number.isInteger(coupon.maxUses) || coupon.maxUses < 0))) {
+    return { valid: false, message: 'This coupon has an invalid configuration' }
   }
 
   const now = new Date()
@@ -42,28 +54,28 @@ export async function validateCoupon(
     }
   }
 
-  if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) {
+  if (coupon.maxUses != null && coupon.usedCount >= coupon.maxUses) {
     return { valid: false, message: 'This coupon has reached its usage limit' }
   }
 
-  let discount = 0
+  const subtotalMinor = moneyMinor(subtotal)
+  let discountMinor = 0
   if (coupon.discountType === 'percentage') {
-    discount = (subtotal * Number(coupon.discountValue)) / 100
-    if (coupon.maxDiscount && discount > Number(coupon.maxDiscount)) {
-      discount = Number(coupon.maxDiscount)
+    discountMinor = percentageMinor(subtotalMinor, coupon.discountValue)
+    if (coupon.maxDiscount != null && discountMinor > moneyMinor(coupon.maxDiscount)) {
+      discountMinor = moneyMinor(coupon.maxDiscount)
     }
   } else {
-    discount = Number(coupon.discountValue)
+    discountMinor = moneyMinor(coupon.discountValue)
   }
 
-  if (discount > subtotal) {
-    discount = subtotal
-  }
+  discountMinor = Math.min(discountMinor, subtotalMinor)
 
   return {
     valid: true,
     coupon,
-    discount: Math.round(discount * 100) / 100,
+    discount: fromMinor(discountMinor),
     discountType: coupon.discountType
   }
 }
+import { fromMinor, moneyMinor, percentageMinor } from './money'
