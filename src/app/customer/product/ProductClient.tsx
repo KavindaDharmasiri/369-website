@@ -1,6 +1,6 @@
 'use client'
 import styles from './product.module.css'
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { getAuthUser } from '@/lib/clientAuth'
@@ -8,6 +8,8 @@ import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { decryptData } from '@/lib/clientEncryption'
 import { getOptimizedImageUrl } from '@/lib/cloudinary'
 import { useAuditTrail } from '@/lib/useAuditTrail'
+import { useEngagement } from '@/lib/engagement/tracker'
+import { recordProductVisit } from '@/lib/engagement/session'
 import Cart from '@/components/Cart'
 import TryOnModal from '@/components/TryOnModal'
 import { detectGarmentType } from '@/lib/garmentType'
@@ -42,6 +44,8 @@ function ProductContent({
   const searchParams = useSearchParams()
   const productId = initialProduct?.id ? String(initialProduct.id) : searchParams.get('id')
   const { logActivity } = useAuditTrail()
+  const engagement = useEngagement()
+  const trackedProductRef = useRef<string | null>(null)
   const deepLinkedSku = initialSkus.find(sku => String(sku.id) === initialSkuId && selectionForSku(sku, initialSpecs) !== null) || null
   const [product, setProduct] = useState<any>(initialProduct)
   const [images, setImages] = useState<string[]>(skuImageUrls(deepLinkedSku, initialImages))
@@ -71,6 +75,32 @@ function ProductContent({
     setImages(defaultImages)
     setIsTransitioning(completeSelection)
   }
+
+  // One product_view per visit (not per re-render or auth hydration), counted per
+  // product so opening product A then B is not mistaken for a repeat view of B.
+  useEffect(() => {
+    if (!productId || !engagement || trackedProductRef.current === productId) return
+    const pid = parseInt(productId)
+    if (!Number.isFinite(pid)) return
+    trackedProductRef.current = productId
+    const visits = recordProductVisit(pid)
+    engagement.track({ eventType: 'product_view', productId: pid, pageType: 'product', metadata: { count: visits } })
+    if (visits >= 2) {
+      window.dispatchEvent(new CustomEvent('engagement:trigger', { detail: { type: 'repeat_view', productId: pid } }))
+    }
+  }, [productId, engagement])
+
+  // Tell the shopping assistant which product this page is about (slug URLs carry no id).
+  useEffect(() => {
+    const pid = productId ? parseInt(productId) : NaN
+    if (!engagement || !Number.isFinite(pid)) return
+    engagement.setPageContext({
+      productId: pid,
+      productName: product?.prodName ?? null,
+      categoryId: Number.isInteger(product?.categoryId) ? product.categoryId : null,
+      categoryName: product?.prodCategoryName ?? null,
+    })
+  }, [productId, product?.prodName, product?.categoryId, product?.prodCategoryName, engagement])
 
   useEffect(() => {
     if (!productId) return
@@ -115,6 +145,9 @@ function ProductContent({
         if (controller.signal.aborted) return
         const sku = findSkuForSelection(Array.isArray(data) ? data : [], specs, selectedSpecs)
         setSelectedSku(sku)
+        if (Array.isArray(data) && data.length > 0 && (!sku || Number(sku.stock) <= 0)) {
+          window.dispatchEvent(new CustomEvent('engagement:trigger', { detail: { type: 'unavailable', productId: Number(productId) } }))
+        }
         if (sku?.images) {
           try {
             const urls = JSON.parse(sku.images)
@@ -276,6 +309,8 @@ function ProductContent({
     setIsTransitioning(true)
     setSelectedSpecs(prev => ({...prev, [specName]: attrName}))
     logActivity('SELECT_SPEC', 'product', productId!, { specName, attrName })
+    const pid = productId ? parseInt(productId) : null
+    engagement?.track({ eventType: /color/i.test(specName) ? 'color_select' : 'size_select', productId: Number.isFinite(pid as any) ? pid : null, metadata: { specName, attrName } })
   }
 
   async function checkWishlist() {
@@ -330,6 +365,8 @@ function ProductContent({
           body: JSON.stringify({ productId: parseInt(productId!) })
         })
         setIsWishlisted(true)
+        const pid = productId ? parseInt(productId) : null
+        engagement?.track({ eventType: 'wishlist_add', productId: Number.isFinite(pid as any) ? pid : null })
         Swal.fire({
           icon: 'success',
           title: 'Added to Wishlist',
@@ -386,7 +423,7 @@ function ProductContent({
       <div className={styles.content}>
         <div className={`${styles.images} ${isTransitioning ? styles.fadeOut : styles.fadeIn}`}>
           {images.length > 0 ? images.map((img, index) => (
-            <div key={index} className={styles.imageBox}>
+            <div key={index} className={styles.imageBox} onClick={() => engagement?.track({ eventType: 'image_interaction', productId: productId ? parseInt(productId) : null, metadata: { index } })}>
               <img src={getOptimizedImageUrl(img)} alt={`${product.prodName} — image ${index + 1}`} />
             </div>
           )) : (
@@ -412,7 +449,8 @@ function ProductContent({
           {selectedSku && selectedSku.stock === 0 && <p className={`${styles.stockInfo} ${styles.outOfStock} ${isTransitioning ? styles.fadeOut : styles.fadeIn}`}>Out of Stock</p>}
 
           {specs.map((spec, index) => (
-            <div key={index} className={styles.option}>
+            <div key={index} className={styles.option} id={index === 0 ? 'product-options' : undefined}
+              data-assist="spec" data-assist-name={spec.name} data-assist-selected={selectedSpecs[spec.name] ? 'true' : 'false'}>
               <label className={styles.label}>{spec.name}</label>
               <div className={styles.sizes}>
                 {spec.attributes.map((attr: any, i: number) => {
@@ -461,12 +499,14 @@ function ProductContent({
           <div className={styles.wishlistRow}>
             <button
               className={`${styles.wishlistBtn} ${isWishlisted ? styles.active : ''}`}
+              id="product-wishlist"
+              data-assist-active={isWishlisted ? 'true' : 'false'}
               onClick={toggleWishlist}
               aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
             >
               <Heart size={20} fill={isWishlisted ? 'currentColor' : 'none'} />
             </button>
-            <button className={styles.addBtn} disabled={isAddingToCart || isTransitioning} onClick={async () => {
+            <button id="product-add-to-bag" className={styles.addBtn} disabled={isAddingToCart || isTransitioning} onClick={async () => {
               if (isAddingToCart || isTransitioning) return
               setIsAddingToCart(true)
 
@@ -550,6 +590,8 @@ function ProductContent({
                   price: selectedSku?.price || product.prodPrice,
                   specs: selectedSpecs
                 })
+                const pid = productId ? parseInt(productId) : null
+                engagement?.track({ eventType: 'cart_add', productId: Number.isFinite(pid as any) ? pid : null, metadata: { skuId: selectedSku?.id || null } })
               } catch (error) {
                 console.error('Failed to add to cart:', error)
                 Swal.fire({
@@ -566,6 +608,7 @@ function ProductContent({
           {user && selectedSku && tryOnGarmentUrl && (
             <button
               className={styles.tryonBtn}
+              id="product-try-on"
               onClick={() => setTryOnOpen(true)}
             >
               <Sparkles size={18} /> Try It Out
@@ -600,7 +643,7 @@ function ProductContent({
         </section>
       )}
 
-      <section className={styles.reviews}>
+      <section className={styles.reviews} id="product-reviews" data-assist-count={reviewCount}>
         <h2 className={styles.reviewsTitle}>Customer Reviews</h2>
 
         <div className={styles.reviewsSummary}>

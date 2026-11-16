@@ -8,6 +8,7 @@ import { useClientAuthUser } from '@/lib/useClientAuthUser'
 import { decryptData } from '@/lib/clientEncryption'
 import { getOptimizedImageUrl } from '@/lib/cloudinary'
 import CustomerHeader from '@/components/CustomerHeader'
+import { useEngagement } from '@/lib/engagement/tracker'
 import CustomerFooter from '@/components/CustomerFooter'
 import Cart from '@/components/Cart'
 import AdBanner from '@/components/AdBanner'
@@ -114,6 +115,7 @@ function ShopContent({
   const searchParams = useSearchParams()
   const [isCartOpen, setIsCartOpen] = useState(false)
   const user = useClientAuthUser()
+  const engagement = useEngagement()
   const newArrivals = initialNewArrivals
   const featuredProducts = initialFeaturedProducts
   const [searchState, setSearchState] = useState<{ query: string; products: any[]; error: string } | null>(null)
@@ -135,7 +137,9 @@ function ShopContent({
       .then(result => {
         if (controller.signal.aborted) return
         const decrypted = decryptData(result.data)
-        setSearchState({ query: search, products: decrypted.products || [], error: '' })
+        const products = decrypted.products || []
+        setSearchState({ query: search, products, error: '' })
+        engagement?.track({ eventType: 'search', searchQuery: search, pageType: 'shop', metadata: { resultCount: products.length } })
       })
       .catch(error => {
         if (!controller.signal.aborted) setSearchState({ query: search, products: [], error: error.message })

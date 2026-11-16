@@ -28,6 +28,9 @@ model User {
   wishlistItems WishlistItem[]
   reviews     Review[]
   tryOnSpace  TryOnSpace?
+  preference  UserPreference?
+  engagementEvents EngagementEvent[]
+  recommendationLogs RecommendationLog[]
 
   @@map("users")
 }
@@ -528,4 +531,90 @@ model SlugRedirect {
   @@index([entityType, entityId])
   @@index([isActive])
   @@map("slug_redirects")
+}
+
+model UserPreference {
+  id                    Int      @id @default(autoincrement()) @map("user_preference_id")
+  userId                Int      @unique @map("user_id")
+  personalizationEnabled Boolean @default(true) @map("personalization_enabled")
+  preferredSizes        String?  @map("preferred_sizes") @db.Text
+  preferredColors       String?  @map("preferred_colors") @db.Text
+  favoriteCategories    String?  @map("favorite_categories") @db.Text
+  preferredStyles       String?  @map("preferred_styles") @db.Text
+  priceMin              Decimal? @map("price_min") @db.Decimal(10, 2)
+  priceMax              Decimal? @map("price_max") @db.Decimal(10, 2)
+  consentUpdatedAt      DateTime? @map("consent_updated_at")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([personalizationEnabled])
+  @@map("user_preferences")
+}
+
+model EngagementEvent {
+  id          Int      @id @default(autoincrement()) @map("engagement_event_id")
+  sessionId   String   @map("session_id") @db.VarChar(64)
+  userId      Int?     @map("user_id")
+  eventType   String   @map("event_type") @db.VarChar(64)
+  pagePath    String?  @map("page_path") @db.VarChar(500)
+  pageType    String?  @map("page_type") @db.VarChar(64)
+  productId   Int?     @map("product_id")
+  categoryId  Int?     @map("category_id")
+  searchQuery String?  @map("search_query") @db.VarChar(200)
+  activeMs    Int      @default(0) @map("active_ms")
+  scrollDepth Int?     @map("scroll_depth")
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([sessionId, createdAt])
+  @@index([eventType, createdAt])
+  @@index([productId, createdAt])
+  @@map("engagement_events")
+}
+
+model RecommendationRule {
+  id              Int      @id @default(autoincrement()) @map("recommendation_rule_id")
+  key             String   @unique @db.VarChar(80)
+  name            String   @db.VarChar(120)
+  enabled         Boolean  @default(true)
+  priority        Int      @default(100)
+  triggerType     String   @map("trigger_type") @db.VarChar(64)
+  conditions      Json?
+  actionType      String   @map("action_type") @db.VarChar(64)
+  actionConfig    Json?    @map("action_config")
+  cooldownSeconds Int      @default(300) @map("cooldown_seconds")
+  maxPerSession   Int      @default(2) @map("max_per_session")
+  pageScopes      Json?    @map("page_scopes")
+  suppressOnPages Json?    @map("suppress_on_pages")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([enabled, priority])
+  @@index([triggerType])
+  @@map("recommendation_rules")
+}
+
+model RecommendationLog {
+  id           Int       @id @default(autoincrement()) @map("recommendation_log_id")
+  sessionId    String    @map("session_id") @db.VarChar(64)
+  userId       Int?      @map("user_id")
+  ruleKey      String    @map("rule_key") @db.VarChar(80)
+  actionType   String    @map("action_type") @db.VarChar(64)
+  pagePath     String?   @map("page_path") @db.VarChar(500)
+  context      Json?
+  productIds   Json?     @map("product_ids")
+  status       String    @default("shown") @db.VarChar(32)
+  snoozedUntil DateTime? @map("snoozed_until")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId, createdAt])
+  @@index([userId, createdAt])
+  @@index([ruleKey, createdAt])
+  @@index([status, createdAt])
+  @@map("recommendation_logs")
 }

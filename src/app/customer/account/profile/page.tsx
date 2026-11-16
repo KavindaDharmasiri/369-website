@@ -12,10 +12,16 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [prefLoading, setPrefLoading] = useState(true)
+  const [prefSaving, setPrefSaving] = useState(false)
+  const [personalizationEnabled, setPersonalizationEnabled] = useState(true)
   const [form, setForm] = useState({ firstName: '', lastName: '', phone: '', dateOfBirth: '' })
 
   useEffect(() => {
-    if (user) fetchProfile()
+    if (user) {
+      fetchProfile()
+      fetchPreference()
+    }
   }, [user])
 
   async function fetchProfile() {
@@ -39,6 +45,18 @@ export default function ProfilePage() {
     }
   }
 
+  async function fetchPreference() {
+    try {
+      const res = await fetch('/api/personalization/preferences', { headers: { Authorization: `Bearer ${getAuthToken()}` } })
+      const json = await res.json().catch(() => null)
+      if (res.ok && json?.data) setPersonalizationEnabled(json.data.personalizationEnabled !== false)
+    } catch {
+      // keep default
+    } finally {
+      setPrefLoading(false)
+    }
+  }
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
@@ -56,6 +74,26 @@ export default function ProfilePage() {
       toast.error(err.message)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const togglePersonalization = async () => {
+    const next = !personalizationEnabled
+    setPrefSaving(true)
+    try {
+      const res = await fetch('/api/personalization/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
+        body: JSON.stringify({ personalizationEnabled: next }),
+      })
+      const json = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(json?.error || 'Failed to update preference')
+      setPersonalizationEnabled(next)
+      toast.success(next ? 'Personalized suggestions enabled' : 'Personalized suggestions turned off')
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update preference')
+    } finally {
+      setPrefSaving(false)
     }
   }
 
@@ -97,6 +135,30 @@ export default function ProfilePage() {
             <div className={styles.statCard}>
               <div className={styles.statValue}>{profile?.addresses?.length ?? 0}</div>
               <div className={styles.statLabel}>Saved Addresses</div>
+            </div>
+          </div>
+
+          <div className={styles.card}>
+            <h3 className={styles.cardTitle}>Shopping preferences</h3>
+            <p className={styles.prefDescription}>
+              Personalized suggestions use your browsing and shopping activity to help you discover relevant products. You can turn this off at any time.
+            </p>
+            <div className={styles.prefRow}>
+              <div>
+                <div className={styles.prefLabel}>Personalized recommendations</div>
+                <div className={styles.prefStatus}>
+                  {prefLoading ? 'Loading preference…' : personalizationEnabled ? 'Enabled for this account' : 'Disabled for this account'}
+                </div>
+              </div>
+              <button
+                type="button"
+                className={`${styles.prefBtn} ${personalizationEnabled ? styles.prefBtnEnabled : ''}`}
+                onClick={togglePersonalization}
+                disabled={prefLoading || prefSaving}
+                aria-pressed={personalizationEnabled}
+              >
+                {prefSaving ? 'Saving…' : prefLoading ? 'Loading…' : personalizationEnabled ? 'Turn off' : 'Turn on'}
+              </button>
             </div>
           </div>
 

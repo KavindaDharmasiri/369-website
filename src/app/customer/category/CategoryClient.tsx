@@ -41,7 +41,7 @@ function CategoryContent({
       <div className={styles.content}>
         <h1 className={styles.title}>{category.charAt(0).toUpperCase() + category.slice(1)}</h1>
 
-        <div className={styles.filterBar}>
+        <div className={styles.filterBar} id="category-filters">
           <div className={styles.filters}>
             <button 
               className={`${styles.filterBtn} ${!selectedSubCategory ? styles.active : ''}`}
@@ -61,7 +61,7 @@ function CategoryContent({
           </div>
           <div className={styles.sort}>
             <span>Sort by</span>
-            <select className={styles.sortSelect} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+            <select id="category-sort" className={styles.sortSelect} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
               <option value="newest">Newest</option>
               <option value="oldest">Oldest</option>
               <option value="price_low">Price: Low to High</option>

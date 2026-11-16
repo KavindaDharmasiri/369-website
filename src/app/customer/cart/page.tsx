@@ -623,7 +623,7 @@ function CartSession({ user }: { user: any }) {
         <div className={styles.leftSection}>
           <h1 className={styles.logo}>369</h1>
 
-          <section className={styles.section}>
+          <section className={styles.section} id="checkout-delivery">
             <h2 className={styles.sectionTitle}>Delivery</h2>
 
             <div className={styles.form}>
@@ -730,7 +730,7 @@ function CartSession({ user }: { user: any }) {
             </div>
           </section>
 
-          <section className={styles.section}>
+          <section className={styles.section} id="checkout-payment" data-assist-payment={paymentMethod}>
             <h2 className={styles.sectionTitle}>Payment</h2>
             
             <div className={styles.paymentMethods}>
@@ -775,7 +775,7 @@ function CartSession({ user }: { user: any }) {
               </div>
             </div>
 
-            <button className={styles.placeOrderBtn} onClick={handlePlaceOrder} disabled={placing || changingCart || applyingCoupon || !!checkoutError || cartItems.length === 0}>
+            <button id="checkout-place-order" className={styles.placeOrderBtn} onClick={handlePlaceOrder} disabled={placing || changingCart || applyingCoupon || !!checkoutError || cartItems.length === 0}>
               {placing ? 'Placing Order...' : 'Place Order'}
             </button>
             <p className={styles.terms}>
@@ -785,7 +785,7 @@ function CartSession({ user }: { user: any }) {
         </div>
 
         <div className={styles.rightSection}>
-          <div className={styles.orderSummary}>
+          <div className={styles.orderSummary} id="checkout" data-assist-count={cartItems.length}>
             <h2 className={styles.summaryTitle}>Order Summary</h2>
             
             {cartItems.length === 0 ? (
@@ -841,6 +841,8 @@ function CartSession({ user }: { user: any }) {
               <div className={styles.discountCode}>
                 <input
                   type="text"
+                  id="checkout-coupon"
+                  data-assist-coupon={appliedCoupon ? 'applied' : 'none'}
                   placeholder="Enter coupon code"
                   value={couponInput}
                   onChange={(e) => setCouponInput(e.target.value)}

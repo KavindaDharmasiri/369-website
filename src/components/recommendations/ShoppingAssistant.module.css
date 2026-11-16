@@ -1,0 +1,351 @@
+/* ===================================================================
+   AI Stylist popup: dark glass card with animated gradient border,
+   staggered items, typing text, and a floating AI button when closed.
+   =================================================================== */
+
+.panel {
+  --accent: #a78bfa;
+  --accent-soft: rgba(167, 139, 250, 0.16);
+  --surface-2: #1b1b22;
+  --line: rgba(255, 255, 255, 0.08);
+  --ink: #f4f4f6;
+  --ink-muted: #a1a1aa;
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: min(372px, calc(100vw - 24px));
+  color: var(--ink);
+  border: 1.5px solid transparent;
+  border-radius: 22px;
+  /* Inner glass + accent glow (padding-box) and a flowing gradient border (border-box). */
+  background:
+    radial-gradient(120% 60% at 100% 0%, var(--accent-soft), transparent 60%) padding-box,
+    linear-gradient(180deg, rgba(27,27,34,0.97), rgba(12,12,16,0.985)) padding-box,
+    linear-gradient(115deg, var(--accent), #6366f1, #22d3ee, var(--accent), #6366f1) border-box;
+  background-size: 100% 100%, 100% 100%, 300% 300%;
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.55),
+    0 0 46px -12px var(--accent);
+  padding: 16px;
+  z-index: 1200;
+  backdrop-filter: blur(16px) saturate(140%);
+  overflow: hidden;
+  transform-origin: 100% 100%;
+  animation:
+    panelIn 560ms cubic-bezier(.16, 1.2, .3, 1) both,
+    borderFlow 7s linear infinite;
+  transition: opacity 220ms ease, transform 220ms ease, filter 220ms ease;
+}
+
+/* Soft moving light behind the content. */
+.aurora {
+  position: absolute;
+  inset: -40% -30% auto auto;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-soft), transparent 65%);
+  filter: blur(8px);
+  pointer-events: none;
+  animation: auroraDrift 9s ease-in-out infinite alternate;
+}
+
+.leaving { animation: panelOut 260ms cubic-bezier(.4, 0, 1, 1) both; }
+/* Bag drawer / try-on / alert open: step out of the way. */
+/* The entrance animation (fill-mode: both) would otherwise keep it visible. */
+.suppressed { animation: borderFlow 7s linear infinite; opacity: 0; transform: translateY(16px) scale(.97); pointer-events: none; filter: blur(4px); }
+
+/* One accent per page family so the suggestion is visibly tied to the page. */
+.accent_home     { --accent: #a78bfa; --accent-soft: rgba(167,139,250,.16); }
+.accent_shop     { --accent: #818cf8; --accent-soft: rgba(129,140,248,.16); }
+.accent_search   { --accent: #60a5fa; --accent-soft: rgba(96,165,250,.16); }
+.accent_category { --accent: #c084fc; --accent-soft: rgba(192,132,252,.16); }
+.accent_product  { --accent: #f472b6; --accent-soft: rgba(244,114,182,.16); }
+.accent_cart     { --accent: #34d399; --accent-soft: rgba(52,211,153,.16); }
+.accent_wishlist { --accent: #fb923c; --accent-soft: rgba(251,146,60,.16); }
+.accent_account  { --accent: #94a3b8; --accent-soft: rgba(148,163,184,.16); }
+.accent_other    { --accent: #a78bfa; --accent-soft: rgba(167,139,250,.16); }
+
+/* ---------- Header ---------- */
+.header { position: relative; display: flex; align-items: flex-start; gap: 12px; animation: fadeUp 420ms 80ms both; }
+.aiIcon {
+  position: relative;
+  flex: none;
+  width: 40px; height: 40px;
+  border-radius: 13px;
+  display: grid; place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #6366f1 55%, #22d3ee);
+  background-size: 200% 200%;
+  box-shadow: 0 0 18px -2px var(--accent), inset 0 0 0 1px rgba(255,255,255,.2);
+  animation: iconGlow 2.8s ease-in-out infinite, borderFlow 6s linear infinite;
+}
+/* Rotating light ring around the AI icon. */
+.aiIcon::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 15px;
+  background: conic-gradient(from 0deg, transparent 0 70%, rgba(255,255,255,.85) 80%, transparent 90%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  padding: 1.5px;
+  animation: spin 3.2s linear infinite;
+}
+.sparkMain { transform-origin: 12px 12px; animation: twinkle 2.4s ease-in-out infinite; }
+.sparkSmall { transform-origin: 19px 4px; animation: twinkle 2.4s 0.6s ease-in-out infinite; }
+.sparkDot { transform-origin: 4.5px 19.5px; animation: twinkle 2.4s 1.2s ease-in-out infinite; }
+
+.headText { flex: 1; min-width: 0; }
+.kickerRow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.aiLabel {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  background: linear-gradient(90deg, #e9d5ff, #93c5fd, #e9d5ff);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: textShine 3.5s linear infinite;
+}
+.contextBadge {
+  display: inline-flex; align-items: center; gap: 6px;
+  max-width: 100%;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--accent);
+  font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dot { width: 6px; height: 6px; border-radius: 999px; background: var(--accent); box-shadow: 0 0 6px var(--accent); flex: none; animation: blink 1.6s ease-in-out infinite; }
+.title { margin: 6px 0 0; font-size: 16px; line-height: 1.3; font-weight: 600; color: var(--ink); }
+.iconBtn {
+  flex: none;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.05); color: var(--ink-muted);
+  width: 28px; height: 28px; border-radius: 999px; cursor: pointer;
+  display: grid; place-items: center;
+  transition: background 150ms, color 150ms, transform 200ms;
+}
+.iconBtn:hover { background: rgba(255,255,255,0.12); color: #fff; transform: rotate(90deg); }
+
+/* ---------- Message (typed) ---------- */
+.message { position: relative; margin: 12px 0; min-height: 2.9em; font-size: 13.5px; line-height: 1.55; color: var(--ink-muted); }
+.caret { display: inline-block; width: 7px; height: 1em; margin-left: 2px; vertical-align: -2px; border-radius: 2px; background: var(--accent); animation: blink 0.9s steps(2) infinite; }
+
+/* ---------- Products ---------- */
+.products { position: relative; display: grid; gap: 6px; margin-bottom: 14px; }
+.product {
+  position: relative;
+  display: grid; grid-template-columns: 52px 1fr auto; gap: 10px; align-items: center;
+  text-decoration: none; color: inherit;
+  padding: 6px 10px 6px 6px; border-radius: 13px;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  animation: itemIn 480ms cubic-bezier(.2,.9,.3,1.2) both;
+  animation-delay: calc(var(--i, 0) * 80ms + 200ms);
+  transition: background 180ms, border-color 180ms, transform 180ms, box-shadow 180ms;
+}
+/* Light sweep on hover. */
+.product::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.08) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 600ms ease;
+  pointer-events: none;
+}
+.product:hover, .product:focus-visible {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -12px var(--accent);
+}
+.product:hover::after { transform: translateX(120%); }
+.thumb { width: 52px; height: 52px; border-radius: 10px; overflow: hidden; background: linear-gradient(135deg, var(--accent-soft), var(--surface-2)); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; transition: transform 300ms ease; }
+.product:hover .thumb img { transform: scale(1.08); }
+.productInfo { min-width: 0; }
+.productName { font-size: 13px; font-weight: 600; line-height: 1.3; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.productPrice { font-size: 12px; color: #d4d4d8; margin-top: 2px; display: flex; gap: 6px; align-items: baseline; }
+.originalPrice { color: #71717a; font-size: 11px; }
+.reason {
+  display: inline-block; margin-top: 4px;
+  font-size: 10.5px; font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 1px 7px; border-radius: 999px;
+}
+.arrow { color: var(--ink-muted); opacity: 0; transform: translateX(-6px); transition: opacity 180ms, transform 180ms; }
+.product:hover .arrow { opacity: 1; transform: none; color: var(--accent); }
+.discovery { border-style: dashed; border-color: rgba(255,255,255,.16); }
+.discovery .reason { color: #e4e4e7; background: rgba(255,255,255,.08); }
+
+/* ---------- Tip cards: checkout checklist & single action ---------- */
+.steps { position: relative; list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 6px; }
+.step {
+  position: relative;
+  display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: 10px;
+  padding: 9px 12px 9px 9px; border-radius: 12px;
+  background: rgba(255,255,255,.03); border: 1px solid var(--line);
+  animation: itemIn 480ms cubic-bezier(.2,.9,.3,1.2) both;
+  animation-delay: calc(var(--i, 0) * 90ms + 200ms);
+  transition: background 300ms, border-color 300ms;
+}
+/* Connector line between steps. */
+.step:not(:last-child)::after {
+  content: ''; position: absolute; left: 21px; top: 100%; width: 2px; height: 6px;
+  background: rgba(255,255,255,.12);
+}
+.stepMark {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 700;
+  color: var(--ink-muted); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14);
+  transition: background 300ms, color 300ms, transform 300ms;
+}
+.stepLabel { font-size: 13px; font-weight: 600; color: var(--ink-muted); }
+.stepDetail { font-size: 11.5px; color: #71717a; white-space: nowrap; }
+.step_done .stepMark { background: #34d399; border-color: #34d399; color: #06261a; animation: popIn 380ms cubic-bezier(.2,1.4,.4,1) both; }
+.step_done .stepLabel { color: #d4d4d8; }
+.step_done .stepDetail { color: #6ee7b7; }
+.step_current { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 55%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent), 0 8px 22px -14px var(--accent); }
+.step_current .stepMark { background: var(--accent); border-color: var(--accent); color: #0b0b0f; animation: currentPulse 1.8s ease-in-out infinite; }
+.step_current .stepLabel { color: var(--ink); }
+.step_current .stepDetail { color: var(--accent); font-weight: 600; }
+
+.tipBadge {
+  position: relative;
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; padding: 10px 12px; border-radius: 13px;
+  background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  font-size: 13px; font-weight: 600; color: var(--ink);
+  animation: itemIn 480ms 220ms cubic-bezier(.2,.9,.3,1.2) both;
+}
+.tipIcon {
+  width: 32px; height: 32px; border-radius: 10px; flex: none;
+  display: grid; place-items: center; color: #0b0b0f;
+  background: linear-gradient(135deg, #fff, color-mix(in srgb, var(--accent) 50%, #fff));
+}
+
+/* ---------- Thinking state ---------- */
+.skeleton {
+  height: 64px; border-radius: 13px;
+  background: linear-gradient(100deg, rgba(255,255,255,.04) 30%, rgba(255,255,255,.10) 50%, rgba(255,255,255,.04) 70%);
+  background-size: 300% 100%;
+  animation: shimmerBg 1.2s linear infinite;
+  animation-delay: calc(var(--i, 0) * 120ms);
+}
+.thinkingRow { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-muted); padding: 2px 4px; }
+.dots { display: inline-flex; gap: 3px; }
+.dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: bounce 1s ease-in-out infinite; }
+.dots i:nth-child(2) { animation-delay: .15s; }
+.dots i:nth-child(3) { animation-delay: .3s; }
+
+/* ---------- Actions ---------- */
+.actions { position: relative; display: flex; gap: 8px; animation: fadeUp 420ms 420ms both; }
+.primary, .secondary {
+  position: relative; overflow: hidden;
+  flex: 1; border-radius: 999px; padding: 10px 12px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 13px; font-weight: 600; text-align: center; cursor: pointer; font-family: inherit;
+  text-decoration: none; transition: filter 150ms, background 150ms, transform 150ms;
+}
+.primary {
+  color: #0b0b0f;
+  background: linear-gradient(135deg, #fff, color-mix(in srgb, var(--accent) 35%, #fff));
+  border: 1px solid transparent;
+}
+/* Periodic shine across the main button. */
+.primary::after {
+  content: '';
+  position: absolute; top: 0; bottom: 0; left: -60%; width: 50%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.75), transparent);
+  transform: skewX(-20deg);
+  animation: btnShine 3.6s 1.2s ease-in-out infinite;
+}
+.primary:hover { filter: brightness(1.06); transform: translateY(-1px); }
+.primary:active, .secondary:active { transform: scale(.97); }
+.secondary { background: rgba(255,255,255,.03); color: var(--ink); border: 1px solid rgba(255,255,255,.16); }
+.secondary:hover { background: rgba(255,255,255,.08); }
+.secondary:disabled { opacity: .6; cursor: progress; }
+.refreshIcon { display: inline-grid; transition: transform 300ms; }
+.secondary:hover .refreshIcon { transform: rotate(-90deg); }
+.spin { animation: spin 0.8s linear infinite; }
+.snoozeLink {
+  position: relative; display: block; margin: 10px auto 0; padding: 0;
+  background: none; border: none; color: #71717a; font-size: 11px; cursor: pointer; font-family: inherit;
+  animation: fadeUp 420ms 520ms both;
+}
+.snoozeLink:hover { color: var(--ink-muted); text-decoration: underline; }
+
+/* ---------- Floating AI button (after closing) ---------- */
+.orb {
+  position: fixed; right: 22px; bottom: 22px; z-index: 1200;
+  width: 54px; height: 54px; border-radius: 50%;
+  border: none; cursor: pointer; color: #fff;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, #a78bfa, #6366f1 55%, #22d3ee);
+  background-size: 200% 200%;
+  box-shadow: 0 12px 30px rgba(0,0,0,.35), 0 0 24px -4px #8b5cf6;
+  animation: orbIn 500ms cubic-bezier(.16,1.3,.3,1) both, borderFlow 6s linear infinite, float 3.4s ease-in-out infinite 500ms;
+  transition: transform 180ms;
+}
+.orb:hover { transform: scale(1.08); }
+.orb:active { transform: scale(.95); }
+.orbRing {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid rgba(167,139,250,.7);
+  animation: ping 2.4s cubic-bezier(0,0,.2,1) infinite;
+  pointer-events: none;
+}
+.orbThinking { animation: orbIn 500ms both, borderFlow 1.2s linear infinite; }
+.orbThinking svg { animation: spin 1.2s linear infinite; }
+
+/* Applied briefly to the on-page element a CTA scrolls to (e.g. size options). */
+.pulseTarget {
+  outline: 3px solid #8b5cf6 !important; outline-offset: 5px; border-radius: 10px;
+  box-shadow: 0 0 0 10px rgba(139, 92, 246, .18) !important;
+  animation: targetPulse 0.9s ease-in-out 3;
+  transition: box-shadow 300ms;
+}
+
+/* ---------- Keyframes ---------- */
+@keyframes panelIn {
+  0%   { opacity: 0; transform: translateY(26px) scale(.92); filter: blur(8px); }
+  60%  { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+@keyframes panelOut {
+  to { opacity: 0; transform: translate(12px, 18px) scale(.85); filter: blur(6px); }
+}
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes itemIn { from { opacity: 0; transform: translateX(18px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes borderFlow { 0% { background-position: 0 0, 0 0, 0% 50%; } 100% { background-position: 0 0, 0 0, 300% 50%; } }
+@keyframes auroraDrift { from { transform: translate(0, 0); } to { transform: translate(-60px, 40px); } }
+@keyframes iconGlow {
+  0%, 100% { box-shadow: 0 0 14px -4px var(--accent), inset 0 0 0 1px rgba(255,255,255,.2); }
+  50%      { box-shadow: 0 0 24px 0 var(--accent),   inset 0 0 0 1px rgba(255,255,255,.3); }
+}
+@keyframes twinkle { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.78); opacity: .75; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes textShine { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes blink { 50% { opacity: .25; } }
+@keyframes shimmerBg { from { background-position: 150% 0; } to { background-position: -150% 0; } }
+@keyframes bounce { 0%, 100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(-4px); opacity: 1; } }
+@keyframes btnShine { 0%, 60% { left: -60%; } 100% { left: 130%; } }
+@keyframes orbIn { from { opacity: 0; transform: scale(.4) rotate(-40deg); } to { opacity: 1; transform: none; } }
+@keyframes float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -5px; } }
+@keyframes ping { 0% { transform: scale(1); opacity: .8; } 80%, 100% { transform: scale(1.55); opacity: 0; } }
+@keyframes targetPulse { 50% { outline-color: rgba(139,92,246,.25); box-shadow: 0 0 0 18px rgba(139,92,246,0); } }
+@keyframes popIn { from { transform: scale(.4); } to { transform: none; } }
+@keyframes currentPulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); } 50% { box-shadow: 0 0 0 6px transparent; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .panel, .panel *, .orb, .orb * { animation: none !important; transition: none !important; }
+}
+@media (max-width: 640px) {
+  .panel { left: 12px; right: 12px; bottom: 12px; width: auto; border-radius: 20px; }
+  .products { max-height: 36vh; overflow-y: auto; }
+  .orb { right: 14px; bottom: 14px; width: 50px; height: 50px; }
+}

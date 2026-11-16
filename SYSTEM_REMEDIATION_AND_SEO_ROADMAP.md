@@ -1,10 +1,20 @@
 # 369: System Remediation and Full SEO Roadmap
 
-Status: **in progress — checkout/security, exact checkout quotes, guest-cart recovery, and durable order-identity batches implemented locally; real-PostgreSQL, browser, deployment, and SEO work remain open.**
+Status: **in progress — checkout/security, exact checkout quotes, durable carts/order identity, and an additive recommendation/customer-engagement system implemented locally with migration applied to the configured database; browser/deployment/CI/operations, live SEO validation, and remaining release gates remain open.**
 
 Scope: both system reviews, the isolated handler checks, performance measurement, production operations, and ecommerce SEO.
 
 ## Current implementation status
+
+### November 16 — recommendation and customer engagement system (local)
+
+- **Analysis and design:** inspected App Router/React/TypeScript/PostgreSQL-Prisma architecture, auth/cart/wishlist/orders/catalog/search, existing `AuditTrail`/admin notifications, and absence of personalization/recommendation storage. Designed an additive, modular system: consent-aware client event collection + trigger manager, server-side rule/next-best-action/scoring APIs, and account opt-out, using only existing infrastructure and real catalog data.
+- **Additive schema/migration (applied):** `prisma/migrations/202611160002_recommendations_engagement/migration.sql` adds `user_preferences`, `engagement_events`, `recommendation_rules`, and `recommendation_logs` with indexes/FKs; no destructive changes. Direct DB `status` up to date, `diff` clean after aligning `@updatedAt` column defaults, structural migration coverage passed.
+- **Server implementation:** `src/lib/recommendations/{types,rules,scoring,engine}.ts` provides configurable rule definitions/thresholds, weighted ranking, candidate generation from public/active in-stock catalog data, dedupe/cooldown/session-limit/suppression-aware suggestion selection, and best-effort impression logging. APIs: `POST /api/recommendations/events` (batched ingest, size-limited, auth-aware, opt-out respected), `POST /api/recommendations/suggest` (no-store, context-driven suggestion/next-best-action), `POST /api/recommendations/interactions` (dismiss/snooze/click/convert), `GET|PUT /api/personalization/preferences` (authenticated opt-out/consent toggle).
+- **Client implementation:** `src/lib/engagement/{session,tracker}.tsx` tracks active time (visibility/focus-aware), scroll depth, page views and custom events with batching/keepalive and checkout suppression; `src/components/recommendations/ShoppingAssistant.tsx` renders one non-blocking, accessible suggestion panel with product cards/CTAs, dismiss/snooze and server interaction logging. Mounted globally via `ClientWrapper` (Suspense + `EngagementProvider`).
+- **Integrations:** product page emits product view/repeat/spec/color-size/image/wishlist/cart signals and repeat-view triggers; shop search emits search-result signals; account profile exposes personalization on/off; assistant suppresses checkout/auth/cart-sensitive contexts and uses cooldown/dismiss/snooze/frequency controls. Existing auth, checkout, quote/order, and audit behavior unchanged by design.
+- **Verification:** `npm test` (including `tests/recommendations.test.cjs`) **193 passed, 0 failed** in this run; `npm run typecheck` passed; `npm run lint` **0 errors, 37 warnings** (pre-existing `no-img-element`/hook-dependency warnings remain); `npm run build` completed successfully; `npm run check:migrations` passed; `npm run db:status` up to date; `npm run db:diff` clean. No Vercel deploy, no commit, no push.
+- **Remaining:** browser/E2E/a11y/CWV and real-user behavior validation, production rollout/feature-flag policy approval, retention/cleanup operations, broader analytics evaluation, and all existing external release gates remain open.
 
 ### November 16 — durable carts, real PostgreSQL verification, operations
 
@@ -540,5 +550,63 @@ Implementation references reviewed while preparing this roadmap; recheck require
 - [Google: merchant listing structured data](https://developers.google.com/search/docs/appearance/structured-data/merchant-listing)
 - [Google: JavaScript SEO](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)
 - [Google: Core Web Vitals](https://developers.google.com/search/docs/appearance/core-web-vitals)
+
+
+## 15. Intelligent recommendation and customer engagement system
+
+Implemented locally as an additive, privacy-aware, modular feature set (no paid APIs/services, no deployment/commit/push).
+
+### 15.1 Project analysis (Phase 1)
+
+- **Stack:** Next.js 16.4.6 App Router, React 18, TypeScript, Prisma/PostgreSQL, route handlers under `src/app/api`, CSS modules/global tokens, JWT auth with active-user/session checks, Cloudinary/encryption/rate-limit/readiness utilities.
+- **Reusable existing pieces:** public catalog/select/discount helpers (`src/lib/publicCatalog.ts`, `publicProduct.ts`, `discounts.ts`), auth middleware (`apiMiddleware.ts`), validation patterns (`validation.ts`), cart/wishlist/order/profile APIs and pages, global `ClientWrapper`, product/shop/category/search/cart/account surfaces, existing audit hooks (`useAuditTrail`, `useActivityTracker`, `/api/audit`).
+- **Gaps identified:** no customer preference/opt-out storage, no behavioral event store for personalization, no recommendation rules/history, no trigger manager or assistant UI, no guest-session recommendation flow beyond generic browsing.
+
+### 15.2 Architecture and design (Phase 2)
+
+- **Client event collector:** `EngagementProvider` (`src/lib/engagement/tracker.tsx`) tracks page views, active dwell (visibility-aware), scroll depth, and explicit events with in-memory batching, periodic/visibility/pagehide flush, payload caps, and checkout suppression. Session-scoped ID (`src/lib/engagement/session.ts`); works for guests and authenticated users.
+- **Trigger manager / assistant:** `src/components/recommendations/ShoppingAssistant.tsx` requests server suggestions after configurable dwell/event triggers, enforces route-key reset, local dismiss/snooze windows, shown-key dedupe, single-panel display, and checkout/auth/cart suppression; records interactions via API.
+- **Recommendation engine:** `src/lib/recommendations/engine.ts` loads consent/preferences/history/signals, evaluates prioritized configurable rules (`rules.ts`), generates candidates from active public in-stock catalog data, applies weighted scoring (`scoring.ts`) and availability/relevance filtering, selects one next-best action, and logs impressions best-effort.
+- **Configurable rules/thresholds (initial):** active browsing without action (>=90s active, >=30% scroll), repeated product view (>=2), similar/comparison browsing (>=3 recent items), returning to previously viewed item (authenticated), unavailable selection, in-budget browsing, and cart inactivity with items. Each rule defines priority, cooldown, max-per-session, page suppressions, and action/CTA.
+- **Weighted ranking factors:** category similarity, preference/history affinity, purchase/wishlist affinity, price relevance, availability, size-fit placeholder, and session activity; normalized scores with `rankProducts` for deterministic ordering. Interface is modular for future ML ranking.
+- **Next-best actions:** view similar/alternatives, compare options, open details/size help, save/view wishlist, continue/review bag, explore category/options, ask assistance (copy/CTAs grounded in real routes/data).
+
+### 15.3 Database changes (Phase 3, additive)
+
+- `user_preferences`: per-user `personalization_enabled`, consent timestamp, optional preference fields (sizes/colors/categories/styles/price range), timestamps; unique user FK, opt-out index.
+- `engagement_events`: session/user linkage, event type/page/product/category/search refs, active ms/scroll depth, bounded metadata JSON, created timestamp, indexes for user/session/event/product/time.
+- `recommendation_rules`: configurable key/name/enabled/priority/trigger/conditions/action/cooldowns/frequency/page scope/suppression JSON, timestamps, unique key and lookup indexes.
+- `recommendation_logs`: session/user, rule/action, page/context/product IDs, status (`shown/clicked/dismissed/snoozed/converted`), snooze-until, timestamps, indexes for session/user/rule/status/time.
+- **Safety:** forward-only additive migration, no drops/renames of existing tables/columns, nullable user linkage for guest/session-safe records, bounded payloads/indexes, consent gate for authenticated event storage.
+
+### 15.4 Implementation files
+
+- **Schema/migration:** `prisma/schema.prisma`, `prisma/migrations/202611160002_recommendations_engagement/migration.sql`.
+- **Server libs:** `src/lib/recommendations/types.ts`, `rules.ts`, `scoring.ts`, `engine.ts`.
+- **APIs:** `src/app/api/recommendations/events/route.ts`, `src/app/api/recommendations/suggest/route.ts`, `src/app/api/recommendations/interactions/route.ts`, `src/app/api/personalization/preferences/route.ts`.
+- **Client/tracking/UI:** `src/lib/engagement/session.ts`, `src/lib/engagement/tracker.tsx`, `src/components/recommendations/ShoppingAssistant.tsx`, `src/components/recommendations/ShoppingAssistant.module.css`, `src/components/ClientWrapper.tsx`.
+- **Integrations:** `src/app/customer/product/ProductClient.tsx`, `src/app/customer/shop/ShopClient.tsx`, `src/app/customer/account/profile/page.tsx`.
+- **Tests:** `tests/recommendations.test.cjs` (rule thresholds/actions/suppression/cooldown-frequency metadata, weighted scoring/ranking bounds).
+
+### 15.5 Privacy, security, performance
+
+- No login required for suggestions; guests receive session/context-based recommendations.
+- Authenticated personalization/event linkage is optional and disabled by account opt-out (`/api/personalization/preferences`, profile UI). Event ingest returns accepted=0 when opted out.
+- Server endpoints enforce active-user checks where required, validate/bound inputs, return `Cache-Control: private, no-store`, avoid sensitive/internal data exposure, and fail safe (suggest/events degrade to no-op/disabled rather than breaking shopping).
+- Tracking is lightweight/batched (active-time, throttled flush, max event batch/payload sizes, checkout suppression); no paid services; no auth/checkout core behavior changes.
+- Recommendations use real catalog/availability/price data; messages are helpful and non-assertive (no claims about customer feelings/intent).
+
+### 15.6 Testing and evaluation (Phase 4)
+
+- **Automated:** rule and scoring tests added/passing for dwell, repeat view, comparison, returning-auth-only, unavailable selection, budget, cart inactivity, suppression/cooldown/session-limit definitions, and ranking/bounded scores.
+- **Local verification:** `npm test` 193/193 pass; `npm run typecheck` pass; `npm run lint` 0 errors/37 warnings; `npm run build` pass; `npm run check:migrations` pass; `npm run db:status` up to date; `npm run db:diff` clean; recommendation migration applied to configured DB.
+- **Scenario coverage (implemented support):** guest/product/category/search/cart browsing signals, authenticated preference/opt-out, repeat/similar/unavailable/cart-inactive triggers, dismiss/snooze/click interactions, checkout suppression, mobile-responsive panel and keyboard-accessible controls. Full browser/E2E/mobile/perf/CWV and live conversion analytics remain pending.
+
+### 15.7 ML extension path (Phase 5)
+
+- Keep `scoring.ts`/`engine.ts` interfaces stable: candidate features can be enriched from aggregated events/preferences/orders; replace or blend `scoreProduct` with a model inference service or offline-trained weights loaded from config.
+- `recommendation_rules` and `AppSetting`/config can store model version, feature flags, and A/B buckets; `recommendation_logs` + interaction statuses provide labeled impression/click/conversion signals for evaluation/training pipelines (subject to consent/retention policy).
+- Add offline jobs for feature aggregation, retention cleanup, and metric dashboards before introducing ML; validate fairness/privacy and rollout behind flags.
+
 
 Completion means the relevant acceptance evidence exists, not that every checkbox was ticked without testing. SEO is an ongoing measured program, not a promise of first-page rankings.

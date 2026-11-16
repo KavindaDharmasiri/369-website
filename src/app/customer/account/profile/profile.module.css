@@ -73,6 +73,66 @@
   padding: 32px;
   max-width: 520px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+}
+
+.prefDescription {
+  margin: 0 0 16px;
+  color: #5a6c7d;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.prefRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.prefLabel {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.prefStatus {
+  font-size: 13px;
+  color: #5a6c7d;
+}
+
+.prefBtn {
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid #d0d7de;
+  background: #fff;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.prefBtn:hover:not(:disabled) {
+  border-color: #111827;
+  background: #f8f9fa;
+}
+
+.prefBtnEnabled {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+
+.prefBtnEnabled:hover:not(:disabled) {
+  background: #1f2937;
+  border-color: #1f2937;
+}
+
+.prefBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .cardTitle {
@@ -144,5 +204,14 @@
 @media (max-width: 560px) {
   .formRow {
     grid-template-columns: 1fr;
+  }
+
+  .prefRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .prefBtn {
+    width: 100%;
   }
 }
